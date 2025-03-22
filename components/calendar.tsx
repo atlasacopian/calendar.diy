@@ -308,24 +308,59 @@ export default function Calendar() {
             event.id === editingEventId ? { ...event, content: eventContent, color: selectedColor } : event,
           ),
         )
+
+        // Update the events for selected date
+        setEventsForSelectedDate(
+          eventsForSelectedDate.map((event) =>
+            event.id === editingEventId ? { ...event, content: eventContent, color: selectedColor } : event,
+          ),
+        )
       } else {
-        // We're adding a new event
-        const newEvent = {
-          id: Math.random().toString(36).substring(2, 11),
-          date: selectedDate,
-          content: eventContent,
-          color: selectedColor,
+        // Check if we already have 2 events for this day
+        const dayEvents = events.filter((event) => isSameDay(event.date, selectedDate))
+        if (dayEvents.length >= 2) {
+          // If we already have 2 events, replace the oldest one
+          const oldestEvent = dayEvents[0]
+
+          // Create new event
+          const newEvent = {
+            id: Math.random().toString(36).substring(2, 11),
+            date: selectedDate,
+            content: eventContent,
+            color: selectedColor,
+          }
+
+          // Remove the oldest event and add the new one
+          const updatedEvents = events.filter((event) => event.id !== oldestEvent.id)
+          updatedEvents.push(newEvent)
+          setEvents(updatedEvents)
+
+          // Update events for selected date
+          const updatedDayEvents = eventsForSelectedDate.filter((event) => event.id !== oldestEvent.id)
+          updatedDayEvents.push(newEvent)
+          setEventsForSelectedDate(updatedDayEvents)
+
+          // Force save to localStorage immediately
+          localStorage.setItem("calendarEvents", JSON.stringify(updatedEvents))
+        } else {
+          // We're adding a new event and we have less than 2 events
+          const newEvent = {
+            id: Math.random().toString(36).substring(2, 11),
+            date: selectedDate,
+            content: eventContent,
+            color: selectedColor,
+          }
+
+          // Add the new event to the events array
+          const updatedEvents = [...events, newEvent]
+          setEvents(updatedEvents)
+
+          // Force save to localStorage immediately
+          localStorage.setItem("calendarEvents", JSON.stringify(updatedEvents))
+
+          // Add to the current day's events
+          setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
         }
-
-        // Add the new event to the events array
-        const updatedEvents = [...events, newEvent]
-        setEvents(updatedEvents)
-
-        // Force save to localStorage immediately
-        localStorage.setItem("calendarEvents", JSON.stringify(updatedEvents))
-
-        // Add to the current day's events
-        setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
       }
     }
 
@@ -333,6 +368,17 @@ export default function Calendar() {
     setEditingEventId(null)
     setEventContent("")
     setSelectedColor("text-black")
+  }
+
+  const handleSaveAndClose = () => {
+    // First save any pending event
+    if (eventContent.trim()) {
+      handleSaveEvent()
+    }
+
+    // Then close the modal
+    setShowModal(false)
+    setSelectedDate(null)
   }
 
   const handleCancelEdit = () => {
@@ -410,6 +456,16 @@ export default function Calendar() {
   const handleDrop = (day: Date, e: React.DragEvent) => {
     e.preventDefault()
     if (draggedEvent) {
+      // Check if the target day already has 2 events
+      const dayEvents = events.filter((event) => isSameDay(event.date, day) && event.id !== draggedEvent.id)
+
+      if (dayEvents.length >= 2) {
+        // If the day already has 2 events, don't allow the drop
+        setDraggedEvent(null)
+        setDragOverDate(null)
+        return
+      }
+
       // Remove the event from its original date
       const filteredEvents = events.filter((event) => event.id !== draggedEvent.id)
 
@@ -613,9 +669,12 @@ export default function Calendar() {
       const eventsContainer = document.createElement("div")
       eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "25px"
 
-      dayEvents.forEach((event) => {
+      // Limit to 2 events
+      const limitedEvents = dayEvents.slice(0, 2)
+
+      limitedEvents.forEach((event) => {
         const eventDiv = document.createElement("div")
-        eventDiv.textContent = event.content
+        eventDiv.textContent = "+ " + event.content
         eventDiv.style.fontSize = "11px"
         eventDiv.style.fontWeight = "500"
         eventDiv.style.marginBottom = "3px"
@@ -730,10 +789,15 @@ export default function Calendar() {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
+      // Limit to 2 events per day
+      const limitedEvents = dayEvents.slice(0, 2)
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
       const isCurrentDay = isToday(date)
       const isDragOver = dragOverDate && isSameDay(dragOverDate, date)
+
+      // HARDCODED SOLUTION: Only highlight March 21, 2025 (and not the 22nd)
+      // Check  date)
 
       // HARDCODED SOLUTION: Only highlight March 21, 2025 (and not the 22nd)
       // Check if this is March 21, 2025
@@ -786,7 +850,7 @@ export default function Calendar() {
           </div>
 
           <div className="mt-0.5 md:mt-1 space-y-0.5 md:space-y-1 overflow-hidden">
-            {dayEvents.map((event, index) => {
+            {limitedEvents.map((event, index) => {
               // Ensure color is in text- format for backward compatibility
               let textColorClass = event.color || "text-black dark:text-white"
               if (textColorClass.startsWith("bg-")) {
@@ -878,6 +942,14 @@ export default function Calendar() {
         .calendar-controls, .dark-mode-toggle {
           display: none !important;
         }
+      }
+      
+      /* Ensure text doesn't overflow and is properly truncated */
+      .calendar-day .truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
       }
     `
     document.head.appendChild(style)
@@ -1318,7 +1390,7 @@ export default function Calendar() {
                         : "bg-gray-100 border border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500 cursor-not-allowed",
                     )}
                   >
-                    Add Event
+                    Add Another Event
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
@@ -1387,7 +1459,7 @@ export default function Calendar() {
             <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
               <div className="flex justify-end gap-2">
                 <button
-                  onClick={handleCancelEdit}
+                  onClick={handleSaveAndClose}
                   className="rounded-md bg-gray-100 border border-gray-300 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                 >
                   Save

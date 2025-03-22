@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "calendar.diy",
   description: "A minimalist project calendar",
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    icon: [{ url: "/favicon.ico", type: "image/x-icon" }],
     apple: "/apple-icon.png",
   },
   // Add Open Graph metadata for social sharing
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "calendar.diy",
     description: "A minimalist project calendar",
-    images: ["/favicon.svg"],
+    images: ["/og-image.png"],
   },
 }
 
@@ -54,11 +54,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="light">
       <head>
-        {/* Use calendar emoji as favicon */}
+        {/* Use calendar emoji as favicon - with Apple-style emoji */}
         <link
           rel="icon"
           href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 fontSize=%2290%22>🗓️</text></svg>"
-          type="image/svg+xml"
         />
 
         {/* Add direct meta tags for social sharing with calendar emoji */}

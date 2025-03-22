@@ -37,8 +37,10 @@ export default function Calendar() {
   const [isDownloading, setIsDownloading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
+  const resetModalRef = useRef<HTMLDivElement>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
   const calendarContentRef = useRef<HTMLDivElement>(null)
   const fullCalendarRef = useRef<HTMLDivElement>(null)
@@ -128,22 +130,26 @@ export default function Calendar() {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         setShowModal(false)
       }
+
+      if (showResetConfirm && resetModalRef.current && !resetModalRef.current.contains(event.target as Node)) {
+        setShowResetConfirm(false)
+      }
     }
 
-    if (showModal) {
+    if (showModal || showResetConfirm) {
       document.addEventListener("mousedown", handleClickOutside)
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
-  }, [showModal])
+  }, [showModal, showResetConfirm])
 
   // Add keyboard navigation for all interactions
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Month navigation when modal is not open
-      if (!showModal) {
+      if (!showModal && !showResetConfirm) {
         if (e.key === "ArrowLeft") {
           handlePreviousMonth()
         } else if (e.key === "ArrowRight") {
@@ -162,11 +168,19 @@ export default function Calendar() {
           if (showModal) {
             handleCancelEdit()
           }
+          if (showResetConfirm) {
+            setShowResetConfirm(false)
+          }
         }
       } else {
         // When modal is open
         if (e.key === "Escape") {
-          handleCancelEdit()
+          if (showModal) {
+            handleCancelEdit()
+          }
+          if (showResetConfirm) {
+            setShowResetConfirm(false)
+          }
         }
       }
     }
@@ -176,7 +190,7 @@ export default function Calendar() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [showModal, currentDate])
+  }, [showModal, showResetConfirm, currentDate])
 
   // Add meta tag to prevent zooming on input focus
   useEffect(() => {
@@ -255,6 +269,23 @@ export default function Calendar() {
       e.preventDefault()
       handleSaveEvent()
     }
+  }
+
+  // Show reset confirmation modal
+  const handleShowResetConfirm = () => {
+    setShowResetConfirm(true)
+  }
+
+  // Reset all user data
+  const handleResetData = () => {
+    // Clear events
+    setEvents([])
+
+    // Clear localStorage
+    localStorage.removeItem("calendarEvents")
+
+    // Close the confirmation modal
+    setShowResetConfirm(false)
   }
 
   // Download calendar as image
@@ -577,84 +608,11 @@ export default function Calendar() {
       >
         <div ref={calendarRef} className="calendar-container">
           <div className="border-b border-gray-100 bg-gray-50 p-2 md:p-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-              <h2 className="font-mono text-lg md:text-xl font-light tracking-tight">
+            <div className="flex flex-col items-center justify-center">
+              <h2 className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center">
                 {format(currentDate, "MMMM yyyy")}
               </h2>
-              <div className="calendar-buttons flex flex-wrap items-center gap-1 md:gap-2 transition-opacity duration-300">
-                <button
-                  onClick={downloadCalendarAsImage}
-                  className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
-                  title="Download as Image"
-                  disabled={isDownloading}
-                >
-                  {/* Render SVG directly instead of using the Lucide component */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-2.5 w-2.5 md:h-3 md:w-3"
-                  >
-                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0-2-2h-3l-2.5-3z"></path>
-                    <circle cx="12" cy="13" r="3"></circle>
-                  </svg>
-                  <span className="hidden xs:inline">Image</span>
-                </button>
-                <button
-                  onClick={exportToIcal}
-                  className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
-                  title="Export to iCal"
-                >
-                  {/* Render SVG directly instead of using the Lucide component */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-2.5 w-2.5 md:h-3 md:w-3"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  <span className="hidden xs:inline">iCal</span>
-                </button>
-                <button
-                  onClick={exportToGoogleCalendar}
-                  className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
-                  title="Export to Google Calendar"
-                >
-                  {/* Render SVG directly instead of using the Lucide component */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-2.5 w-2.5 md:h-3 md:w-3"
-                  >
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  <span className="hidden xs:inline">Google</span>
-                </button>
+              <div className="flex items-center gap-2 mt-2">
                 <button
                   onClick={handlePreviousMonth}
                   className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
@@ -709,6 +667,110 @@ export default function Calendar() {
               </div>
             ))}
             {renderCalendar()}
+          </div>
+
+          {/* Calendar Footer with Buttons */}
+          <div className="border-t border-gray-100 bg-gray-50 p-2 md:p-4">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={downloadCalendarAsImage}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                title="Download as Image"
+                disabled={isDownloading}
+              >
+                {/* Render SVG directly instead of using the Lucide component */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3"
+                >
+                  <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0-2-2h-3l-2.5-3z"></path>
+                  <circle cx="12" cy="13" r="3"></circle>
+                </svg>
+                <span>Image</span>
+              </button>
+              <button
+                onClick={exportToIcal}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                title="Export to iCal"
+              >
+                {/* Render SVG directly instead of using the Lucide component */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>iCal</span>
+              </button>
+              <button
+                onClick={exportToGoogleCalendar}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                title="Export to Google Calendar"
+              >
+                {/* Render SVG directly instead of using the Lucide component */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span>Google</span>
+              </button>
+              <button
+                onClick={handleShowResetConfirm}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                title="Reset Calendar Data"
+              >
+                {/* Render SVG directly instead of using the Lucide component */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3"
+                >
+                  <path d="M3 2v6h6"></path>
+                  <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
+                  <path d="M21 22v-6h-6"></path>
+                  <path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path>
+                </svg>
+                <span>Reset</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -821,6 +883,71 @@ export default function Calendar() {
                   className="rounded-md bg-black px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white transition-colors hover:bg-gray-800"
                 >
                   Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div
+            ref={resetModalRef}
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[90vh] flex flex-col"
+            style={{ margin: "auto" }}
+          >
+            {/* Modal Header */}
+            <div className="border-b border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <h3 className="font-mono text-sm font-medium tracking-tight">Reset Calendar Data</h3>
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                >
+                  {/* Render SVG directly instead of using the Lucide component */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to reset all calendar data? This will remove all events you've added and cannot be
+                undone.
+              </p>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="rounded-md border border-gray-200 bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 transition-colors hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleResetData}
+                  className="rounded-md bg-red-600 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white transition-colors hover:bg-red-700"
+                >
+                  Reset Data
                 </button>
               </div>
             </div>

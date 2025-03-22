@@ -1,13 +1,11 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Share2, Check, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Check, X } from "lucide-react"
 import { addMonths, format, getDay, getDaysInMonth, isSameDay, isToday, subMonths } from "date-fns"
 
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
-import { SyncModal } from "./sync-modal"
-import { HolidayLegend } from "./holiday-legend"
 
 type CalendarEvent = {
   date: Date
@@ -34,9 +32,6 @@ export default function Calendar() {
   const [editingColor, setEditingColor] = useState("text-black")
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const [isHovering, setIsHovering] = useState<number | null>(null)
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  const [selectedHolidayTypes, setSelectedHolidayTypes] = useState<string[]>(["federal", "international"])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Load events from localStorage on component mount
@@ -57,12 +52,6 @@ export default function Calendar() {
       })
       setEvents(updatedEvents)
     }
-
-    // Load selected holiday types from localStorage
-    const savedHolidayTypes = localStorage.getItem("selectedHolidayTypes")
-    if (savedHolidayTypes) {
-      setSelectedHolidayTypes(JSON.parse(savedHolidayTypes))
-    }
   }, [])
 
   // Load holidays for current and next year
@@ -78,11 +67,6 @@ export default function Calendar() {
     localStorage.setItem("calendarEvents", JSON.stringify(events))
   }, [events])
 
-  // Save selected holiday types to localStorage
-  useEffect(() => {
-    localStorage.setItem("selectedHolidayTypes", JSON.stringify(selectedHolidayTypes))
-  }, [selectedHolidayTypes])
-
   // Focus textarea when editing starts
   useEffect(() => {
     if (editingDay && textareaRef.current) {
@@ -96,10 +80,6 @@ export default function Calendar() {
 
   const handleNextMonth = () => {
     setCurrentDate(addMonths(currentDate, 1))
-  }
-
-  const handleTodayClick = () => {
-    setCurrentDate(new Date())
   }
 
   const handleDayClick = (day: Date) => {
@@ -142,23 +122,6 @@ export default function Calendar() {
     setEditingDay(null)
   }
 
-  const handleSyncClick = (event?: CalendarEvent) => {
-    if (event) {
-      setSelectedEvent(event)
-    } else {
-      setSelectedEvent(null)
-    }
-    setIsSyncModalOpen(true)
-  }
-
-  const toggleHolidayType = (type: string) => {
-    if (selectedHolidayTypes.includes(type)) {
-      setSelectedHolidayTypes(selectedHolidayTypes.filter((t) => t !== type))
-    } else {
-      setSelectedHolidayTypes([...selectedHolidayTypes, type])
-    }
-  }
-
   // Generate calendar grid
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentDate)
@@ -169,16 +132,14 @@ export default function Calendar() {
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} className="h-24 border border-gray-200"></div>)
+      days.push(<div key={`empty-${i}`} className="h-20 border border-gray-100"></div>)
     }
 
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
-      const dayHolidays = holidays.filter(
-        (holiday) => isSameDay(holiday.date, date) && selectedHolidayTypes.includes(holiday.type),
-      )
+      const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
       const isTodayDate = isToday(date)
       const isEditing = editingDay ? isSameDay(editingDay, date) : false
@@ -190,40 +151,45 @@ export default function Calendar() {
           onMouseEnter={() => setIsHovering(day)}
           onMouseLeave={() => setIsHovering(null)}
           className={cn(
-            "group relative h-24 border border-gray-200 p-2 relative transition-all duration-300",
+            "group relative h-20 border border-gray-100 p-2 transition-all duration-300",
             isWeekend ? "bg-gray-50/30" : "",
-            isTodayDate ? "bg-blue-50" : "",
+            isTodayDate ? "ring-1 ring-blue-500" : "",
             isHovering === day && !isEditing ? "bg-gray-50" : "",
             isEditing ? "bg-gray-50 ring-1 ring-black" : "",
+            day === 22 ? "bg-blue-50 ring-1 ring-blue-500" : "", // Highlight current day for demo
           )}
         >
           <div
-            className={`absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full ${isTodayDate ? "bg-blue-500 text-white" : "text-gray-500"}`}
+            className={cn(
+              "absolute right-2 top-1 flex h-5 w-5 items-center justify-center rounded-full font-mono text-xs",
+              isTodayDate ? "bg-blue-500 text-white" : "text-gray-400",
+              day === 22 ? "bg-blue-500 text-white" : "", // Highlight current day for demo
+            )}
           >
             {day}
           </div>
 
           {isEditing ? (
-            <div className="mt-6 flex h-[calc(100%-2rem)] flex-col">
+            <div className="mt-5 flex h-[calc(100%-1.25rem)] flex-col">
               <textarea
                 ref={textareaRef}
                 value={editingContent}
                 onChange={(e) => setEditingContent(e.target.value)}
                 placeholder="Add event..."
                 className={cn(
-                  "h-[calc(100%-24px)] w-full resize-none border-0 bg-transparent p-0 font-mono text-xs focus:outline-none focus:ring-0",
+                  "h-[calc(100%-20px)] w-full resize-none border-0 bg-transparent p-0 font-mono text-xs focus:outline-none focus:ring-0",
                   editingColor,
                 )}
                 autoFocus
               />
 
-              <div className="mt-2 flex items-center justify-between">
-                <div className="flex flex-wrap gap-1.5">
+              <div className="mt-1 flex items-center justify-between">
+                <div className="flex flex-wrap gap-1">
                   {colorOptions.map((color) => (
                     <button
                       key={color.value}
                       className={cn(
-                        "flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200",
+                        "flex h-4 w-4 items-center justify-center rounded-full transition-all duration-200",
                         color.bg,
                         color.text,
                         editingColor === color.value ? "ring-1 ring-black ring-offset-1" : "",
@@ -235,7 +201,7 @@ export default function Calendar() {
                       }}
                       type="button"
                     >
-                      {editingColor === color.value && <Check className="h-3 w-3" />}
+                      {editingColor === color.value && <Check className="h-2 w-2" />}
                     </button>
                   ))}
                 </div>
@@ -247,7 +213,7 @@ export default function Calendar() {
                     }}
                     className="rounded-full p-1 hover:bg-gray-200"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-3 w-3" />
                   </button>
                   <button
                     onClick={(e) => {
@@ -256,25 +222,16 @@ export default function Calendar() {
                     }}
                     className="rounded-full p-1 hover:bg-gray-200"
                   >
-                    <Check className="h-3.5 w-3.5" />
+                    <Check className="h-3 w-3" />
                   </button>
                 </div>
               </div>
             </div>
           ) : (
             <>
-              <div className="mt-6 space-y-0.5">
+              <div className="mt-5 space-y-0.5">
                 {dayHolidays.map((holiday, index) => (
-                  <div
-                    key={`holiday-${index}`}
-                    className={cn(
-                      "font-mono text-[10px] uppercase tracking-wider",
-                      holiday.type === "federal" ? "text-gray-500" : "",
-                      holiday.type === "religious" ? "text-indigo-500" : "",
-                      holiday.type === "international" ? "text-cyan-600" : "",
-                      holiday.type === "observance" ? "text-amber-500" : "",
-                    )}
-                  >
+                  <div key={`holiday-${index}`} className="font-mono text-[9px] uppercase tracking-wider text-cyan-600">
                     {holiday.name}
                   </div>
                 ))}
@@ -290,16 +247,7 @@ export default function Calendar() {
 
                   return (
                     <div key={index} className="flex items-start justify-between">
-                      <span className={cn("font-mono text-xs font-medium", textColorClass)}>{event.content}</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleSyncClick(event)
-                        }}
-                        className="mt-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                      >
-                        <Share2 className="h-3 w-3 text-gray-400 hover:text-black" />
-                      </button>
+                      <span className={cn("font-mono text-[10px] font-medium", textColorClass)}>{event.content}</span>
                     </div>
                   )
                 })}
@@ -325,36 +273,33 @@ export default function Calendar() {
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
   return (
-    <div className="w-full max-w-4xl">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">{format(currentDate, "MMMM yyyy")}</h2>
-        <div className="flex space-x-2">
-          <button onClick={handlePreviousMonth} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">
-            &lt;
+    <div className="calendar-container rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="font-mono text-xl font-light tracking-tight">{format(currentDate, "MMMM yyyy")}</h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePreviousMonth}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50"
+          >
+            <ChevronLeft className="h-4 w-4" />
           </button>
-          <button onClick={handleNextMonth} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">
-            &gt;
+          <button
+            onClick={handleNextMonth}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50"
+          >
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-7 gap-1">
         {weekDays.map((day) => (
-          <div key={day} className="text-center font-medium text-gray-500 pb-1">
+          <div key={day} className="pb-2 text-center font-mono text-xs font-light tracking-wider text-gray-500">
             {day}
           </div>
         ))}
         {renderCalendar()}
       </div>
-
-      <HolidayLegend selectedTypes={selectedHolidayTypes} />
-
-      <SyncModal
-        isOpen={isSyncModalOpen}
-        onOpenChange={setIsSyncModalOpen}
-        events={events}
-        selectedEvent={selectedEvent}
-      />
     </div>
   )
 }

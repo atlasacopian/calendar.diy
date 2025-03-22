@@ -66,14 +66,6 @@ html {
 }
 
 /* Add xs breakpoint for very small screens */
-@layer utilities {
-  @variants responsive {
-    .xs\:inline {
-      display: inline;
-    }
-  }
-}
-
 @media (min-width: 400px) {
   .xs\:inline {
     display: inline;

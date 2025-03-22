@@ -613,7 +613,7 @@ export default function Calendar() {
                     strokeLinejoin="round"
                     className="h-2.5 w-2.5 md:h-3 md:w-3"
                   >
-                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0-2-2h-3l-2.5-3z"></path>
                     <circle cx="12" cy="13" r="3"></circle>
                   </svg>
                   <span className="hidden xs:inline">Image</span>
@@ -725,18 +725,13 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Event Modal - Properly centered on desktop, top-aligned on mobile */}
+      {/* Event Modal - Properly centered on all screens */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div
             ref={modalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[80vh] sm:max-h-[90vh] flex flex-col mx-auto"
-            style={{
-              marginTop: isMobile ? "10px" : "auto",
-              transform: "translateX(-50%)",
-              left: "50%",
-              position: "relative",
-            }}
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[90vh] flex flex-col"
+            style={{ margin: "auto" }}
           >
             {/* Modal Header */}
             <div className="border-b border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">

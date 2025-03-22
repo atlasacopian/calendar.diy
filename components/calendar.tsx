@@ -1280,7 +1280,7 @@ export default function Calendar() {
                     </button>
                     <button
                       onClick={handleSaveEvent}
-                      className="rounded-md bg-black dark:bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                      className="rounded-md bg-gray-100 border border-gray-300 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                     >
                       Update Event
                     </button>
@@ -1292,8 +1292,8 @@ export default function Calendar() {
                     className={cn(
                       "rounded-md px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs",
                       eventContent.trim()
-                        ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                        : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed",
+                        ? "bg-gray-100 border border-gray-300 text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        : "bg-gray-100 border border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500 cursor-not-allowed",
                     )}
                   >
                     Add Event

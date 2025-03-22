@@ -4,10 +4,10 @@ const nextConfig = {
   // Explicitly disable AMP
   amp: false,
   // Ensure proper static generation
-  output: "standalone",
+  output: 'standalone',
   // Disable redirects that might interfere with indexing
   async redirects() {
-    return []
+    return [];
   },
   // Ensure proper trailing slashes handling
   trailingSlash: false,
@@ -15,9 +15,10 @@ const nextConfig = {
   poweredByHeader: false,
   // Ensure proper image optimization
   images: {
-    domains: ["calendar-diy.vercel.app"],
+    domains: ['calendar-diy.vercel.app'],
   },
 }
 
-module.exports = nextConfig
+// Use ES modules export syntax for .mjs files
+export default nextConfig
 

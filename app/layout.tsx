@@ -9,6 +9,30 @@ export const metadata: Metadata = {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
     apple: "/apple-icon.png",
   },
+  // Add Open Graph metadata for social sharing
+  openGraph: {
+    title: "calendar.diy",
+    description: "A minimalist project calendar",
+    url: "https://calendar.diy",
+    siteName: "calendar.diy",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "calendar.diy - A minimalist project calendar",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  // Add Twitter card metadata
+  twitter: {
+    card: "summary_large_image",
+    title: "calendar.diy",
+    description: "A minimalist project calendar",
+    images: ["/og-image.png"],
+  },
 }
 
 // Update the viewport settings in layout.tsx to prevent zooming

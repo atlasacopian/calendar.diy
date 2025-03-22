@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Editable Calendar Template – No Signup | calendar.diy",
   description:
     "A clean, free, editable calendar you can use instantly. No account. No clutter. Just a simple calendar for your projects, schedules, or planning.",
+  metadataBase: new URL("https://calendar.diy"),
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",

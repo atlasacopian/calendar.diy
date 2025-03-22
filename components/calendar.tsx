@@ -730,8 +730,13 @@ export default function Calendar() {
         <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div
             ref={modalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[80vh] sm:max-h-[90vh] flex flex-col"
-            style={{ marginTop: isMobile ? "10px" : "auto" }}
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[80vh] sm:max-h-[90vh] flex flex-col mx-auto"
+            style={{
+              marginTop: isMobile ? "10px" : "auto",
+              transform: "translateX(-50%)",
+              left: "50%",
+              position: "relative",
+            }}
           >
             {/* Modal Header */}
             <div className="border-b border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">

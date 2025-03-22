@@ -1,14 +1,12 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, CalendarIcon, Share2, Check, X } from "lucide-react"
+import { Share2, Check, X } from "lucide-react"
 import { addMonths, format, getDay, getDaysInMonth, isSameDay, isToday, subMonths } from "date-fns"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import { SyncModal } from "./sync-modal"
-import { HolidayFilter } from "./holiday-filter"
 import { HolidayLegend } from "./holiday-legend"
 
 type CalendarEvent = {
@@ -171,7 +169,7 @@ export default function Calendar() {
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} className="h-36 border border-gray-100"></div>)
+      days.push(<div key={`empty-${i}`} className="h-24 border border-gray-200"></div>)
     }
 
     // Add cells for each day of the month
@@ -192,18 +190,15 @@ export default function Calendar() {
           onMouseEnter={() => setIsHovering(day)}
           onMouseLeave={() => setIsHovering(null)}
           className={cn(
-            "group relative h-36 border border-gray-100 p-3 transition-all duration-300",
+            "group relative h-24 border border-gray-200 p-2 relative transition-all duration-300",
             isWeekend ? "bg-gray-50/30" : "",
-            isTodayDate ? "ring-1 ring-black" : "",
+            isTodayDate ? "bg-blue-50" : "",
             isHovering === day && !isEditing ? "bg-gray-50" : "",
             isEditing ? "bg-gray-50 ring-1 ring-black" : "",
           )}
         >
           <div
-            className={cn(
-              "absolute right-3 top-3 flex h-6 w-6 items-center justify-center font-mono text-xs",
-              isTodayDate ? "bg-black text-white" : "text-gray-400",
-            )}
+            className={`absolute top-1 right-1 w-6 h-6 flex items-center justify-center rounded-full ${isTodayDate ? "bg-blue-500 text-white" : "text-gray-500"}`}
           >
             {day}
           </div>
@@ -327,56 +322,25 @@ export default function Calendar() {
     return days
   }
 
-  const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
   return (
-    <div className="calendar-container">
-      <div className="mb-8 flex items-center justify-between">
-        <h2 className="font-mono text-2xl font-light uppercase tracking-tight">{format(currentDate, "MMMM yyyy")}</h2>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleTodayClick}
-            className="h-8 rounded-none font-mono text-xs tracking-wider hover:bg-gray-50"
-          >
-            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-            TODAY
-          </Button>
-          <HolidayFilter selectedTypes={selectedHolidayTypes} onToggleType={toggleHolidayType} />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleSyncClick()}
-            className="h-8 rounded-none font-mono text-xs tracking-wider hover:bg-gray-50"
-          >
-            <Share2 className="mr-2 h-3.5 w-3.5" />
-            SYNC
-          </Button>
-          <div className="flex">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handlePreviousMonth}
-              className="h-8 w-8 rounded-none border-black transition-all duration-200 hover:bg-black hover:text-white"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleNextMonth}
-              className="h-8 w-8 rounded-none border-black transition-all duration-200 hover:bg-black hover:text-white"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+    <div className="w-full max-w-4xl">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">{format(currentDate, "MMMM yyyy")}</h2>
+        <div className="flex space-x-2">
+          <button onClick={handlePreviousMonth} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">
+            &lt;
+          </button>
+          <button onClick={handleNextMonth} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">
+            &gt;
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-0">
+      <div className="grid grid-cols-7 gap-1">
         {weekDays.map((day) => (
-          <div key={day} className="pb-3 text-center font-mono text-xs font-light tracking-wider text-gray-500">
+          <div key={day} className="text-center font-medium text-gray-500 pb-1">
             {day}
           </div>
         ))}

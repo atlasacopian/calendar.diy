@@ -93,6 +93,7 @@ export default function Calendar() {
                 {/* Day cells */}
                 {dayCells.map((day) => {
                   const isToday = day === currentDate.getDate()
+                  const hasHoliday = day === 17 && currentMonth === 2 // St. Patrick's Day
 
                   return (
                     <div
@@ -109,11 +110,40 @@ export default function Calendar() {
                         {day}
                       </div>
 
-                      {/* Static example of a holiday */}
-                      {day === 17 && currentMonth === 2 && (
+                      {/* Only show holiday info for St. Patrick's Day */}
+                      {hasHoliday && (
                         <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
-                          <div className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 whitespace-normal break-words">
+                          <div className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 whitespace-normal break-words truncate">
                             ST. PATRICK'S DAY
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Example of a day with content - only for demonstration */}
+                      {day === 6 && (
+                        <div className="mt-3 md:mt-3.5 overflow-hidden">
+                          <div className="font-mono text-[10px] md:text-[10px] font-medium text-blue-600 truncate">
+                            Example event with long text that should be truncated
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Example of a day with two entries - only for demonstration */}
+                      {day === 13 && (
+                        <div className="mt-3 md:mt-3.5 flex flex-col h-[calc(100%-20px)]">
+                          <div className="flex-1 flex items-start">
+                            <span className="font-mono text-[10px] md:text-[10px] font-medium text-red-600 truncate max-w-full">
+                              First entry
+                            </span>
+                          </div>
+
+                          {/* Only show divider when there are two entries */}
+                          <div className="border-t border-gray-200 w-full my-auto"></div>
+
+                          <div className="flex-1 flex items-end">
+                            <span className="font-mono text-[10px] md:text-[10px] font-medium text-green-600 truncate max-w-full">
+                              Second entry
+                            </span>
                           </div>
                         </div>
                       )}

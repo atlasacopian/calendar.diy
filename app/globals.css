@@ -11,6 +11,7 @@ body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
   font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @layer utilities {
@@ -62,5 +63,20 @@ html {
 /* Custom selection color */
 ::selection {
   background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Add xs breakpoint for very small screens */
+@layer utilities {
+  @variants responsive {
+    .xs\:inline {
+      display: inline;
+    }
+  }
+}
+
+@media (min-width: 400px) {
+  .xs\:inline {
+    display: inline;
+  }
 }
 

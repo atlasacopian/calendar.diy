@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import type React from "react"
 
 import { useEffect, useRef, useState } from "react"
 import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToday } from "date-fns"
@@ -659,12 +659,20 @@ export default function Calendar() {
       eventsContainer.style.display = "flex"
       eventsContainer.style.flexDirection = "column"
       eventsContainer.style.height = "calc(100% - 25px)"
-      eventsContainer.style.justifyContent = "space-between"
+
+      // If there's only one event, center it vertically
+      if (dayEvents.length === 1) {
+        eventsContainer.style.justifyContent = "center"
+      } else {
+        eventsContainer.style.justifyContent = "space-between"
+      }
 
       // Limit to 2 events
       const limitedEvents = dayEvents.slice(0, 2)
 
-      limitedEvents.forEach((event, index) => {
+      if (limitedEvents.length === 1) {
+        // Single event - centered vertically
+        const event = limitedEvents[0]
         const eventDiv = document.createElement("div")
         eventDiv.textContent = event.content
         eventDiv.style.fontSize = "11px"
@@ -683,28 +691,72 @@ export default function Calendar() {
         if (event.color?.includes("purple")) color = "#9333ea"
 
         eventDiv.style.color = color
+        eventsContainer.appendChild(eventDiv)
+      } else if (limitedEvents.length === 2) {
+        // Two events with centered divider
+        const topEventContainer = document.createElement("div")
+        topEventContainer.style.flex = "1"
+        topEventContainer.style.display = "flex"
+        topEventContainer.style.alignItems = "flex-start"
 
-        if (index === 0 && limitedEvents.length > 1) {
-          eventDiv.style.marginBottom = "auto"
-        } else if (index > 0) {
-          eventDiv.style.marginTop = "auto"
-        }
+        const event1 = limitedEvents[0]
+        const eventDiv1 = document.createElement("div")
+        eventDiv1.textContent = event1.content
+        eventDiv1.style.fontSize = "11px"
+        eventDiv1.style.fontWeight = "500"
+        eventDiv1.style.wordBreak = "break-word"
+        eventDiv1.style.overflow = "hidden"
+        eventDiv1.style.maxWidth = "100%"
 
-        // Add to container
-        if (index === 0 && limitedEvents.length > 1) {
-          eventsContainer.appendChild(eventDiv)
+        // Convert Tailwind color classes to CSS colors
+        let color1 = "#000"
+        if (event1.color?.includes("blue")) color1 = "#2563eb"
+        if (event1.color?.includes("red")) color1 = "#dc2626"
+        if (event1.color?.includes("yellow")) color1 = "#eab308"
+        if (event1.color?.includes("orange")) color1 = "#f97316"
+        if (event1.color?.includes("green")) color1 = "#16a34a"
+        if (event1.color?.includes("purple")) color1 = "#9333ea"
 
-          // Add divider in the middle
-          const divider = document.createElement("div")
-          divider.style.height = "1px"
-          divider.style.backgroundColor = "#eee"
-          divider.style.width = "100%"
-          divider.style.margin = "2px 0"
-          eventsContainer.appendChild(divider)
-        } else {
-          eventsContainer.appendChild(eventDiv)
-        }
-      })
+        eventDiv1.style.color = color1
+        topEventContainer.appendChild(eventDiv1)
+        eventsContainer.appendChild(topEventContainer)
+
+        // Add centered divider
+        const divider = document.createElement("div")
+        divider.style.height = "1px"
+        divider.style.backgroundColor = "#eee"
+        divider.style.width = "100%"
+        divider.style.margin = "auto 0"
+        eventsContainer.appendChild(divider)
+
+        // Bottom event
+        const bottomEventContainer = document.createElement("div")
+        bottomEventContainer.style.flex = "1"
+        bottomEventContainer.style.display = "flex"
+        bottomEventContainer.style.alignItems = "flex-end"
+
+        const event2 = limitedEvents[1]
+        const eventDiv2 = document.createElement("div")
+        eventDiv2.textContent = event2.content
+        eventDiv2.style.fontSize = "11px"
+        eventDiv2.style.fontWeight = "500"
+        eventDiv2.style.wordBreak = "break-word"
+        eventDiv2.style.overflow = "hidden"
+        eventDiv2.style.maxWidth = "100%"
+
+        // Convert Tailwind color classes to CSS colors
+        let color2 = "#000"
+        if (event2.color?.includes("blue")) color2 = "#2563eb"
+        if (event2.color?.includes("red")) color2 = "#dc2626"
+        if (event2.color?.includes("yellow")) color2 = "#eab308"
+        if (event2.color?.includes("orange")) color2 = "#f97316"
+        if (event2.color?.includes("green")) color2 = "#16a34a"
+        if (event2.color?.includes("purple")) color2 = "#9333ea"
+
+        eventDiv2.style.color = color2
+        bottomEventContainer.appendChild(eventDiv2)
+        eventsContainer.appendChild(bottomEventContainer)
+      }
 
       dayCell.appendChild(eventsContainer)
       grid.appendChild(dayCell)
@@ -859,45 +911,78 @@ export default function Calendar() {
             ))}
           </div>
 
-          <div className="mt-0 pt-0 overflow-visible flex flex-col h-[calc(100%-12px)]">
-            {limitedEvents.map((event, index) => {
-              // Ensure color is in text- format for backward compatibility
-              let textColorClass = event.color || "text-black dark:text-white"
-              if (textColorClass.startsWith("bg-")) {
-                textColorClass = textColorClass.replace("bg-", "text-")
-              }
-
-              // Add dark mode variants
-              if (textColorClass === "text-black") {
-                textColorClass = "text-black dark:text-white"
-              }
-
-              return (
-                <React.Fragment key={index}>
-                  {index > 0 && <div className="border-t border-gray-200 dark:border-gray-700 w-full my-0.5"></div>}
-                  <div
-                    className={cn("min-h-0", limitedEvents.length > 1 ? (index === 0 ? "mb-0" : "mt-0") : "")}
-                    draggable
-                    onDragStart={(e) => handleDragStart(event, e)}
-                    onDragEnd={handleDragEnd}
+          <div className="mt-0 pt-0 overflow-visible flex flex-col h-[calc(100%-12px)] justify-center">
+            {limitedEvents.length === 1 ? (
+              // If there's only one event, center it vertically
+              <div
+                className="flex-1 flex items-center"
+                draggable
+                onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
+                onDragEnd={handleDragEnd}
+              >
+                <span
+                  className={cn(
+                    "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
+                    limitedEvents[0].color || "text-black dark:text-white",
+                    "hover:underline",
+                    "max-w-full", // Ensure text doesn't overflow
+                    "block", // Make sure it's displayed as a block
+                    "overflow-visible", // Allow text to be visible
+                    "break-words", // Break words to prevent overflow
+                  )}
+                >
+                  {limitedEvents[0].content}
+                </span>
+              </div>
+            ) : (
+              // If there are two events, space them with the divider centered
+              <div className="flex flex-col h-full">
+                <div
+                  className="flex-1 flex items-start"
+                  draggable
+                  onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <span
+                    className={cn(
+                      "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
+                      limitedEvents[0].color || "text-black dark:text-white",
+                      "hover:underline",
+                      "max-w-full",
+                      "block",
+                      "overflow-visible",
+                      "break-words",
+                    )}
                   >
-                    <span
-                      className={cn(
-                        "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
-                        textColorClass,
-                        "hover:underline",
-                        "max-w-full", // Ensure text doesn't overflow
-                        "block", // Make sure it's displayed as a block
-                        "overflow-visible", // Allow text to be visible
-                        "break-words", // Break words to prevent overflow
-                      )}
-                    >
-                      {event.content}
-                    </span>
-                  </div>
-                </React.Fragment>
-              )
-            })}
+                    {limitedEvents[0].content}
+                  </span>
+                </div>
+
+                {/* Centered divider */}
+                <div className="border-t border-gray-200 dark:border-gray-700 w-full my-auto"></div>
+
+                <div
+                  className="flex-1 flex items-end"
+                  draggable
+                  onDragStart={(e) => handleDragStart(limitedEvents[1], e)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <span
+                    className={cn(
+                      "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
+                      limitedEvents[1].color || "text-black dark:text-white",
+                      "hover:underline",
+                      "max-w-full",
+                      "block",
+                      "overflow-visible",
+                      "break-words",
+                    )}
+                  >
+                    {limitedEvents[1].content}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>,
       )

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "calendar.diy",
   description: "A minimalist project calendar",
   icons: {
-    icon: "/favicon.svg",
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
     apple: "/apple-icon.png",
   },
 }
@@ -28,6 +28,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Add direct link tags for favicons to ensure they load */}
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
+      </head>
       <body>{children}</body>
     </html>
   )

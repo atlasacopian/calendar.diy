@@ -38,6 +38,7 @@ export const metadata: Metadata = {
       "Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account needed.",
     images: ["https://calendar.diy/calendar_og.jpg"],
   },
+  robots: "index, follow",
 }
 
 // Update the viewport settings in layout.tsx to prevent zooming
@@ -73,6 +74,10 @@ export default function RootLayout({
         <meta property="og:type" content="website" />
       </head>
       <body className="bg-white transition-colors duration-200">
+        {/* Visually hidden content for SEO */}
+        <h1 className="sr-only">Editable Calendar – No Signup</h1>
+        <p className="sr-only">A simple, editable calendar you can use instantly. Free forever, no account required.</p>
+
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           {children}
         </ThemeProvider>

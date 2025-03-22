@@ -1110,6 +1110,33 @@ export default function Calendar() {
           </svg>
           <span>Reset</span>
         </button>
+        <a
+          href="https://www.buymeacoffee.com/atlasacopian"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Buy Me A Coffee"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3"
+          >
+            <path d="M17 8h1a4 4 0 1 1 0 8h-1"></path>
+            <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path>
+            <line x1="6" y1="2" x2="6" y2="4"></line>
+            <line x1="10" y1="2" x2="10" y2="4"></line>
+            <line x1="14" y1="2" x2="14" y2="4"></line>
+          </svg>
+          <span>Buy Me a Coffee</span>
+        </a>
       </div>
 
       {/* Event Modal - Properly centered on all screens */}
@@ -1472,19 +1499,6 @@ export default function Calendar() {
           </div>
         </div>
       )}
-
-      {/* Buy Me A Coffee Button - Centered at bottom */}
-      <div className="fixed bottom-2 left-0 right-0 z-10 flex justify-center">
-        <a
-          href="https://www.buymeacoffee.com/atlasacopian"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-200 text-gray-700 rounded text-[10px] font-mono shadow-sm transition-all hover:bg-gray-50"
-        >
-          <span>☕</span>
-          <span>buy me a coffee</span>
-        </a>
-      </div>
     </div>
   )
 }

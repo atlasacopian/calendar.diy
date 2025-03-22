@@ -52,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="light">
       <head>
         {/* Force favicon refresh with a timestamp query parameter */}
         <link rel="icon" href={`/favicon.svg?v=${Date.now()}`} type="image/svg+xml" />
@@ -64,8 +64,8 @@ export default function RootLayout({
         <meta property="og:title" content="calendar.diy" />
         <meta name="twitter:title" content="calendar.diy" />
       </head>
-      <body className="bg-white dark:bg-gray-900 transition-colors duration-200">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <body className="bg-white transition-colors duration-200">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           {children}
         </ThemeProvider>
       </body>

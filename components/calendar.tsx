@@ -703,6 +703,8 @@ export default function Calendar() {
         eventDiv.style.wordBreak = "break-word"
         eventDiv.style.overflow = "hidden"
         eventDiv.style.maxWidth = "100%"
+        eventDiv.style.textOverflow = "ellipsis"
+        eventDiv.style.whiteSpace = "nowrap"
 
         // Convert Tailwind color classes to CSS colors
         let color = "#000"
@@ -730,6 +732,8 @@ export default function Calendar() {
         eventDiv1.style.wordBreak = "break-word"
         eventDiv1.style.overflow = "hidden"
         eventDiv1.style.maxWidth = "100%"
+        eventDiv1.style.textOverflow = "ellipsis"
+        eventDiv1.style.whiteSpace = "nowrap"
 
         // Convert Tailwind color classes to CSS colors
         let color1 = "#000"
@@ -744,7 +748,7 @@ export default function Calendar() {
         topEventContainer.appendChild(eventDiv1)
         eventsContainer.appendChild(topEventContainer)
 
-        // Add centered divider
+        // Add centered divider only when there are 2 events
         const divider = document.createElement("div")
         divider.style.height = "1px"
         divider.style.backgroundColor = "#eee"
@@ -766,6 +770,8 @@ export default function Calendar() {
         eventDiv2.style.wordBreak = "break-word"
         eventDiv2.style.overflow = "hidden"
         eventDiv2.style.maxWidth = "100%"
+        eventDiv2.style.textOverflow = "ellipsis"
+        eventDiv2.style.whiteSpace = "nowrap"
 
         // Convert Tailwind color classes to CSS colors
         let color2 = "#000"
@@ -956,7 +962,7 @@ export default function Calendar() {
                     "hover:underline",
                     "max-w-full", // Ensure text doesn't overflow
                     "block", // Make sure it's displayed as a block
-                    "overflow-visible", // Allow text to be visible
+                    "truncate", // Add truncation with ellipsis
                     "break-words", // Break words to prevent overflow
                   )}
                 >
@@ -981,7 +987,7 @@ export default function Calendar() {
                       "hover:underline",
                       "max-w-full",
                       "block",
-                      "overflow-visible",
+                      "truncate",
                       "break-words",
                     )}
                   >
@@ -989,8 +995,10 @@ export default function Calendar() {
                   </span>
                 </div>
 
-                {/* Centered divider */}
-                <div className="border-t border-gray-200 dark:border-gray-700 w-full my-auto"></div>
+                {/* Only show divider when there are two entries */}
+                {limitedEvents.length === 2 && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 w-full my-auto"></div>
+                )}
 
                 <div
                   className="flex-1 flex items-end"
@@ -1007,7 +1015,7 @@ export default function Calendar() {
                       "hover:underline",
                       "max-w-full",
                       "block",
-                      "overflow-visible",
+                      "truncate",
                       "break-words",
                     )}
                   >
@@ -1047,11 +1055,6 @@ export default function Calendar() {
       /* Explicitly remove any styling for day 22 */
       .calendar-day:nth-child(29) .rounded-full {
         background-color: transparent !important;
-      /* Remove the ::after pseudo-element that creates the black bar */
-
-      /* Explicitly remove any styling for day 22 */
-      .calendar-day:nth-child(29) .rounded-full {
-        background-color: transparent !important;
         color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
       }
       
@@ -1076,18 +1079,23 @@ export default function Calendar() {
         }
       }
       
-      /* Ensure text doesn't overflow and is properly truncated */
-      .calendar-day .truncate, .calendar-day .line-clamp-2 {
-        white-space: normal;
-        overflow: visible;
-        word-break: break-word;
-        max-width: 100%;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        text-overflow: ellipsis;
-      }
-      
+    /* Ensure text doesn't overflow and is properly truncated */
+    .calendar-day .truncate {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    
+    .calendar-day .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    
       /* Make most text uppercase except user input */
       .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span:not(.preserve-case), div:not(.preserve-case), a, label {
         text-transform: uppercase !important;
@@ -1106,7 +1114,8 @@ export default function Calendar() {
       /* Ensure event text is not cut off */
       .preserve-case {
         text-transform: none !important;
-        overflow: visible !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
         word-break: break-word !important;
       }
     `

@@ -3,13 +3,16 @@
 import type React from "react"
 
 import { useEffect, useRef, useState } from "react"
-import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths } from "date-fns"
+import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, startOfMonth, isToday } from "date-fns"
 import html2canvas from "html2canvas"
+import { motion, AnimatePresence } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
+import { Moon, Sun, Share2 } from "lucide-react"
 
 type CalendarEvent = {
+  id: string
   date: Date
   content: string
   color?: string
@@ -38,6 +41,13 @@ export default function Calendar() {
   const [isMobile, setIsMobile] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null)
+  const [dragOverDate, setDragOverDate] = useState<Date | null>(null)
+  const [slideDirection, setSlideDirection] = useState<"left" | "right">("right")
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareUrl, setShareUrl] = useState("")
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
   const resetModalRef = useRef<HTMLDivElement>(null)
@@ -45,6 +55,7 @@ export default function Calendar() {
   const calendarContentRef = useRef<HTMLDivElement>(null)
   const fullCalendarRef = useRef<HTMLDivElement>(null)
   const printableCalendarRef = useRef<HTMLDivElement>(null)
+  const shareInputRef = useRef<HTMLInputElement>(null)
 
   // Check if device is mobile
   useEffect(() => {
@@ -86,6 +97,18 @@ export default function Calendar() {
 
   // Load events from localStorage on component mount
   useEffect(() => {
+    // Load dark mode preference
+    const savedDarkMode = localStorage.getItem("calendarDarkMode")
+    if (savedDarkMode) {
+      const isDark = JSON.parse(savedDarkMode)
+      setIsDarkMode(isDark)
+      if (isDark) {
+        document.documentElement.classList.add("dark")
+      } else {
+        document.documentElement.classList.remove("dark")
+      }
+    }
+
     const savedEvents = localStorage.getItem("calendarEvents")
     if (savedEvents) {
       // Convert any bg- color classes to text- color classes for backward compatibility
@@ -96,11 +119,26 @@ export default function Calendar() {
         }
         return {
           ...event,
+          id: event.id || Math.random().toString(36).substring(2, 11),
           date: new Date(event.date),
           color,
         }
       })
       setEvents(updatedEvents)
+    }
+
+    // Check URL for shared date
+    const urlParams = new URLSearchParams(window.location.search)
+    const dateParam = urlParams.get("date")
+    if (dateParam) {
+      try {
+        const sharedDate = new Date(dateParam)
+        if (!isNaN(sharedDate.getTime())) {
+          setCurrentDate(sharedDate)
+        }
+      } catch (e) {
+        console.error("Invalid date in URL")
+      }
     }
   }, [])
 
@@ -129,12 +167,30 @@ export default function Calendar() {
     localStorage.setItem("calendarEvents", JSON.stringify(events))
   }, [events])
 
+  // Save dark mode preference
+  useEffect(() => {
+    localStorage.setItem("calendarDarkMode", JSON.stringify(isDarkMode))
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+    }
+  }, [isDarkMode])
+
   // Focus textarea when modal opens
   useEffect(() => {
     if (showModal && textareaRef.current) {
       textareaRef.current.focus()
     }
   }, [showModal])
+
+  // Focus share input when share modal opens
+  useEffect(() => {
+    if (showShareModal && shareInputRef.current) {
+      shareInputRef.current.focus()
+      shareInputRef.current.select()
+    }
+  }, [showShareModal])
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -168,13 +224,21 @@ export default function Calendar() {
           handleNextMonth()
         } else if (e.key === "ArrowUp") {
           // Go to previous year
+          setSlideDirection("left")
           setCurrentDate(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1))
         } else if (e.key === "ArrowDown") {
           // Go to next year
+          setSlideDirection("right")
           setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1))
         } else if (e.key === "Home") {
           // Go to current month
-          setCurrentDate(new Date())
+          const now = new Date()
+          if (now.getTime() > currentDate.getTime()) {
+            setSlideDirection("right")
+          } else {
+            setSlideDirection("left")
+          }
+          setCurrentDate(now)
         } else if (e.key === "Escape") {
           // Close any open dialogs or reset view
           if (showModal) {
@@ -183,6 +247,10 @@ export default function Calendar() {
           if (showResetConfirm) {
             setShowResetConfirm(false)
           }
+        } else if (e.key === "d" && (e.ctrlKey || e.metaKey)) {
+          // Toggle dark mode with Ctrl+D or Cmd+D
+          e.preventDefault()
+          setIsDarkMode(!isDarkMode)
         }
       } else {
         // When modal is open
@@ -193,6 +261,9 @@ export default function Calendar() {
           if (showResetConfirm) {
             setShowResetConfirm(false)
           }
+          if (showShareModal) {
+            setShowShareModal(false)
+          }
         }
       }
     }
@@ -202,7 +273,7 @@ export default function Calendar() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [showModal, showResetConfirm, currentDate])
+  }, [showModal, showResetConfirm, currentDate, isDarkMode, showShareModal])
 
   // Add meta tag to prevent zooming on input focus
   useEffect(() => {
@@ -226,10 +297,12 @@ export default function Calendar() {
   }, [])
 
   const handlePreviousMonth = () => {
+    setSlideDirection("left")
     setCurrentDate(subMonths(currentDate, 1))
   }
 
   const handleNextMonth = () => {
+    setSlideDirection("right")
     setCurrentDate(addMonths(currentDate, 1))
   }
 
@@ -252,6 +325,7 @@ export default function Calendar() {
       setEvents([
         ...filteredEvents,
         {
+          id: Math.random().toString(36).substring(2, 11),
           date: selectedDate,
           content: eventContent,
           color: selectedColor,
@@ -300,6 +374,98 @@ export default function Calendar() {
     setShowResetConfirm(false)
   }
 
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode)
+  }
+
+  // Handle drag start for events
+  const handleDragStart = (event: CalendarEvent, e: React.DragEvent) => {
+    setDraggedEvent(event)
+    // Set a ghost drag image
+    if (e.dataTransfer) {
+      const ghostElement = document.createElement("div")
+      ghostElement.classList.add("event-ghost")
+      ghostElement.textContent = event.content
+      ghostElement.style.padding = "4px 8px"
+      ghostElement.style.background = isDarkMode ? "#333" : "#f5f5f5"
+      ghostElement.style.border = "1px solid #ddd"
+      ghostElement.style.borderRadius = "4px"
+      ghostElement.style.width = "100px"
+      ghostElement.style.overflow = "hidden"
+      ghostElement.style.whiteSpace = "nowrap"
+      ghostElement.style.textOverflow = "ellipsis"
+      ghostElement.style.position = "absolute"
+      ghostElement.style.top = "-1000px"
+      document.body.appendChild(ghostElement)
+
+      e.dataTransfer.setDragImage(ghostElement, 50, 10)
+
+      // Remove the ghost element after a short delay
+      setTimeout(() => {
+        document.body.removeChild(ghostElement)
+      }, 100)
+    }
+  }
+
+  // Handle drag over for calendar days
+  const handleDragOver = (day: Date, e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOverDate(day)
+  }
+
+  // Handle drop for calendar days
+  const handleDrop = (day: Date, e: React.DragEvent) => {
+    e.preventDefault()
+    if (draggedEvent) {
+      // Remove the event from its original date
+      const filteredEvents = events.filter((event) => event.id !== draggedEvent.id)
+
+      // Add it to the new date
+      setEvents([
+        ...filteredEvents,
+        {
+          ...draggedEvent,
+          date: day,
+        },
+      ])
+    }
+    setDraggedEvent(null)
+    setDragOverDate(null)
+  }
+
+  // Handle drag end
+  const handleDragEnd = () => {
+    setDraggedEvent(null)
+    setDragOverDate(null)
+  }
+
+  // Share current month view
+  const handleShare = () => {
+    const url = new URL(window.location.href)
+    url.searchParams.set("date", format(currentDate, "yyyy-MM-dd"))
+    setShareUrl(url.toString())
+    setShowShareModal(true)
+  }
+
+  // Copy share URL to clipboard
+  const copyShareUrl = () => {
+    if (shareInputRef.current) {
+      shareInputRef.current.select()
+      document.execCommand("copy")
+
+      // Show feedback
+      const button = document.getElementById("copy-button")
+      if (button) {
+        const originalText = button.textContent
+        button.textContent = "Copied!"
+        setTimeout(() => {
+          if (button) button.textContent = originalText
+        }, 2000)
+      }
+    }
+  }
+
   // Download calendar as image
   const downloadCalendarAsImage = async () => {
     try {
@@ -310,7 +476,7 @@ export default function Calendar() {
 
       // Capture the printable calendar
       const canvas = await html2canvas(printableCalendar, {
-        backgroundColor: "white",
+        backgroundColor: isDarkMode ? "#1a1a1a" : "white",
         scale: 2, // Higher resolution
         logging: false,
         useCORS: true,
@@ -343,7 +509,8 @@ export default function Calendar() {
     printableDiv.style.position = "absolute"
     printableDiv.style.left = "-9999px"
     printableDiv.style.width = "1200px" // Fixed width to ensure consistency
-    printableDiv.style.backgroundColor = "white"
+    printableDiv.style.backgroundColor = isDarkMode ? "#1a1a1a" : "white"
+    printableDiv.style.color = isDarkMode ? "#e0e0e0" : "#333"
     printableDiv.style.fontFamily = '"JetBrains Mono", monospace'
     printableDiv.style.padding = "40px" // Add padding for more white space
 
@@ -356,13 +523,14 @@ export default function Calendar() {
     header.style.fontWeight = "300"
     header.style.textAlign = "center"
     header.style.textTransform = "uppercase"
+    header.style.color = isDarkMode ? "#e0e0e0" : "#333"
     printableDiv.appendChild(header)
 
     // Create calendar grid
     const grid = document.createElement("div")
     grid.style.display = "grid"
     grid.style.gridTemplateColumns = "repeat(7, 1fr)"
-    grid.style.border = "1px solid #eee"
+    grid.style.border = isDarkMode ? "1px solid #444" : "1px solid #eee"
     grid.style.borderBottom = "none"
     grid.style.borderRight = "none"
     grid.style.maxWidth = "900px" // Limit width for more white space
@@ -374,11 +542,11 @@ export default function Calendar() {
       dayHeader.textContent = day
       dayHeader.style.padding = "10px"
       dayHeader.style.textAlign = "center"
-      dayHeader.style.borderBottom = "1px solid #eee"
-      dayHeader.style.borderRight = "1px solid #eee"
-      dayHeader.style.backgroundColor = "#f9f9f9"
+      dayHeader.style.borderBottom = isDarkMode ? "1px solid #444" : "1px solid #eee"
+      dayHeader.style.borderRight = isDarkMode ? "1px solid #444" : "1px solid #eee"
+      dayHeader.style.backgroundColor = isDarkMode ? "#222" : "#f9f9f9"
       dayHeader.style.fontSize = "14px"
-      dayHeader.style.color = "#666"
+      dayHeader.style.color = isDarkMode ? "#aaa" : "#666"
       grid.appendChild(dayHeader)
     })
 
@@ -389,9 +557,10 @@ export default function Calendar() {
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       const emptyCell = document.createElement("div")
-      emptyCell.style.borderBottom = "1px solid #eee"
-      emptyCell.style.borderRight = "1px solid #eee"
+      emptyCell.style.borderBottom = isDarkMode ? "1px solid #444" : "1px solid #eee"
+      emptyCell.style.borderRight = isDarkMode ? "1px solid #444" : "1px solid #eee"
       emptyCell.style.height = "100px"
+      emptyCell.style.backgroundColor = isDarkMode ? "#1a1a1a" : "white"
       grid.appendChild(emptyCell)
     }
 
@@ -411,13 +580,10 @@ export default function Calendar() {
       const dayCell = document.createElement("div")
       dayCell.style.position = "relative"
       dayCell.style.padding = "10px"
-      dayCell.style.borderBottom = "1px solid #eee"
-      dayCell.style.borderRight = "1px solid #eee"
+      dayCell.style.borderBottom = isDarkMode ? "1px solid #444" : "1px solid #eee"
+      dayCell.style.borderRight = isDarkMode ? "1px solid #444" : "1px solid #eee"
       dayCell.style.height = "100px"
-
-      if (isWeekend) {
-        dayCell.style.backgroundColor = "#f9f9f9"
-      }
+      dayCell.style.backgroundColor = isDarkMode ? (isWeekend ? "#222" : "#1a1a1a") : isWeekend ? "#f9f9f9" : "white"
 
       // Add day number
       const dayNumber = document.createElement("div")
@@ -426,7 +592,7 @@ export default function Calendar() {
       dayNumber.style.top = "5px"
       dayNumber.style.right = "10px"
       dayNumber.style.fontSize = "14px"
-      dayNumber.style.color = "#999"
+      dayNumber.style.color = isDarkMode ? "#777" : "#999"
 
       // Apply special styling for March 21, 2025 - only circle, no box
       if (isMarch21) {
@@ -446,7 +612,7 @@ export default function Calendar() {
         holidayDiv.style.fontSize = "9px"
         holidayDiv.style.textTransform = "uppercase"
         holidayDiv.style.letterSpacing = "0.05em"
-        holidayDiv.style.color = "#666"
+        holidayDiv.style.color = isDarkMode ? "#999" : "#666"
         holidayDiv.style.marginBottom = "3px"
         holidaysContainer.appendChild(holidayDiv)
       })
@@ -465,13 +631,13 @@ export default function Calendar() {
         eventDiv.style.marginBottom = "3px"
 
         // Convert Tailwind color classes to CSS colors
-        let color = "#000"
-        if (event.color?.includes("blue")) color = "#2563eb"
-        if (event.color?.includes("red")) color = "#dc2626"
-        if (event.color?.includes("yellow")) color = "#eab308"
-        if (event.color?.includes("orange")) color = "#f97316"
-        if (event.color?.includes("green")) color = "#16a34a"
-        if (event.color?.includes("purple")) color = "#9333ea"
+        let color = isDarkMode ? "#fff" : "#000"
+        if (event.color?.includes("blue")) color = isDarkMode ? "#60a5fa" : "#2563eb"
+        if (event.color?.includes("red")) color = isDarkMode ? "#f87171" : "#dc2626"
+        if (event.color?.includes("yellow")) color = isDarkMode ? "#fcd34d" : "#eab308"
+        if (event.color?.includes("orange")) color = isDarkMode ? "#fdba74" : "#f97316"
+        if (event.color?.includes("green")) color = isDarkMode ? "#4ade80" : "#16a34a"
+        if (event.color?.includes("purple")) color = isDarkMode ? "#c084fc" : "#9333ea"
 
         eventDiv.style.color = color
         eventsContainer.appendChild(eventDiv)
@@ -547,6 +713,61 @@ export default function Calendar() {
     window.open(url, "_blank")
   }
 
+  // Generate mini calendar for navigation
+  const renderMiniCalendar = () => {
+    const daysInMonth = getDaysInMonth(currentDate)
+    const firstDayOfMonth = startOfMonth(currentDate)
+    const startingDayOfWeek = getDay(firstDayOfMonth)
+
+    const miniDays = []
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      miniDays.push(<div key={`mini-empty-${i}`} className="w-5 h-5"></div>)
+    }
+
+    // Add cells for each day of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+      const hasEvent = events.some((event) => isSameDay(event.date, date))
+      const isCurrentDay = isToday(date)
+
+      miniDays.push(
+        <button
+          key={`mini-day-${day}`}
+          onClick={() => handleDayClick(date)}
+          className={cn(
+            "w-5 h-5 flex items-center justify-center text-[10px] rounded-full transition-colors",
+            isCurrentDay ? "bg-black text-white dark:bg-white dark:text-black" : "",
+            hasEvent && !isCurrentDay ? "border border-gray-300 dark:border-gray-600" : "",
+            "hover:bg-gray-100 dark:hover:bg-gray-800",
+          )}
+        >
+          {day}
+        </button>,
+      )
+    }
+
+    return (
+      <div className="mini-calendar p-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 shadow-sm">
+        <div className="text-xs font-mono mb-1 text-center text-gray-600 dark:text-gray-400">
+          {format(currentDate, "MMMM yyyy")}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+            <div
+              key={`mini-header-${i}`}
+              className="w-5 h-5 flex items-center justify-center text-[8px] text-gray-500 dark:text-gray-400"
+            >
+              {day}
+            </div>
+          ))}
+          {miniDays}
+        </div>
+      </div>
+    )
+  }
+
   // Generate calendar grid
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentDate)
@@ -557,7 +778,13 @@ export default function Calendar() {
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} className="h-16 md:h-20 border-b border-r border-gray-100"></div>)
+      days.push(
+        <div
+          key={`empty-${i}`}
+          className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
+          onDragOver={(e) => e.preventDefault()}
+        ></div>,
+      )
     }
 
     // Add cells for each day of the month
@@ -566,6 +793,8 @@ export default function Calendar() {
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
+      const isCurrentDay = isToday(date)
+      const isDragOver = dragOverDate && isSameDay(dragOverDate, date)
 
       // HARDCODED SOLUTION: Only highlight March 21, 2025 (and not the 22nd)
       // Check if this is March 21, 2025
@@ -581,9 +810,13 @@ export default function Calendar() {
         <div
           key={day}
           onClick={() => handleDayClick(date)}
+          onDragOver={(e) => handleDragOver(date, e)}
+          onDrop={(e) => handleDrop(date, e)}
           className={cn(
-            "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 p-1 md:p-2 transition-colors",
-            isWeekend ? "bg-gray-50/30" : "",
+            "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800 p-1 md:p-2 transition-colors",
+            isWeekend ? "bg-gray-50/30 dark:bg-gray-900/30" : "",
+            isCurrentDay ? "bg-gray-50 dark:bg-gray-900/50" : "",
+            isDragOver ? "bg-gray-100 dark:bg-gray-800" : "",
             // Remove the ring/box around the day
             // isMarch21 ? "ring-1 ring-inset ring-black" : "",
             // Explicitly remove any styling for March 22
@@ -593,9 +826,10 @@ export default function Calendar() {
           <div
             className={cn(
               "absolute right-1 md:right-2 top-1 flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full font-mono text-[10px] md:text-xs",
-              isMarch21 ? "bg-black text-white" : "text-gray-400",
+              isMarch21 ? "bg-black text-white dark:bg-white dark:text-black" : "text-gray-400 dark:text-gray-500",
+              isCurrentDay && !isMarch21 ? "bg-gray-200 dark:bg-gray-700" : "",
               // Explicitly remove any styling for March 22
-              isMarch22 ? "!bg-transparent !text-gray-400" : "",
+              isMarch22 ? "!bg-transparent !text-gray-400 dark:!text-gray-500" : "",
             )}
           >
             {day}
@@ -605,7 +839,7 @@ export default function Calendar() {
             {dayHolidays.map((holiday, index) => (
               <div
                 key={`holiday-${index}`}
-                className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 whitespace-normal break-words"
+                className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
               >
                 {holiday.name}
               </div>
@@ -615,14 +849,31 @@ export default function Calendar() {
           <div className="mt-0.5 md:mt-1 space-y-0.5 md:space-y-1 overflow-hidden">
             {dayEvents.map((event, index) => {
               // Ensure color is in text- format for backward compatibility
-              let textColorClass = event.color || "text-black"
+              let textColorClass = event.color || "text-black dark:text-white"
               if (textColorClass.startsWith("bg-")) {
                 textColorClass = textColorClass.replace("bg-", "text-")
               }
 
+              // Add dark mode variants
+              if (textColorClass === "text-black") {
+                textColorClass = "text-black dark:text-white"
+              }
+
               return (
-                <div key={index} className="flex items-start justify-between">
-                  <span className={cn("font-mono text-[8px] md:text-[10px] font-medium truncate", textColorClass)}>
+                <div
+                  key={index}
+                  className="flex items-start justify-between"
+                  draggable
+                  onDragStart={(e) => handleDragStart(event, e)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <span
+                    className={cn(
+                      "font-mono text-[8px] md:text-[10px] font-medium truncate cursor-move",
+                      textColorClass,
+                      "hover:underline",
+                    )}
+                  >
                     {event.content}
                   </span>
                 </div>
@@ -643,21 +894,69 @@ export default function Calendar() {
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
-  .calendar-day {
-    position: relative;
-  }
-  .calendar-day:hover {
-    background-color: rgba(249, 250, 251, 1) !important;
-  }
-  
-  /* Remove the ::after pseudo-element that creates the black bar */
-  
-  /* Explicitly remove any styling for day 22 */
-  .calendar-day:nth-child(29) .rounded-full {
-    background-color: transparent !important;
-    color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
-  }
-`
+      .calendar-day {
+        position: relative;
+      }
+      .calendar-day:hover {
+        background-color: rgba(249, 250, 251, 1) !important;
+      }
+      
+      .dark .calendar-day:hover {
+        background-color: rgba(30, 30, 30, 1) !important;
+      }
+
+      /* Remove the ::after pseudo-element that creates the black bar */
+
+      /* Explicitly remove any styling for day 22 */
+      .calendar-day:nth-child(29) .rounded-full {
+        background-color: transparent !important;
+        color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
+      }
+      
+      /* Print styles */
+      @media print {
+        body {
+          background: white !important;
+          color: black !important;
+        }
+        
+        .calendar-container {
+          border: 1px solid #eee !important;
+          box-shadow: none !important;
+        }
+        
+        .calendar-day {
+          border: 1px solid #eee !important;
+        }
+        
+        .calendar-controls, .dark-mode-toggle {
+          display: none !important;
+        }
+      }
+      
+      /* Animation classes */
+      .slide-left-enter {
+        transform: translateX(-20px);
+        opacity: 0;
+      }
+      
+      .slide-left-enter-active {
+        transform: translateX(0);
+        opacity: 1;
+        transition: all 300ms ease-in-out;
+      }
+      
+      .slide-right-enter {
+        transform: translateX(20px);
+        opacity: 0;
+      }
+      
+      .slide-right-enter-active {
+        transform: translateX(0);
+        opacity: 1;
+        transition: all 300ms ease-in-out;
+      }
+    `
     document.head.appendChild(style)
 
     return () => {
@@ -666,77 +965,128 @@ export default function Calendar() {
   }, [])
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className={cn("flex flex-col space-y-4", isDarkMode ? "dark" : "")}>
       <div
         ref={fullCalendarRef}
-        className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+        className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm transition-colors duration-200"
       >
         <div ref={calendarRef} className="calendar-container">
-          <div className="border-b border-gray-100 bg-gray-50 p-2 md:p-4 flex items-center justify-between">
-            <button
-              onClick={handlePreviousMonth}
-              className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-3 w-3 md:h-4 md:w-4"
+          <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4 flex items-center justify-between transition-colors duration-200">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePreviousMonth}
+                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
               >
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3 md:h-4 md:w-4"
+                >
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
 
-            <h2 className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center">
-              {format(currentDate, "MMMM yyyy")}
-            </h2>
+              {/* Mini calendar toggle for mobile */}
+              {isMobile && (
+                <div className="relative group">
+                  <button className="text-xs font-mono text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                    📅
+                  </button>
+                  <div className="absolute left-0 top-full mt-1 z-10 hidden group-hover:block">
+                    {renderMiniCalendar()}
+                  </div>
+                </div>
+              )}
+            </div>
 
-            <button
-              onClick={handleNextMonth}
-              className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-3 w-3 md:h-4 md:w-4"
+            <div className="flex items-center gap-2">
+              <h2 className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center dark:text-white transition-colors duration-200">
+                {format(currentDate, "MMMM yyyy")}
+              </h2>
+              <span className="text-xl md:text-2xl" aria-hidden="true">
+                🗓️
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleDarkMode}
+                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
+                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
               >
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
+                {isDarkMode ? <Sun className="h-3 w-3 md:h-4 md:w-4" /> : <Moon className="h-3 w-3 md:h-4 md:w-4" />}
+              </button>
+
+              <button
+                onClick={handleNextMonth}
+                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3 md:h-4 md:w-4"
+                >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <div ref={calendarContentRef} className="grid grid-cols-7">
-            {(isMobile ? weekDaysMobile : weekDays).map((day) => (
-              <div
-                key={day}
-                className="border-b border-r border-gray-100 bg-gray-50 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500"
-              >
-                {day}
+          <div className="flex">
+            {/* Mini calendar for desktop */}
+            {!isMobile && (
+              <div className="hidden md:block w-48 p-4 border-r border-gray-100 dark:border-gray-800 transition-colors duration-200">
+                {renderMiniCalendar()}
               </div>
-            ))}
-            {renderCalendar()}
+            )}
+
+            <div className="flex-1">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentDate.toString()}
+                  initial={{ opacity: 0, x: slideDirection === "left" ? 20 : -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: slideDirection === "left" ? -20 : 20 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full"
+                >
+                  <div ref={calendarContentRef} className="grid grid-cols-7">
+                    {(isMobile ? weekDaysMobile : weekDays).map((day) => (
+                      <div
+                        key={day}
+                        className="border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500 dark:text-gray-400 transition-colors duration-200"
+                      >
+                        {day}
+                      </div>
+                    ))}
+                    {renderCalendar()}
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Calendar Controls - Now free-floating without the gray background */}
-      <div className="flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">
+      <div className="calendar-controls flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">
         <button
           onClick={exportToIcal}
-          className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Export to iCal"
         >
           <svg
@@ -760,7 +1110,7 @@ export default function Calendar() {
         </button>
         <button
           onClick={exportToGoogleCalendar}
-          className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Export to Google Calendar"
         >
           <svg
@@ -784,7 +1134,7 @@ export default function Calendar() {
         </button>
         <button
           onClick={handleShowResetConfirm}
-          className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Reset Calendar Data"
         >
           <svg
@@ -808,7 +1158,7 @@ export default function Calendar() {
         </button>
         <button
           onClick={downloadCalendarAsImage}
-          className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Download as Image"
           disabled={isDownloading}
         >
@@ -830,25 +1180,37 @@ export default function Calendar() {
           </svg>
           <span>Screenshot</span>
         </button>
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Share Calendar"
+        >
+          <Share2 className="h-3 w-3" />
+          <span>Share</span>
+        </button>
       </div>
 
       {/* Event Modal - Properly centered on all screens */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
             ref={modalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[90vh] flex flex-col"
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl max-h-[90vh] flex flex-col"
             style={{ margin: "auto" }}
           >
             {/* Modal Header */}
-            <div className="border-b border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight">
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">
                   {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Add Event"}
                 </h3>
                 <button
                   onClick={handleCancelEdit}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {/* Render SVG directly instead of using the Lucide component */}
                   <svg
@@ -871,9 +1233,12 @@ export default function Calendar() {
             </div>
 
             {/* Modal Content */}
-            <div className="p-2 sm:p-3 overflow-y-auto flex-grow">
+            <div className="p-2 sm:p-3 overflow-y-auto flex-grow dark:text-gray-200">
               <div className="mb-2 sm:mb-3">
-                <label htmlFor="event-content" className="mb-1 block font-mono text-xs text-gray-700">
+                <label
+                  htmlFor="event-content"
+                  className="mb-1 block font-mono text-xs text-gray-700 dark:text-gray-300"
+                >
                   Event
                 </label>
                 <textarea
@@ -883,13 +1248,13 @@ export default function Calendar() {
                   onChange={(e) => setEventContent(e.target.value)}
                   onKeyDown={handleTextareaKeyDown}
                   placeholder="Add event details..."
-                  className="w-full rounded-md border border-gray-200 p-2 font-mono text-base md:text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-base md:text-sm focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white"
                   rows={isMobile ? 2 : 3}
                 />
               </div>
 
               <div className="mb-2 sm:mb-3">
-                <label className="mb-1 block font-mono text-xs text-gray-700">Color</label>
+                <label className="mb-1 block font-mono text-xs text-gray-700 dark:text-gray-300">Color</label>
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {colorOptions.map((color) => (
                     <button
@@ -898,7 +1263,9 @@ export default function Calendar() {
                         "flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full transition-all duration-200",
                         color.bg,
                         color.text,
-                        selectedColor === color.value ? "ring-1 ring-gray-400 ring-offset-1" : "",
+                        selectedColor === color.value
+                          ? "ring-1 ring-gray-400 dark:ring-gray-300 ring-offset-1 dark:ring-offset-gray-800"
+                          : "",
                       )}
                       title={color.name}
                       onClick={() => setSelectedColor(color.value)}
@@ -927,41 +1294,45 @@ export default function Calendar() {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleCancelEdit}
-                  className="rounded-md border border-gray-200 bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 transition-colors hover:bg-gray-50"
+                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEvent}
-                  className="rounded-md bg-black px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white transition-colors hover:bg-gray-800"
+                  className="rounded-md bg-black dark:bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white dark:text-black transition-colors hover:bg-gray-800 dark:hover:bg-gray-200"
                 >
                   Save
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
             ref={resetModalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[90vh] flex flex-col"
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl max-h-[90vh] flex flex-col"
             style={{ margin: "auto" }}
           >
             {/* Modal Header */}
-            <div className="border-b border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-medium tracking-tight">Reset Calendar Data</h3>
+                <h3 className="font-mono text-sm font-medium tracking-tight dark:text-white">Reset Calendar Data</h3>
                 <button
                   onClick={() => setShowResetConfirm(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {/* Render SVG directly instead of using the Lucide component */}
                   <svg
@@ -984,33 +1355,112 @@ export default function Calendar() {
             </div>
 
             {/* Modal Content */}
-            <div className="p-4">
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="p-4 dark:text-gray-200">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                 Are you sure you want to reset all calendar data? This will remove all events you've added and cannot be
                 undone.
               </p>
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowResetConfirm(false)}
-                  className="rounded-md border border-gray-200 bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 transition-colors hover:bg-gray-50"
+                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleResetData}
-                  className="rounded-md bg-red-600 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white transition-colors hover:bg-red-700"
+                  className="rounded-md bg-red-600 dark:bg-red-700 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white transition-colors hover:bg-red-700 dark:hover:bg-red-800"
                 >
                   Reset Data
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
+
+      {/* Share Modal */}
+      {showShareModal &&
+        (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="w-opacity: 0, scale: 0.95}}
+            transition={{ duration: 0.2 }}
+            className=\"w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl max-h-[90vh] flex flex-col"
+            style={{ margin: "auto" }}
+          >
+            {/* Modal Header */}
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <h3 className="font-mono text-sm font-medium tracking-tight dark:text-white">Share Calendar</h3>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4 dark:text-gray-200">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                Share this link to show others this calendar view:
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={shareInputRef}
+                  type="text"
+                  value={shareUrl}
+                  readOnly
+                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-xs focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white"
+                />
+                <button
+                  id="copy-button"
+                  onClick={copyShareUrl}
+                  className="rounded-md bg-black dark:bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white dark:text-black transition-colors hover:bg-gray-800 dark:hover:bg-gray-200 whitespace-nowrap"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+        )}
     </div>
   )
 }

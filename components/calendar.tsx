@@ -490,37 +490,6 @@ export default function Calendar() {
 
     printableDiv.appendChild(grid)
 
-    // Add buttons container similar to what's shown on screen
-    const buttonsContainer = document.createElement("div")
-    buttonsContainer.style.display = "flex"
-    buttonsContainer.style.justifyContent = "center"
-    buttonsContainer.style.gap = "8px"
-    buttonsContainer.style.marginTop = "20px"
-
-    // Create button styles
-    const buttonStyle = {
-      display: "flex",
-      alignItems: "center",
-      gap: "4px",
-      padding: "4px 8px",
-      fontSize: "12px",
-      color: "#666",
-      border: "1px solid #e5e7eb",
-      borderRadius: "6px",
-      backgroundColor: "white",
-    }
-
-    // Add buttons (just for visual representation)
-    const buttonLabels = ["iCal", "Google", "Reset", "Screenshot"]
-    buttonLabels.forEach((label) => {
-      const button = document.createElement("div")
-      Object.assign(button.style, buttonStyle)
-      button.textContent = label
-      buttonsContainer.appendChild(button)
-    })
-
-    printableDiv.appendChild(buttonsContainer)
-
     // Add more bottom padding
     const bottomSpace = document.createElement("div")
     bottomSpace.style.height = "40px"
@@ -840,7 +809,7 @@ export default function Calendar() {
             <path d="M3 2v6h6"></path>
             <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
             <path d="M21 22v-6h-6"></path>
-            <path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path>
+            <path d="M3 12a9  9 0 0 0 15 6.7l3-2.7"></path>
           </svg>
           <span>Reset</span>
         </button>

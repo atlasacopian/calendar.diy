@@ -333,12 +333,6 @@ export default function Calendar() {
     setEditingEventId(null)
     setEventContent("")
     setSelectedColor("text-black")
-
-    // Always close the modal after saving on mobile
-    if (isMobile) {
-      setShowModal(false)
-      setSelectedDate(null)
-    }
   }
 
   const handleCancelEdit = () => {
@@ -568,8 +562,6 @@ export default function Calendar() {
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
-
-      // HARDCODED SOLUTION: Only highlight March 21, 2025
       const isMarch21 =
         currentDate.getMonth() === 2 && // March is month 2 (0-indexed)
         day === 21 &&

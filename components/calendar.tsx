@@ -655,10 +655,10 @@ export default function Calendar() {
 
       // Add events
       const eventsContainer = document.createElement("div")
-      eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "25px"
+      eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "15px"
       eventsContainer.style.display = "flex"
       eventsContainer.style.flexDirection = "column"
-      eventsContainer.style.height = "calc(100% - 30px)"
+      eventsContainer.style.height = "calc(100% - 25px)"
       eventsContainer.style.justifyContent = "space-between"
 
       // Limit to 2 events
@@ -699,7 +699,7 @@ export default function Calendar() {
           divider.style.height = "1px"
           divider.style.backgroundColor = "#eee"
           divider.style.width = "100%"
-          divider.style.margin = "5px 0"
+          divider.style.margin = "2px 0"
           eventsContainer.appendChild(divider)
         } else {
           eventsContainer.appendChild(eventDiv)
@@ -826,7 +826,7 @@ export default function Calendar() {
           onDragOver={(e) => handleDragOver(date, e)}
           onDrop={(e) => handleDrop(date, e)}
           className={cn(
-            "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800 p-1 md:p-2",
+            "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800 p-1 md:p-2 pt-0.5 md:pt-1",
             isWeekend ? "bg-gray-50/30 dark:bg-gray-900/30" : "",
             isCurrentDay ? "bg-gray-50 dark:bg-gray-900/50" : "",
             isDragOver ? "bg-gray-100 dark:bg-gray-800" : "",
@@ -838,7 +838,7 @@ export default function Calendar() {
         >
           <div
             className={cn(
-              "absolute right-1 md:right-2 top-1 flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full font-mono text-[10px] md:text-xs",
+              "absolute right-1 md:right-2 top-0.5 flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full font-mono text-[10px] md:text-xs",
               isMarch21 ? "bg-black text-white dark:bg-white dark:text-black" : "text-gray-400 dark:text-gray-500",
               isCurrentDay && !isMarch21 ? "bg-gray-200 dark:bg-gray-700" : "",
               // Explicitly remove any styling for March 22
@@ -848,7 +848,7 @@ export default function Calendar() {
             {day}
           </div>
 
-          <div className="mt-4 md:mt-5 space-y-0.5 overflow-hidden">
+          <div className="mt-2 md:mt-2.5 space-y-0.5 overflow-hidden">
             {dayHolidays.map((holiday, index) => (
               <div
                 key={`holiday-${index}`}
@@ -859,7 +859,7 @@ export default function Calendar() {
             ))}
           </div>
 
-          <div className="mt-0 pt-0 overflow-visible flex flex-col space-y-1 h-[calc(100%-12px)]">
+          <div className="mt-0 pt-0 overflow-visible flex flex-col space-y-0.5 h-[calc(100%-12px)]">
             {limitedEvents.map((event, index) => {
               // Ensure color is in text- format for backward compatibility
               let textColorClass = event.color || "text-black dark:text-white"
@@ -874,7 +874,7 @@ export default function Calendar() {
 
               return (
                 <React.Fragment key={index}>
-                  {index > 0 && <div className="border-t border-gray-200 dark:border-gray-700 w-full"></div>}
+                  {index > 0 && <div className="border-t border-gray-200 dark:border-gray-700 w-full my-0.5"></div>}
                   <div
                     className={cn("min-h-0", limitedEvents.length > 1 ? (index === 0 ? "mb-auto" : "mt-auto") : "")}
                     draggable

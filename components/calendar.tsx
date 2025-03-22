@@ -134,7 +134,7 @@ export default function Calendar() {
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} className="h-24 border border-gray-100"></div>)
+      days.push(<div key={`empty-${i}`} className="h-24 border-b border-r border-gray-100"></div>)
     }
 
     // Add cells for each day of the month
@@ -152,18 +152,18 @@ export default function Calendar() {
           onMouseEnter={() => setIsHovering(day)}
           onMouseLeave={() => setIsHovering(null)}
           className={cn(
-            "group relative h-24 border border-gray-100 p-2 transition-all duration-300",
+            "group relative h-24 border-b border-r border-gray-100 p-2 transition-all duration-300",
             isWeekend ? "bg-gray-50/30" : "",
-            isTodayDate ? "ring-1 ring-blue-500" : "",
+            isTodayDate ? "ring-1 ring-inset ring-black" : "",
             isHovering === day ? "bg-gray-50" : "",
-            day === 22 ? "bg-blue-50 ring-1 ring-blue-500" : "", // Highlight current day for demo
+            day === 22 ? "bg-gray-50 ring-1 ring-inset ring-black" : "", // Highlight current day for demo
           )}
         >
           <div
             className={cn(
               "absolute right-2 top-1 flex h-5 w-5 items-center justify-center rounded-full font-mono text-xs",
-              isTodayDate ? "bg-blue-500 text-white" : "text-gray-400",
-              day === 22 ? "bg-blue-500 text-white" : "", // Highlight current day for demo
+              isTodayDate ? "bg-black text-white" : "text-gray-400",
+              day === 22 ? "bg-black text-white" : "", // Highlight current day for demo
             )}
           >
             {day}
@@ -171,7 +171,7 @@ export default function Calendar() {
 
           <div className="mt-5 space-y-0.5">
             {dayHolidays.map((holiday, index) => (
-              <div key={`holiday-${index}`} className="font-mono text-[9px] uppercase tracking-wider text-cyan-600">
+              <div key={`holiday-${index}`} className="font-mono text-[9px] uppercase tracking-wider text-gray-500">
                 {holiday.name}
               </div>
             ))}
@@ -193,12 +193,7 @@ export default function Calendar() {
             })}
           </div>
 
-          <div
-            className={cn(
-              "absolute bottom-0 left-0 h-0.5 w-full bg-black opacity-0 transition-opacity duration-300",
-              isHovering === day ? "opacity-100" : "",
-            )}
-          />
+          {isHovering === day && <div className="absolute bottom-0 left-0 h-0.5 w-full bg-black" />}
         </div>,
       )
     }
@@ -210,28 +205,33 @@ export default function Calendar() {
 
   return (
     <>
-      <div className="calendar-container rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="font-mono text-xl font-light tracking-tight">{format(currentDate, "MMMM yyyy")}</h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePreviousMonth}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleNextMonth}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+      <div className="calendar-container overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 bg-gray-50 p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-mono text-xl font-light tracking-tight">{format(currentDate, "MMMM yyyy")}</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePreviousMonth}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={handleNextMonth}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7">
           {weekDays.map((day) => (
-            <div key={day} className="pb-2 text-center font-mono text-xs font-light tracking-wider text-gray-500">
+            <div
+              key={day}
+              className="border-b border-r border-gray-100 bg-gray-50 p-2 text-center font-mono text-xs font-light tracking-wider text-gray-500"
+            >
               {day}
             </div>
           ))}
@@ -241,70 +241,76 @@ export default function Calendar() {
 
       {/* Event Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-mono text-lg font-medium">
-                {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Add Event"}
-              </h3>
-              <button
-                onClick={handleCancelEdit}
-                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="event-content" className="mb-2 block font-mono text-sm text-gray-700">
-                Event
-              </label>
-              <textarea
-                ref={textareaRef}
-                id="event-content"
-                value={eventContent}
-                onChange={(e) => setEventContent(e.target.value)}
-                placeholder="Add event details..."
-                className="w-full rounded-md border border-gray-300 p-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                rows={3}
-              />
-            </div>
-
-            <div className="mb-6">
-              <label className="mb-2 block font-mono text-sm text-gray-700">Color</label>
-              <div className="flex flex-wrap gap-2">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color.value}
-                    className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
-                      color.bg,
-                      color.text,
-                      selectedColor === color.value ? "ring-2 ring-gray-400 ring-offset-2" : "",
-                    )}
-                    title={color.name}
-                    onClick={() => setSelectedColor(color.value)}
-                    type="button"
-                  >
-                    {selectedColor === color.value && <Check className="h-4 w-4" />}
-                  </button>
-                ))}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl">
+            <div className="border-b border-gray-100 bg-gray-50 p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-mono text-lg font-light tracking-tight">
+                  {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Add Event"}
+                </h3>
+                <button
+                  onClick={handleCancelEdit}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={handleCancelEdit}
-                className="rounded-md border border-gray-300 bg-white px-4 py-2 font-mono text-sm text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveEvent}
-                className="rounded-md bg-blue-500 px-4 py-2 font-mono text-sm text-white hover:bg-blue-600"
-              >
-                Save
-              </button>
+            <div className="p-4">
+              <div className="mb-4">
+                <label htmlFor="event-content" className="mb-2 block font-mono text-sm text-gray-700">
+                  Event
+                </label>
+                <textarea
+                  ref={textareaRef}
+                  id="event-content"
+                  value={eventContent}
+                  onChange={(e) => setEventContent(e.target.value)}
+                  placeholder="Add event details..."
+                  className="w-full rounded-md border border-gray-200 p-2 font-mono text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                  rows={3}
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="mb-2 block font-mono text-sm text-gray-700">Color</label>
+                <div className="flex flex-wrap gap-2">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color.value}
+                      className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
+                        color.bg,
+                        color.text,
+                        selectedColor === color.value ? "ring-2 ring-gray-400 ring-offset-2" : "",
+                      )}
+                      title={color.name}
+                      onClick={() => setSelectedColor(color.value)}
+                      type="button"
+                    >
+                      {selectedColor === color.value && <Check className="h-4 w-4" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 bg-gray-50 p-4">
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={handleCancelEdit}
+                  className="rounded-md border border-gray-200 bg-white px-4 py-2 font-mono text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEvent}
+                  className="rounded-md bg-black px-4 py-2 font-mono text-sm text-white transition-colors hover:bg-gray-800"
+                >
+                  Save
+                </button>
+              </div>
             </div>
           </div>
         </div>

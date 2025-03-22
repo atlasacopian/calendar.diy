@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, X, Check, CalendarIcon, Download, Camera } from "lucide-react"
-import { addMonths, format, getDay, getDaysInMonth, isSameDay, isToday, subMonths } from "date-fns"
+import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths } from "date-fns"
 import html2canvas from "html2canvas"
 
 import { cn } from "@/lib/utils"
@@ -43,6 +43,9 @@ export default function Calendar() {
   const calendarContentRef = useRef<HTMLDivElement>(null)
   const fullCalendarRef = useRef<HTMLDivElement>(null)
   const printableCalendarRef = useRef<HTMLDivElement>(null)
+
+  // Store the actual today's date to ensure it doesn't change when navigating months
+  const todayDate = useRef(new Date())
 
   // Check if device is mobile
   useEffect(() => {
@@ -216,6 +219,16 @@ export default function Calendar() {
     }
   }
 
+  // Helper function to check if a date is today
+  const isActuallyToday = (date: Date) => {
+    const today = todayDate.current
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    )
+  }
+
   // Create a temporary printable version of the calendar
   const createPrintableCalendar = () => {
     // Create a temporary div for the printable calendar
@@ -278,7 +291,6 @@ export default function Calendar() {
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
-      const isTodayDate = isToday(date)
 
       const dayCell = document.createElement("div")
       dayCell.style.position = "relative"
@@ -291,10 +303,6 @@ export default function Calendar() {
         dayCell.style.backgroundColor = "#f9f9f9"
       }
 
-      if (isTodayDate) {
-        dayCell.style.boxShadow = "inset 0 0 0 1px #ddd" // Lighter outline instead of black
-      }
-
       // Add day number
       const dayNumber = document.createElement("div")
       dayNumber.textContent = day.toString()
@@ -302,12 +310,7 @@ export default function Calendar() {
       dayNumber.style.top = "5px"
       dayNumber.style.right = "10px"
       dayNumber.style.fontSize = "14px"
-      dayNumber.style.color = isTodayDate ? "#fff" : "#999"
-
-      if (isTodayDate) {
-        // Remove the black background for today's date in the printable version
-        dayNumber.style.color = "#666" // Just use a slightly darker color instead of white on black
-      }
+      dayNumber.style.color = "#999"
 
       dayCell.appendChild(dayNumber)
 
@@ -488,7 +491,7 @@ export default function Calendar() {
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
-      const isTodayDate = isToday(date)
+      const isTodayDate = isActuallyToday(date)
 
       days.push(
         <div

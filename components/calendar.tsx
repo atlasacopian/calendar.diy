@@ -292,7 +292,7 @@ export default function Calendar() {
       }
 
       if (isTodayDate) {
-        dayCell.style.boxShadow = "inset 0 0 0 1px #000"
+        dayCell.style.boxShadow = "inset 0 0 0 1px #ddd" // Lighter outline instead of black
       }
 
       // Add day number
@@ -305,13 +305,8 @@ export default function Calendar() {
       dayNumber.style.color = isTodayDate ? "#fff" : "#999"
 
       if (isTodayDate) {
-        dayNumber.style.backgroundColor = "#000"
-        dayNumber.style.borderRadius = "50%"
-        dayNumber.style.width = "24px"
-        dayNumber.style.height = "24px"
-        dayNumber.style.display = "flex"
-        dayNumber.style.alignItems = "center"
-        dayNumber.style.justifyContent = "center"
+        // Remove the black background for today's date in the printable version
+        dayNumber.style.color = "#666" // Just use a slightly darker color instead of white on black
       }
 
       dayCell.appendChild(dayNumber)

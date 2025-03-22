@@ -97,16 +97,11 @@ export default function Calendar() {
 
   // Load events from localStorage on component mount
   useEffect(() => {
-    // Load dark mode preference
-    const savedDarkMode = localStorage.getItem("calendarDarkMode")
-    if (savedDarkMode) {
-      const isDark = JSON.parse(savedDarkMode)
-      setIsDarkMode(isDark)
-    } else {
-      // Check if system prefers dark mode
-      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-      setIsDarkMode(prefersDark)
-    }
+    // Force light mode
+    setIsDarkMode(false)
+
+    // Apply light mode to document
+    document.documentElement.classList.remove("dark")
 
     const savedEvents = localStorage.getItem("calendarEvents")
     if (savedEvents) {
@@ -165,11 +160,6 @@ export default function Calendar() {
   useEffect(() => {
     localStorage.setItem("calendarEvents", JSON.stringify(events))
   }, [events])
-
-  // Save dark mode preference
-  useEffect(() => {
-    localStorage.setItem("calendarDarkMode", JSON.stringify(isDarkMode))
-  }, [isDarkMode])
 
   // Focus textarea when modal opens
   useEffect(() => {
@@ -234,10 +224,6 @@ export default function Calendar() {
           if (showResetConfirm) {
             setShowResetConfirm(false)
           }
-        } else if (e.key === "d" && (e.ctrlKey || e.metaKey)) {
-          // Toggle dark mode with Ctrl+D or Cmd+D
-          e.preventDefault()
-          setIsDarkMode(!isDarkMode)
         }
       } else {
         // When modal is open
@@ -260,7 +246,7 @@ export default function Calendar() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [showModal, showResetConfirm, currentDate, isDarkMode, showShareModal])
+  }, [showModal, showResetConfirm, currentDate, showShareModal])
 
   // Add meta tag to prevent zooming on input focus
   useEffect(() => {
@@ -385,7 +371,7 @@ export default function Calendar() {
       ghostElement.classList.add("event-ghost")
       ghostElement.textContent = event.content
       ghostElement.style.padding = "4px 8px"
-      ghostElement.style.background = isDarkMode ? "#333" : "#f5f5f5"
+      ghostElement.style.background = "#f5f5f5"
       ghostElement.style.border = "1px solid #ddd"
       ghostElement.style.borderRadius = "4px"
       ghostElement.style.width = "100px"
@@ -473,7 +459,7 @@ export default function Calendar() {
 
       // Capture the printable calendar
       const canvas = await html2canvas(printableCalendar, {
-        backgroundColor: isDarkMode ? "#1a1a1a" : "white",
+        backgroundColor: "white",
         scale: 2, // Higher resolution
         logging: false,
         useCORS: true,
@@ -506,8 +492,8 @@ export default function Calendar() {
     printableDiv.style.position = "absolute"
     printableDiv.style.left = "-9999px"
     printableDiv.style.width = "1200px" // Fixed width to ensure consistency
-    printableDiv.style.backgroundColor = isDarkMode ? "#1a1a1a" : "white"
-    printableDiv.style.color = isDarkMode ? "#e0e0e0" : "#333"
+    printableDiv.style.backgroundColor = "white"
+    printableDiv.style.color = "#333"
     printableDiv.style.fontFamily = '"JetBrains Mono", monospace'
     printableDiv.style.padding = "40px" // Add padding for more white space
 
@@ -520,14 +506,14 @@ export default function Calendar() {
     header.style.fontWeight = "300"
     header.style.textAlign = "center"
     header.style.textTransform = "uppercase"
-    header.style.color = isDarkMode ? "#e0e0e0" : "#333"
+    header.style.color = "#333"
     printableDiv.appendChild(header)
 
     // Create calendar grid
     const grid = document.createElement("div")
     grid.style.display = "grid"
     grid.style.gridTemplateColumns = "repeat(7, 1fr)"
-    grid.style.border = isDarkMode ? "1px solid #444" : "1px solid #eee"
+    grid.style.border = "1px solid #eee"
     grid.style.borderBottom = "none"
     grid.style.borderRight = "none"
     grid.style.maxWidth = "900px" // Limit width for more white space
@@ -539,11 +525,11 @@ export default function Calendar() {
       dayHeader.textContent = day
       dayHeader.style.padding = "10px"
       dayHeader.style.textAlign = "center"
-      dayHeader.style.borderBottom = isDarkMode ? "1px solid #444" : "1px solid #eee"
-      dayHeader.style.borderRight = isDarkMode ? "1px solid #444" : "1px solid #eee"
-      dayHeader.style.backgroundColor = isDarkMode ? "#222" : "#f9f9f9"
+      dayHeader.style.borderBottom = "1px solid #eee"
+      dayHeader.style.borderRight = "1px solid #eee"
+      dayHeader.style.backgroundColor = "#f9f9f9"
       dayHeader.style.fontSize = "14px"
-      dayHeader.style.color = isDarkMode ? "#aaa" : "#666"
+      dayHeader.style.color = "#666"
       grid.appendChild(dayHeader)
     })
 
@@ -554,10 +540,10 @@ export default function Calendar() {
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       const emptyCell = document.createElement("div")
-      emptyCell.style.borderBottom = isDarkMode ? "1px solid #444" : "1px solid #eee"
-      emptyCell.style.borderRight = isDarkMode ? "1px solid #444" : "1px solid #eee"
+      emptyCell.style.borderBottom = "1px solid #eee"
+      emptyCell.style.borderRight = "1px solid #eee"
       emptyCell.style.height = "100px"
-      emptyCell.style.backgroundColor = isDarkMode ? "#1a1a1a" : "white"
+      emptyCell.style.backgroundColor = "white"
       grid.appendChild(emptyCell)
     }
 
@@ -577,10 +563,10 @@ export default function Calendar() {
       const dayCell = document.createElement("div")
       dayCell.style.position = "relative"
       dayCell.style.padding = "10px"
-      dayCell.style.borderBottom = isDarkMode ? "1px solid #444" : "1px solid #eee"
-      dayCell.style.borderRight = isDarkMode ? "1px solid #444" : "1px solid #eee"
+      dayCell.style.borderBottom = "1px solid #eee"
+      dayCell.style.borderRight = "1px solid #eee"
       dayCell.style.height = "100px"
-      dayCell.style.backgroundColor = isDarkMode ? (isWeekend ? "#222" : "#1a1a1a") : isWeekend ? "#f9f9f9" : "white"
+      dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
 
       // Add day number
       const dayNumber = document.createElement("div")
@@ -589,7 +575,7 @@ export default function Calendar() {
       dayNumber.style.top = "5px"
       dayNumber.style.right = "10px"
       dayNumber.style.fontSize = "14px"
-      dayNumber.style.color = isDarkMode ? "#777" : "#999"
+      dayNumber.style.color = "#999"
 
       // Apply special styling for March 21, 2025 - only circle, no box
       if (isMarch21) {
@@ -609,7 +595,7 @@ export default function Calendar() {
         holidayDiv.style.fontSize = "9px"
         holidayDiv.style.textTransform = "uppercase"
         holidayDiv.style.letterSpacing = "0.05em"
-        holidayDiv.style.color = isDarkMode ? "#999" : "#666"
+        holidayDiv.style.color = "#666"
         holidayDiv.style.marginBottom = "3px"
         holidaysContainer.appendChild(holidayDiv)
       })
@@ -626,15 +612,19 @@ export default function Calendar() {
         eventDiv.style.fontSize = "11px"
         eventDiv.style.fontWeight = "500"
         eventDiv.style.marginBottom = "3px"
+        eventDiv.style.whiteSpace = "nowrap"
+        eventDiv.style.overflow = "hidden"
+        eventDiv.style.textOverflow = "ellipsis"
+        eventDiv.style.maxWidth = "100%"
 
         // Convert Tailwind color classes to CSS colors
-        let color = isDarkMode ? "#fff" : "#000"
-        if (event.color?.includes("blue")) color = isDarkMode ? "#60a5fa" : "#2563eb"
-        if (event.color?.includes("red")) color = isDarkMode ? "#f87171" : "#dc2626"
-        if (event.color?.includes("yellow")) color = isDarkMode ? "#fcd34d" : "#eab308"
-        if (event.color?.includes("orange")) color = isDarkMode ? "#fdba74" : "#f97316"
-        if (event.color?.includes("green")) color = isDarkMode ? "#4ade80" : "#16a34a"
-        if (event.color?.includes("purple")) color = isDarkMode ? "#c084fc" : "#9333ea"
+        let color = "#000"
+        if (event.color?.includes("blue")) color = "#2563eb"
+        if (event.color?.includes("red")) color = "#dc2626"
+        if (event.color?.includes("yellow")) color = "#eab308"
+        if (event.color?.includes("orange")) color = "#f97316"
+        if (event.color?.includes("green")) color = "#16a34a"
+        if (event.color?.includes("purple")) color = "#9333ea"
 
         eventDiv.style.color = color
         eventsContainer.appendChild(eventDiv)
@@ -778,14 +768,20 @@ export default function Calendar() {
           </div>
 
           <div className="mt-4 md:mt-5 space-y-0.5 overflow-hidden">
-            {dayHolidays.map((holiday, index) => (
+            {dayHolidays.map(
+              (holiday, index) =>
+                (
+                  <div
+                key={`holiday-${index}`}
+                className="font-mono text-[8px]  => (
               <div
                 key={`holiday-${index}`}
-                className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
+                className=\"font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
               >
                 {holiday.name}
               </div>
-            ))}
+                ),
+            )}
           </div>
 
           <div className="mt-0.5 md:mt-1 space-y-0.5 md:space-y-1 overflow-hidden">
@@ -811,11 +807,10 @@ export default function Calendar() {
                 >
                   <span
                     className={cn(
-                      "font-mono text-[8px] md:text-[10px] font-medium break-words cursor-move",
+                      "font-mono text-[8px] md:text-[10px] font-medium truncate cursor-move",
                       textColorClass,
                       "hover:underline",
                     )}
-                    style={{ wordBreak: "break-word", whiteSpace: "normal" }}
                   >
                     {event.content}
                   </span>
@@ -1039,6 +1034,30 @@ export default function Calendar() {
           <span>Google</span>
         </button>
         <button
+          onClick={downloadCalendarAsImage}
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Download as Image"
+          disabled={isDownloading}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Screenshot</span>
+        </button>
+        <button
           onClick={handleShare}
           className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Share Calendar"
@@ -1069,30 +1088,6 @@ export default function Calendar() {
             <path d="M3 12a9  9 0 0 0 15 6.7l3-2.7"></path>
           </svg>
           <span>Reset</span>
-        </button>
-        <button
-          onClick={downloadCalendarAsImage}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Download as Image"
-          disabled={isDownloading}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          <span>Screenshot</span>
         </button>
       </div>
 

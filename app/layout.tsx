@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   },
   // Add Open Graph metadata for social sharing
   openGraph: {
-    title: "calendar.diy",
+    title: "📅 calendar.diy",
     description: "A minimalist project calendar",
     url: "https://calendar.diy",
     siteName: "calendar.diy",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   // Add Twitter card metadata
   twitter: {
     card: "summary",
-    title: "calendar.diy",
+    title: "📅 calendar.diy",
     description: "A minimalist project calendar",
     images: ["/favicon.svg"],
   },
@@ -57,9 +57,11 @@ export default function RootLayout({
         <link rel="icon" href={`/favicon.svg?v=${Date.now()}`} type="image/svg+xml" />
         <link rel="apple-touch-icon" href={`/apple-icon.png?v=${Date.now()}`} />
 
-        {/* Add direct meta tags for social sharing */}
+        {/* Add direct meta tags for social sharing with calendar emoji */}
         <meta property="og:image" content="/favicon.svg" />
         <meta name="twitter:image" content="/favicon.svg" />
+        <meta property="og:title" content="📅 calendar.diy" />
+        <meta name="twitter:title" content="📅 calendar.diy" />
       </head>
       <body>{children}</body>
     </html>

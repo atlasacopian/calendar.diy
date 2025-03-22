@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useEffect, useRef, useState } from "react"
 import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToday } from "date-fns"
@@ -268,6 +268,19 @@ export default function Calendar() {
       viewportMeta.setAttribute("content", "width=device-width, initial-scale=1")
     }
   }, [])
+
+  // Add body class to prevent scrolling when modal is open
+  useEffect(() => {
+    if (showModal) {
+      document.body.classList.add("modal-open")
+    } else {
+      document.body.classList.remove("modal-open")
+    }
+
+    return () => {
+      document.body.classList.remove("modal-open")
+    }
+  }, [showModal])
 
   const handlePreviousMonth = () => {
     setCurrentDate(subMonths(currentDate, 1))
@@ -849,7 +862,7 @@ export default function Calendar() {
             ))}
           </div>
 
-          <div className="mt-0.5 md:mt-1 space-y-0.5 md:space-y-1 overflow-hidden">
+          <div className="mt-0.5 md:mt-1 overflow-hidden flex flex-col h-full">
             {limitedEvents.map((event, index) => {
               // Ensure color is in text- format for backward compatibility
               let textColorClass = event.color || "text-black dark:text-white"
@@ -863,26 +876,28 @@ export default function Calendar() {
               }
 
               return (
-                <div
-                  key={index}
-                  className="flex items-start justify-between"
-                  draggable
-                  onDragStart={(e) => handleDragStart(event, e)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <span
-                    className={cn(
-                      "font-mono text-[10px] md:text-[10px] font-medium cursor-move uppercase",
-                      textColorClass,
-                      "hover:underline",
-                      "max-w-full", // Ensure text doesn't overflow
-                      "block", // Make sure it's displayed as a block
-                      "line-clamp-2", // Allow up to 2 lines before truncating
-                    )}
+                <React.Fragment key={index}>
+                  {index > 0 && <div className="border-t border-gray-200 dark:border-gray-700 my-0.5"></div>}
+                  <div
+                    className={cn("flex-1 min-h-0", limitedEvents.length > 1 ? "h-1/2" : "h-full")}
+                    draggable
+                    onDragStart={(e) => handleDragStart(event, e)}
+                    onDragEnd={handleDragEnd}
                   >
-                    <span className="inline-block w-3">•</span> {event.content.toUpperCase()}
-                  </span>
-                </div>
+                    <span
+                      className={cn(
+                        "font-mono text-[10px] md:text-[10px] font-medium cursor-move uppercase",
+                        textColorClass,
+                        "hover:underline",
+                        "max-w-full", // Ensure text doesn't overflow
+                        "block", // Make sure it's displayed as a block
+                        "line-clamp-2", // Allow up to 2 lines before truncating
+                      )}
+                    >
+                      {event.content.toUpperCase()}
+                    </span>
+                  </div>
+                </React.Fragment>
               )
             })}
           </div>
@@ -959,6 +974,11 @@ export default function Calendar() {
       /* Make all text uppercase */
       .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span, div, a, label, input, textarea {
         text-transform: uppercase !important;
+      }
+
+      /* Add body class to prevent scrolling when modal is open */
+      body.modal-open {
+        overflow: hidden;
       }
     `
     document.head.appendChild(style)
@@ -1276,7 +1296,7 @@ export default function Calendar() {
             </div>
 
             {/* Modal Content */}
-            <div className="p-2 sm:p-3 overflow-y-auto flex-grow dark:text-gray-200">
+            <div className="p-2 sm:p-3 overflow-y-auto flex-grow dark:text-gray-200 modal-content">
               {/* Existing events for this day */}
               {eventsForSelectedDate.length > 0 && (
                 <div className="mb-4">
@@ -1289,9 +1309,12 @@ export default function Calendar() {
                         key={event.id}
                         className={cn(
                           "p-2 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-start",
-                          editingEventId === event.id ? "bg-gray-50 dark:bg-gray-700" : "",
-                          "cursor-move",
+                          editingEventId === event.id
+                            ? "bg-gray-50 dark:bg-gray-700"
+                            : "hover:bg-gray-50 dark:hover:bg-gray-700",
+                          "cursor-pointer",
                         )}
+                        onClick={() => handleEditEvent(event)}
                         draggable
                         onDragStart={(e) => {
                           e.dataTransfer.setData("text/plain", index.toString())
@@ -1313,55 +1336,35 @@ export default function Calendar() {
                           <p
                             className={cn("text-xs break-words uppercase", event.color || "text-black dark:text-white")}
                           >
-                            <span className="inline-block w-3">•</span> {event.content.toUpperCase()}
+                            {event.content.toUpperCase()}
                           </p>
                         </div>
-                        <div className="flex space-x-1 ml-2">
-                          <button
-                            onClick={() => handleEditEvent(event)}
-                            className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600"
-                            title="Edit event"
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation() // Prevent triggering the parent onClick
+                            handleDeleteEvent(event.id)
+                          }}
+                          className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 ml-2"
+                          title="Delete event"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-3 w-3 text-gray-500 dark:text-gray-400"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-3 w-3 text-gray-500 dark:text-gray-400"
-                            >
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteEvent(event.id)}
-                            className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600"
-                            title="Delete event"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-3 w-3 text-gray-500 dark:text-gray-400"
-                            >
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                              <line x1="10" y1="11" x2="10" y2="17"></line>
-                              <line x1="14" y1="11" x2="14" y2="17"></line>
-                            </svg>
-                          </button>
-                        </div>
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                          </svg>
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -1389,7 +1392,7 @@ export default function Calendar() {
               </div>
 
               <div className="mb-2 sm:mb-3">
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex items-center justify-between">
                   <label className="block font-mono text-xs text-gray-700 dark:text-gray-300">COLOR</label>
                 </div>
                 <div className="flex items-center justify-between">
@@ -1434,8 +1437,8 @@ export default function Calendar() {
                     className={cn(
                       "rounded-md px-2 py-1 font-mono text-xs uppercase",
                       eventContent.trim()
-                        ? "bg-gray-100 border border-gray-300 text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        : "bg-gray-100 border border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500 cursor-not-allowed",
+                        ? "text-gray-500 border border-gray-200 dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        : "text-gray-300 border border-gray-200 dark:text-gray-600 dark:border-gray-700 cursor-not-allowed",
                     )}
                   >
                     ADD ANOTHER EVENT
@@ -1473,7 +1476,7 @@ export default function Calendar() {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleSaveAndClose}
-                  className="rounded-md bg-gray-100 border border-gray-300 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 uppercase"
+                  className="rounded-md bg-black dark:bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 uppercase"
                 >
                   ENTER
                 </button>

@@ -42,6 +42,7 @@ export default function Calendar() {
   const calendarRef = useRef<HTMLDivElement>(null)
   const calendarContentRef = useRef<HTMLDivElement>(null)
   const fullCalendarRef = useRef<HTMLDivElement>(null)
+  const printableCalendarRef = useRef<HTMLDivElement>(null)
 
   // Check if device is mobile
   useEffect(() => {
@@ -215,32 +216,177 @@ export default function Calendar() {
     }
   }
 
+  // Create a temporary printable version of the calendar
+  const createPrintableCalendar = () => {
+    // Create a temporary div for the printable calendar
+    const printableDiv = document.createElement("div")
+    printableDiv.className = "printable-calendar"
+    printableDiv.style.position = "absolute"
+    printableDiv.style.left = "-9999px"
+    printableDiv.style.width = "1200px" // Fixed width to ensure consistency
+    printableDiv.style.backgroundColor = "white"
+    printableDiv.style.fontFamily = '"JetBrains Mono", monospace'
+
+    // Add month/year header
+    const header = document.createElement("h2")
+    header.textContent = format(currentDate, "MMMM yyyy")
+    header.style.padding = "20px"
+    header.style.margin = "0"
+    header.style.fontSize = "24px"
+    header.style.fontWeight = "300"
+    printableDiv.appendChild(header)
+
+    // Create calendar grid
+    const grid = document.createElement("div")
+    grid.style.display = "grid"
+    grid.style.gridTemplateColumns = "repeat(7, 1fr)"
+    grid.style.border = "1px solid #eee"
+    grid.style.borderBottom = "none"
+    grid.style.borderRight = "none"
+
+    // Add day headers
+    weekDays.forEach((day) => {
+      const dayHeader = document.createElement("div")
+      dayHeader.textContent = day
+      dayHeader.style.padding = "10px"
+      dayHeader.style.textAlign = "center"
+      dayHeader.style.borderBottom = "1px solid #eee"
+      dayHeader.style.borderRight = "1px solid #eee"
+      dayHeader.style.backgroundColor = "#f9f9f9"
+      dayHeader.style.fontSize = "14px"
+      dayHeader.style.color = "#666"
+      grid.appendChild(dayHeader)
+    })
+
+    // Generate calendar days
+    const daysInMonth = getDaysInMonth(currentDate)
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+    const startingDayOfWeek = getDay(firstDayOfMonth)
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      const emptyCell = document.createElement("div")
+      emptyCell.style.borderBottom = "1px solid #eee"
+      emptyCell.style.borderRight = "1px solid #eee"
+      emptyCell.style.height = "120px"
+      grid.appendChild(emptyCell)
+    }
+
+    // Add cells for each day of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+      const dayEvents = events.filter((event) => isSameDay(event.date, date))
+      const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
+      const isWeekend = getDay(date) === 0 || getDay(date) === 6
+      const isTodayDate = isToday(date)
+
+      const dayCell = document.createElement("div")
+      dayCell.style.position = "relative"
+      dayCell.style.padding = "10px"
+      dayCell.style.borderBottom = "1px solid #eee"
+      dayCell.style.borderRight = "1px solid #eee"
+      dayCell.style.height = "120px"
+
+      if (isWeekend) {
+        dayCell.style.backgroundColor = "#f9f9f9"
+      }
+
+      if (isTodayDate) {
+        dayCell.style.boxShadow = "inset 0 0 0 1px #000"
+      }
+
+      // Add day number
+      const dayNumber = document.createElement("div")
+      dayNumber.textContent = day.toString()
+      dayNumber.style.position = "absolute"
+      dayNumber.style.top = "5px"
+      dayNumber.style.right = "10px"
+      dayNumber.style.fontSize = "14px"
+      dayNumber.style.color = isTodayDate ? "#fff" : "#999"
+
+      if (isTodayDate) {
+        dayNumber.style.backgroundColor = "#000"
+        dayNumber.style.borderRadius = "50%"
+        dayNumber.style.width = "24px"
+        dayNumber.style.height = "24px"
+        dayNumber.style.display = "flex"
+        dayNumber.style.alignItems = "center"
+        dayNumber.style.justifyContent = "center"
+      }
+
+      dayCell.appendChild(dayNumber)
+
+      // Add holidays
+      const holidaysContainer = document.createElement("div")
+      holidaysContainer.style.marginTop = "25px"
+
+      dayHolidays.forEach((holiday) => {
+        const holidayDiv = document.createElement("div")
+        holidayDiv.textContent = holiday.name
+        holidayDiv.style.fontSize = "10px"
+        holidayDiv.style.textTransform = "uppercase"
+        holidayDiv.style.color = "#666"
+        holidayDiv.style.marginBottom = "2px"
+        holidaysContainer.appendChild(holidayDiv)
+      })
+
+      dayCell.appendChild(holidaysContainer)
+
+      // Add events
+      const eventsContainer = document.createElement("div")
+      eventsContainer.style.marginTop = "5px"
+
+      dayEvents.forEach((event) => {
+        const eventDiv = document.createElement("div")
+        eventDiv.textContent = event.content
+        eventDiv.style.fontSize = "11px"
+        eventDiv.style.fontWeight = "500"
+        eventDiv.style.marginBottom = "3px"
+
+        // Convert Tailwind color classes to CSS colors
+        let color = "#000"
+        if (event.color?.includes("blue")) color = "#2563eb"
+        if (event.color?.includes("red")) color = "#dc2626"
+        if (event.color?.includes("yellow")) color = "#eab308"
+        if (event.color?.includes("orange")) color = "#f97316"
+        if (event.color?.includes("green")) color = "#16a34a"
+        if (event.color?.includes("purple")) color = "#9333ea"
+
+        eventDiv.style.color = color
+        eventsContainer.appendChild(eventDiv)
+      })
+
+      dayCell.appendChild(eventsContainer)
+      grid.appendChild(dayCell)
+    }
+
+    printableDiv.appendChild(grid)
+    document.body.appendChild(printableDiv)
+
+    return printableDiv
+  }
+
   // Download calendar as image
   const downloadCalendarAsImage = async () => {
-    if (!fullCalendarRef.current) return
-
     try {
       setIsDownloading(true)
 
-      // Hide the buttons during capture
-      const buttonsContainer = calendarRef.current?.querySelector(".calendar-buttons")
-      if (buttonsContainer) {
-        buttonsContainer.classList.add("opacity-0")
-      }
+      // Create a printable version of the calendar
+      const printableCalendar = createPrintableCalendar()
 
-      // Capture the full calendar including header
-      const canvas = await html2canvas(fullCalendarRef.current, {
+      // Capture the printable calendar
+      const canvas = await html2canvas(printableCalendar, {
         backgroundColor: "white",
         scale: 2, // Higher resolution
         logging: false,
         useCORS: true,
         allowTaint: true,
+        width: 1200, // Fixed width
+        height: printableCalendar.offsetHeight,
       })
 
-      // Show the buttons again
-      if (buttonsContainer) {
-        buttonsContainer.classList.remove("opacity-0")
-      }
+      // Remove the temporary element
+      document.body.removeChild(printableCalendar)
 
       // Convert to image and download
       const image = canvas.toDataURL("image/png")

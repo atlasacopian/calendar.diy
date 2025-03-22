@@ -9,42 +9,35 @@ import html2canvas from "html2canvas"
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 
-type CalendarCategory = {
-  id: string
-  name: string
-  color: string
-  visible: boolean
-}
-
 type CalendarEvent = {
   date: Date
   content: string
-  categoryId: string
+  color?: string
 }
 
-// Calendar categories with colors
-const defaultCategories: CalendarCategory[] = [
-  { id: "personal", name: "Personal", color: "bg-blue-600 text-white", visible: true },
-  { id: "work", name: "Work", color: "bg-green-600 text-white", visible: true },
-  { id: "family", name: "Family", color: "bg-purple-600 text-white", visible: true },
-  { id: "health", name: "Health", color: "bg-red-600 text-white", visible: true },
-  { id: "other", name: "Other", color: "bg-yellow-500 text-black", visible: true },
+// Color options for color picker
+const colorOptions = [
+  { name: "Black", value: "text-black", bg: "bg-black", text: "text-white" },
+  { name: "Blue", value: "text-blue-600", bg: "bg-blue-600", text: "text-white" },
+  { name: "Red", value: "text-red-600", bg: "bg-red-600", text: "text-white" },
+  { name: "Yellow", value: "text-yellow-500", bg: "bg-yellow-500", text: "text-black" },
+  { name: "Orange", value: "text-orange-500", bg: "bg-orange-500", text: "text-black" },
+  { name: "Green", value: "text-green-600", bg: "bg-green-600", text: "text-white" },
+  { name: "Purple", value: "text-purple-600", bg: "bg-purple-600", text: "text-white" },
 ]
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [categories, setCategories] = useState<CalendarCategory[]>(defaultCategories)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [eventContent, setEventContent] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("personal")
+  const [selectedColor, setSelectedColor] = useState("text-black")
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const [isDownloading, setIsDownloading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [showSidebar, setShowSidebar] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
   const resetModalRef = useRef<HTMLDivElement>(null)
@@ -91,53 +84,23 @@ export default function Calendar() {
     }
   }, [isMobile])
 
-  // Load events and categories from localStorage on component mount
+  // Load events from localStorage on component mount
   useEffect(() => {
     const savedEvents = localStorage.getItem("calendarEvents")
-    const savedCategories = localStorage.getItem("calendarCategories")
-
     if (savedEvents) {
-      try {
-        // Convert old format events to new format if needed
-        const parsedEvents = JSON.parse(savedEvents)
-        const updatedEvents = parsedEvents.map((event: any) => {
-          // If the event already has a categoryId, use it
-          if (event.categoryId) {
-            return {
-              ...event,
-              date: new Date(event.date),
-            }
-          }
-
-          // Otherwise, convert from the old color-based format
-          let categoryId = "other"
-          if (event.color) {
-            if (event.color.includes("blue")) categoryId = "personal"
-            else if (event.color.includes("green")) categoryId = "work"
-            else if (event.color.includes("purple")) categoryId = "family"
-            else if (event.color.includes("red")) categoryId = "health"
-            else if (event.color.includes("yellow")) categoryId = "other"
-          }
-
-          return {
-            date: new Date(event.date),
-            content: event.content,
-            categoryId,
-          }
-        })
-
-        setEvents(updatedEvents)
-      } catch (error) {
-        console.error("Error parsing saved events:", error)
-      }
-    }
-
-    if (savedCategories) {
-      try {
-        setCategories(JSON.parse(savedCategories))
-      } catch (error) {
-        console.error("Error parsing saved categories:", error)
-      }
+      // Convert any bg- color classes to text- color classes for backward compatibility
+      const updatedEvents = JSON.parse(savedEvents).map((event: any) => {
+        let color = event.color || "text-black"
+        if (color.startsWith("bg-")) {
+          color = color.replace("bg-", "text-")
+        }
+        return {
+          ...event,
+          date: new Date(event.date),
+          color,
+        }
+      })
+      setEvents(updatedEvents)
     }
   }, [])
 
@@ -161,11 +124,10 @@ export default function Calendar() {
     setHolidays(allHolidays)
   }, [currentDate]) // Re-run when currentDate changes
 
-  // Save events and categories to localStorage whenever they change
+  // Save events to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("calendarEvents", JSON.stringify(events))
-    localStorage.setItem("calendarCategories", JSON.stringify(categories))
-  }, [events, categories])
+  }, [events])
 
   // Focus textarea when modal opens
   useEffect(() => {
@@ -221,9 +183,6 @@ export default function Calendar() {
           if (showResetConfirm) {
             setShowResetConfirm(false)
           }
-          if (showSidebar && isMobile) {
-            setShowSidebar(false)
-          }
         }
       } else {
         // When modal is open
@@ -243,7 +202,7 @@ export default function Calendar() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [showModal, showResetConfirm, currentDate, showSidebar, isMobile])
+  }, [showModal, showResetConfirm, currentDate])
 
   // Add meta tag to prevent zooming on input focus
   useEffect(() => {
@@ -276,21 +235,17 @@ export default function Calendar() {
 
   const handleDayClick = (day: Date) => {
     setSelectedDate(day)
-    const existingEvent = events.find(
-      (event) => isSameDay(event.date, day) && categories.find((c) => c.id === event.categoryId)?.visible,
-    )
+    const existingEvent = events.find((event) => isSameDay(event.date, day))
     setEventContent(existingEvent?.content || "")
-    setSelectedCategory(existingEvent?.categoryId || "personal")
+    setSelectedColor(existingEvent?.color || "text-black")
     setShowModal(true)
   }
 
   const handleSaveEvent = () => {
     if (!selectedDate) return
 
-    // Remove existing event for this day and category if it exists
-    const filteredEvents = events.filter(
-      (event) => !(isSameDay(event.date, selectedDate) && event.categoryId === selectedCategory),
-    )
+    // Remove existing event for this day if it exists
+    const filteredEvents = events.filter((event) => !isSameDay(event.date, selectedDate))
 
     // Add new event if content is not empty
     if (eventContent.trim()) {
@@ -299,7 +254,7 @@ export default function Calendar() {
         {
           date: selectedDate,
           content: eventContent,
-          categoryId: selectedCategory,
+          color: selectedColor,
         },
       ])
     } else {
@@ -309,14 +264,14 @@ export default function Calendar() {
     setShowModal(false)
     setSelectedDate(null)
     setEventContent("")
-    setSelectedCategory("personal")
+    setSelectedColor("text-black")
   }
 
   const handleCancelEdit = () => {
     setShowModal(false)
     setSelectedDate(null)
     setEventContent("")
-    setSelectedCategory("personal")
+    setSelectedColor("text-black")
   }
 
   // Handle Enter key in textarea
@@ -326,15 +281,6 @@ export default function Calendar() {
       e.preventDefault()
       handleSaveEvent()
     }
-  }
-
-  // Toggle category visibility
-  const toggleCategoryVisibility = (categoryId: string) => {
-    setCategories(
-      categories.map((category) =>
-        category.id === categoryId ? { ...category, visible: !category.visible } : category,
-      ),
-    )
   }
 
   // Show reset confirmation modal
@@ -347,20 +293,11 @@ export default function Calendar() {
     // Clear events
     setEvents([])
 
-    // Reset categories to default
-    setCategories(defaultCategories)
-
     // Clear localStorage
     localStorage.removeItem("calendarEvents")
-    localStorage.removeItem("calendarCategories")
 
     // Close the confirmation modal
     setShowResetConfirm(false)
-  }
-
-  // Toggle sidebar on mobile
-  const toggleSidebar = () => {
-    setShowSidebar(!showSidebar)
   }
 
   // Download calendar as image
@@ -461,9 +398,7 @@ export default function Calendar() {
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      const visibleEvents = events.filter(
-        (event) => isSameDay(event.date, date) && categories.find((c) => c.id === event.categoryId)?.visible,
-      )
+      const dayEvents = events.filter((event) => isSameDay(event.date, date))
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
 
@@ -529,24 +464,21 @@ export default function Calendar() {
       const eventsContainer = document.createElement("div")
       eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "25px"
 
-      visibleEvents.forEach((event) => {
+      dayEvents.forEach((event) => {
         const eventDiv = document.createElement("div")
         eventDiv.textContent = event.content
         eventDiv.style.fontSize = "11px"
         eventDiv.style.fontWeight = "500"
         eventDiv.style.marginBottom = "3px"
 
-        // Get the category color
-        const category = categories.find((c) => c.id === event.categoryId)
+        // Convert Tailwind color classes to CSS colors
         let color = "#000"
-
-        if (category) {
-          if (category.color.includes("blue")) color = "#2563eb"
-          if (category.color.includes("green")) color = "#16a34a"
-          if (category.color.includes("purple")) color = "#9333ea"
-          if (category.color.includes("red")) color = "#dc2626"
-          if (category.color.includes("yellow")) color = "#eab308"
-        }
+        if (event.color?.includes("blue")) color = "#2563eb"
+        if (event.color?.includes("red")) color = "#dc2626"
+        if (event.color?.includes("yellow")) color = "#eab308"
+        if (event.color?.includes("orange")) color = "#f97316"
+        if (event.color?.includes("green")) color = "#16a34a"
+        if (event.color?.includes("purple")) color = "#9333ea"
 
         eventDiv.style.color = color
         eventsContainer.appendChild(eventDiv)
@@ -638,9 +570,7 @@ export default function Calendar() {
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      const visibleEvents = events.filter(
-        (event) => isSameDay(event.date, date) && categories.find((c) => c.id === event.categoryId)?.visible,
-      )
+      const dayEvents = events.filter((event) => isSameDay(event.date, date))
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
 
@@ -661,6 +591,8 @@ export default function Calendar() {
           className={cn(
             "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 p-1 md:p-2 transition-colors",
             isWeekend ? "bg-gray-50/30" : "",
+            // Remove the ring/box around the day
+            // isMarch21 ? "ring-1 ring-inset ring-black" : "",
             // Explicitly remove any styling for March 22
             isMarch22 ? "!ring-0" : "",
           )}
@@ -688,13 +620,16 @@ export default function Calendar() {
           </div>
 
           <div className="mt-0.5 md:mt-1 space-y-0.5 md:space-y-1 overflow-hidden">
-            {visibleEvents.map((event, index) => {
-              const category = categories.find((c) => c.id === event.categoryId)
-              const colorClass = category ? category.color.split(" ")[0].replace("bg-", "text-") : "text-black"
+            {dayEvents.map((event, index) => {
+              // Ensure color is in text- format for backward compatibility
+              let textColorClass = event.color || "text-black"
+              if (textColorClass.startsWith("bg-")) {
+                textColorClass = textColorClass.replace("bg-", "text-")
+              }
 
               return (
                 <div key={index} className="flex items-start justify-between">
-                  <span className={cn("font-mono text-[8px] md:text-[10px] font-medium truncate", colorClass)}>
+                  <span className={cn("font-mono text-[8px] md:text-[10px] font-medium truncate", textColorClass)}>
                     {event.content}
                   </span>
                 </div>
@@ -722,6 +657,8 @@ export default function Calendar() {
     background-color: rgba(249, 250, 251, 1) !important;
   }
   
+  /* Remove the ::after pseudo-element that creates the black bar */
+  
   /* Explicitly remove any styling for day 22 */
   .calendar-day:nth-child(29) .rounded-full {
     background-color: transparent !important;
@@ -736,252 +673,170 @@ export default function Calendar() {
   }, [])
 
   return (
-    <div className="flex flex-col md:flex-row gap-4">
-      {/* Sidebar for calendar categories - hidden on mobile by default */}
+    <div className="flex flex-col space-y-4">
       <div
-        className={cn(
-          "md:w-64 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden transition-all duration-300",
-          isMobile ? (showSidebar ? "fixed inset-0 z-50 w-full h-full" : "hidden") : "flex flex-col",
-        )}
+        ref={fullCalendarRef}
+        className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
       >
-        {isMobile && showSidebar && (
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <h3 className="font-mono text-lg font-light">Calendars</h3>
+        <div ref={calendarRef} className="calendar-container">
+          <div className="border-b border-gray-100 bg-gray-50 p-2 md:p-4 flex items-center justify-between">
             <button
-              onClick={toggleSidebar}
-              className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+              onClick={handlePreviousMonth}
+              className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="h-5 w-5"
+                className="h-3 w-3 md:h-4 md:w-4"
               >
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
+            <h2 className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center">
+              {format(currentDate, "MMMM yyyy")}
+            </h2>
+
+            <button
+              onClick={handleNextMonth}
+              className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-3 w-3 md:h-4 md:w-4"
+              >
+                <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
           </div>
-        )}
 
-        <div className="p-4">
-          <h3 className="font-mono text-sm font-medium mb-3">My Calendars</h3>
-
-          <div className="space-y-2">
-            {categories.map((category) => (
-              <div key={category.id} className="flex items-center">
-                <input
-                  type="checkbox"
-                  id={`category-${category.id}`}
-                  checked={category.visible}
-                  onChange={() => toggleCategoryVisibility(category.id)}
-                  className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                />
-                <label htmlFor={`category-${category.id}`} className="ml-2 flex items-center text-sm font-mono">
-                  <span className={`inline-block w-3 h-3 rounded-full mr-2 ${category.color.split(" ")[0]}`}></span>
-                  {category.name}
-                </label>
+          <div ref={calendarContentRef} className="grid grid-cols-7">
+            {(isMobile ? weekDaysMobile : weekDays).map((day) => (
+              <div
+                key={day}
+                className="border-b border-r border-gray-100 bg-gray-50 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500"
+              >
+                {day}
               </div>
             ))}
+            {renderCalendar()}
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col space-y-4">
-        <div
-          ref={fullCalendarRef}
-          className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+      {/* Calendar Controls - Now free-floating without the gray background */}
+      <div className="flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">
+        <button
+          onClick={exportToIcal}
+          className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+          title="Export to iCal"
         >
-          <div ref={calendarRef} className="calendar-container">
-            <div className="border-b border-gray-100 bg-gray-50 p-2 md:p-4 flex items-center justify-between">
-              {isMobile && (
-                <button
-                  onClick={toggleSidebar}
-                  className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200 mr-2"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-3 w-3 md:h-4 md:w-4"
-                  >
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                  </svg>
-                </button>
-              )}
-
-              <button
-                onClick={handlePreviousMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3 w-3 md:h-4 md:w-4"
-                >
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              </button>
-
-              <h2 className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center">
-                {format(currentDate, "MMMM yyyy")}
-              </h2>
-
-              <button
-                onClick={handleNextMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3 w-3 md:h-4 md:w-4"
-                >
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
-            </div>
-
-            <div ref={calendarContentRef} className="grid grid-cols-7">
-              {(isMobile ? weekDaysMobile : weekDays).map((day) => (
-                <div
-                  key={day}
-                  className="border-b border-r border-gray-100 bg-gray-50 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500"
-                >
-                  {day}
-                </div>
-              ))}
-              {renderCalendar()}
-            </div>
-          </div>
-        </div>
-
-        {/* Calendar Controls - Now free-floating without the gray background */}
-        <div className="flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">
-          <button
-            onClick={exportToIcal}
-            className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
-            title="Export to iCal"
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3 w-3"
-            >
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span>iCal</span>
-          </button>
-          <button
-            onClick={exportToGoogleCalendar}
-            className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
-            title="Export to Google Calendar"
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>iCal</span>
+        </button>
+        <button
+          onClick={exportToGoogleCalendar}
+          className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+          title="Export to Google Calendar"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3 w-3"
-            >
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span>Google</span>
-          </button>
-          <button
-            onClick={handleShowResetConfirm}
-            className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
-            title="Reset Calendar Data"
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>Google</span>
+        </button>
+        <button
+          onClick={handleShowResetConfirm}
+          className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+          title="Reset Calendar Data"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3 w-3"
-            >
-              <path d="M3 2v6h6"></path>
-              <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
-              <path d="M21 22v-6h-6"></path>
-              <path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path>
-            </svg>
-            <span>Reset</span>
-          </button>
-          <button
-            onClick={downloadCalendarAsImage}
-            className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
-            title="Download as Image"
-            disabled={isDownloading}
+            <path d="M3 2v6h6"></path>
+            <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
+            <path d="M21 22v-6h-6"></path>
+            <path d="M3 12a9  9 0 0 0 15 6.7l3-2.7"></path>
+          </svg>
+          <span>Reset</span>
+        </button>
+        <button
+          onClick={downloadCalendarAsImage}
+          className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+          title="Download as Image"
+          disabled={isDownloading}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3 w-3"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            <span>Screenshot</span>
-          </button>
-        </div>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Screenshot</span>
+        </button>
       </div>
 
       {/* Event Modal - Properly centered on all screens */}
@@ -1002,6 +857,7 @@ export default function Calendar() {
                   onClick={handleCancelEdit}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
                 >
+                  {/* Render SVG directly instead of using the Lucide component */}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -1040,29 +896,38 @@ export default function Calendar() {
               </div>
 
               <div className="mb-2 sm:mb-3">
-                <label className="mb-1 block font-mono text-xs text-gray-700">Calendar</label>
-                <div className="grid grid-cols-1 gap-2">
-                  {categories.map((category) => (
-                    <div key={category.id} className="flex items-center">
-                      <input
-                        type="radio"
-                        id={`modal-category-${category.id}`}
-                        name="event-category"
-                        value={category.id}
-                        checked={selectedCategory === category.id}
-                        onChange={() => setSelectedCategory(category.id)}
-                        className="h-4 w-4 border-gray-300 text-black focus:ring-black"
-                      />
-                      <label
-                        htmlFor={`modal-category-${category.id}`}
-                        className="ml-2 flex items-center text-sm font-mono"
-                      >
-                        <span
-                          className={`inline-block w-3 h-3 rounded-full mr-2 ${category.color.split(" ")[0]}`}
-                        ></span>
-                        {category.name}
-                      </label>
-                    </div>
+                <label className="mb-1 block font-mono text-xs text-gray-700">Color</label>
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color.value}
+                      className={cn(
+                        "flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full transition-all duration-200",
+                        color.bg,
+                        color.text,
+                        selectedColor === color.value ? "ring-1 ring-gray-400 ring-offset-1" : "",
+                      )}
+                      title={color.name}
+                      onClick={() => setSelectedColor(color.value)}
+                      type="button"
+                    >
+                      {selectedColor === color.value && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-2.5 w-2.5 sm:h-3 sm:w-3"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      )}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -1105,6 +970,7 @@ export default function Calendar() {
                   onClick={() => setShowResetConfirm(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
                 >
+                  {/* Render SVG directly instead of using the Lucide component */}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"

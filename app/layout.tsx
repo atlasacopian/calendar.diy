@@ -3,8 +3,22 @@ import "./globals.css"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Project Calendar",
+  title: "calendar.diy",
   description: "A minimalist project calendar",
+  icons: {
+    icon: [
+      {
+        url: "/favicon.ico",
+        sizes: "any",
+      },
+    ],
+    apple: [
+      {
+        url: "/apple-icon.png",
+        sizes: "180x180",
+      },
+    ],
+  },
 }
 
 export default function RootLayout({

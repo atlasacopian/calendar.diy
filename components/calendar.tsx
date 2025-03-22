@@ -506,7 +506,7 @@ export default function Calendar() {
       const button = document.getElementById("copy-button")
       if (button) {
         const originalText = button.textContent
-        button.textContent = "Copied!"
+        button.textContent = "COPIED!"
         setTimeout(() => {
           if (button) button.textContent = originalText
         }, 2000)
@@ -587,7 +587,7 @@ export default function Calendar() {
     // Add day headers
     weekDays.forEach((day) => {
       const dayHeader = document.createElement("div")
-      dayHeader.textContent = day
+      dayHeader.textContent = day.toUpperCase()
       dayHeader.style.padding = "10px"
       dayHeader.style.textAlign = "center"
       dayHeader.style.borderBottom = "1px solid #eee"
@@ -654,7 +654,7 @@ export default function Calendar() {
 
       dayHolidays.forEach((holiday) => {
         const holidayDiv = document.createElement("div")
-        holidayDiv.textContent = holiday.name
+        holidayDiv.textContent = holiday.name.toUpperCase()
         holidayDiv.style.fontSize = "9px"
         holidayDiv.style.textTransform = "uppercase"
         holidayDiv.style.letterSpacing = "0.05em"
@@ -674,7 +674,7 @@ export default function Calendar() {
 
       limitedEvents.forEach((event) => {
         const eventDiv = document.createElement("div")
-        eventDiv.textContent = "+ " + event.content
+        eventDiv.textContent = "• " + event.content.toUpperCase()
         eventDiv.style.fontSize = "11px"
         eventDiv.style.fontWeight = "500"
         eventDiv.style.marginBottom = "3px"
@@ -799,7 +799,7 @@ export default function Calendar() {
       // HARDCODED SOLUTION: Only highlight March 21, 2025 (and not the 22nd)
       // Check  date)
 
-      // HARDCODED SOLUTION: Only highlight March 21, 2025 (and not the 22nd)
+      // HARDCODED SOLUTION: Only highlight March 21, 2025
       // Check if this is March 21, 2025
       const isMarch21 =
         currentDate.getMonth() === 2 && // March is month 2 (0-indexed)
@@ -844,7 +844,7 @@ export default function Calendar() {
                 key={`holiday-${index}`}
                 className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
               >
-                {holiday.name}
+                {holiday.name.toUpperCase()}
               </div>
             ))}
           </div>
@@ -872,14 +872,15 @@ export default function Calendar() {
                 >
                   <span
                     className={cn(
-                      "font-mono text-[10px] md:text-[10px] font-medium truncate cursor-move",
+                      "font-mono text-[10px] md:text-[10px] font-medium cursor-move uppercase",
                       textColorClass,
                       "hover:underline",
                       "max-w-full", // Ensure text doesn't overflow
                       "block", // Make sure it's displayed as a block
+                      "line-clamp-2", // Allow up to 2 lines before truncating
                     )}
                   >
-                    <span className="inline-block w-3">+</span> {event.content}
+                    <span className="inline-block w-3">•</span> {event.content.toUpperCase()}
                   </span>
                 </div>
               )
@@ -892,7 +893,7 @@ export default function Calendar() {
     return days
   }
 
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
   const weekDaysMobile = ["S", "M", "T", "W", "T", "F", "S"]
 
   // Add CSS for proper hover effects
@@ -946,10 +947,18 @@ export default function Calendar() {
       
       /* Ensure text doesn't overflow and is properly truncated */
       .calendar-day .truncate {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;
+        overflow: visible;
+        word-break: break-word;
         max-width: 100%;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+      
+      /* Make all text uppercase */
+      .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span, div, a, label, input, textarea {
+        text-transform: uppercase !important;
       }
     `
     document.head.appendChild(style)
@@ -1046,7 +1055,7 @@ export default function Calendar() {
 
             <div className="flex items-center gap-2">
               <h2 className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center dark:text-white">
-                {format(currentDate, "MMMM yyyy")}
+                {format(currentDate, "MMMM yyyy").toUpperCase()}
               </h2>
             </div>
 
@@ -1117,7 +1126,7 @@ export default function Calendar() {
             <line x1="8" y1="2" x2="8" y2="6"></line>
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
-          <span>iCal</span>
+          <span>ICAL</span>
         </button>
         <button
           onClick={exportToGoogleCalendar}
@@ -1141,7 +1150,7 @@ export default function Calendar() {
             <line x1="8" y1="2" x2="8" y2="6"></line>
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
-          <span>Google</span>
+          <span>GOOGLE</span>
         </button>
         <button
           onClick={downloadCalendarAsImage}
@@ -1165,7 +1174,7 @@ export default function Calendar() {
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span>Screenshot</span>
+          <span>SCREENSHOT</span>
         </button>
         <button
           onClick={handleShare}
@@ -1173,7 +1182,7 @@ export default function Calendar() {
           title="Share Calendar"
         >
           <Share2 className="h-3 w-3" />
-          <span>Share</span>
+          <span>SHARE</span>
         </button>
         <button
           onClick={handleShowResetConfirm}
@@ -1197,7 +1206,7 @@ export default function Calendar() {
             <path d="M21 22v-6h-6"></path>
             <path d="M3 12a9  9 0 0 0 15 6.7l3-2.7"></path>
           </svg>
-          <span>Reset</span>
+          <span>RESET</span>
         </button>
         <a
           href="https://www.buymeacoffee.com/atlasacopian"
@@ -1224,7 +1233,7 @@ export default function Calendar() {
             <line x1="10" y1="2" x2="10" y2="4"></line>
             <line x1="14" y1="2" x2="14" y2="4"></line>
           </svg>
-          <span>Buy Me a Coffee</span>
+          <span>BUY ME A COFFEE</span>
         </a>
       </div>
 
@@ -1233,14 +1242,14 @@ export default function Calendar() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div
             ref={modalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl max-h-[90vh] flex flex-col"
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl max-h-[80vh] flex flex-col"
             style={{ margin: "auto" }}
           >
             {/* Modal Header */}
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">
-                  {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Add Event"}
+                  {selectedDate ? format(selectedDate, "MMMM d, yyyy").toUpperCase() : "ADD EVENT"}
                 </h3>
                 <button
                   onClick={handleCancelEdit}
@@ -1272,7 +1281,7 @@ export default function Calendar() {
               {eventsForSelectedDate.length > 0 && (
                 <div className="mb-4">
                   <h4 className="font-mono text-xs font-medium mb-2 text-gray-700 dark:text-gray-300">
-                    Events on {selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""}
+                    EVENTS ON {selectedDate ? format(selectedDate, "MMMM d, yyyy").toUpperCase() : ""}
                   </h4>
                   <div className="space-y-2">
                     {eventsForSelectedDate.map((event, index) => (
@@ -1301,8 +1310,10 @@ export default function Calendar() {
                         }}
                       >
                         <div className="flex-1">
-                          <p className={cn("text-xs break-words", event.color || "text-black dark:text-white")}>
-                            <span className="inline-block w-3">+</span> {event.content}
+                          <p
+                            className={cn("text-xs break-words uppercase", event.color || "text-black dark:text-white")}
+                          >
+                            <span className="inline-block w-3">•</span> {event.content.toUpperCase()}
                           </p>
                         </div>
                         <div className="flex space-x-1 ml-2">
@@ -1363,7 +1374,7 @@ export default function Calendar() {
                   htmlFor="event-content"
                   className="mb-1 block font-mono text-xs text-gray-700 dark:text-gray-300"
                 >
-                  {editingEventId ? "Edit Event" : "Add New Event"}
+                  {editingEventId ? "EDIT EVENT" : "ADD NEW EVENT"}
                 </label>
                 <textarea
                   ref={textareaRef}
@@ -1371,62 +1382,64 @@ export default function Calendar() {
                   value={eventContent}
                   onChange={(e) => setEventContent(e.target.value)}
                   onKeyDown={handleTextareaKeyDown}
-                  placeholder={editingEventId ? "Edit event details..." : "Add event details..."}
-                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-base md:text-sm focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white"
+                  placeholder={editingEventId ? "EDIT EVENT DETAILS..." : "ADD EVENT DETAILS..."}
+                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-base md:text-sm focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white uppercase"
                   rows={isMobile ? 2 : 3}
                 />
               </div>
 
               <div className="mb-2 sm:mb-3">
                 <div className="flex justify-between items-center mb-1">
-                  <label className="block font-mono text-xs text-gray-700 dark:text-gray-300">Color</label>
+                  <label className="block font-mono text-xs text-gray-700 dark:text-gray-300">COLOR</label>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                    {colorOptions.map((color) => (
+                      <button
+                        key={color.value}
+                        className={cn(
+                          "flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full",
+                          color.bg,
+                          color.text,
+                          selectedColor === color.value
+                            ? "ring-1 ring-gray-400 dark:ring-gray-300 ring-offset-1 dark:ring-offset-gray-800"
+                            : "",
+                        )}
+                        title={color.name}
+                        onClick={() => setSelectedColor(color.value)}
+                        type="button"
+                      >
+                        {selectedColor === color.value && (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-2.5 w-2.5 sm:h-3 sm:w-3"
+                          >
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                   <button
                     onClick={handleSaveEvent}
                     disabled={!eventContent.trim()}
                     className={cn(
-                      "rounded-md px-2 py-1 font-mono text-xs",
+                      "rounded-md px-2 py-1 font-mono text-xs uppercase",
                       eventContent.trim()
                         ? "bg-gray-100 border border-gray-300 text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                         : "bg-gray-100 border border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500 cursor-not-allowed",
                     )}
                   >
-                    Add Another Event
+                    ADD ANOTHER EVENT
                   </button>
-                </div>
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                  {colorOptions.map((color) => (
-                    <button
-                      key={color.value}
-                      className={cn(
-                        "flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full",
-                        color.bg,
-                        color.text,
-                        selectedColor === color.value
-                          ? "ring-1 ring-gray-400 dark:ring-gray-300 ring-offset-1 dark:ring-offset-gray-800"
-                          : "",
-                      )}
-                      title={color.name}
-                      onClick={() => setSelectedColor(color.value)}
-                      type="button"
-                    >
-                      {selectedColor === color.value && (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-                        >
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      )}
-                    </button>
-                  ))}
                 </div>
               </div>
 
@@ -1440,15 +1453,15 @@ export default function Calendar() {
                         setEventContent("")
                         setSelectedColor("text-black")
                       }}
-                      className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 uppercase"
                     >
-                      Cancel Edit
+                      CANCEL EDIT
                     </button>
                     <button
                       onClick={handleSaveEvent}
-                      className="rounded-md bg-gray-100 border border-gray-300 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                      className="rounded-md bg-gray-100 border border-gray-300 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 uppercase"
                     >
-                      Update Event
+                      UPDATE EVENT
                     </button>
                   </>
                 )}
@@ -1460,9 +1473,9 @@ export default function Calendar() {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleSaveAndClose}
-                  className="rounded-md bg-gray-100 border border-gray-300 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                  className="rounded-md bg-gray-100 border border-gray-300 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 uppercase"
                 >
-                  Save
+                  ENTER
                 </button>
               </div>
             </div>
@@ -1481,7 +1494,9 @@ export default function Calendar() {
             {/* Modal Header */}
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-medium tracking-tight dark:text-white">Reset Calendar Data</h3>
+                <h3 className="font-mono text-sm font-medium tracking-tight dark:text-white uppercase">
+                  RESET CALENDAR DATA
+                </h3>
                 <button
                   onClick={() => setShowResetConfirm(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
@@ -1508,9 +1523,9 @@ export default function Calendar() {
 
             {/* Modal Content */}
             <div className="p-4 dark:text-gray-200">
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                Are you sure you want to reset all calendar data? This will remove all events you've added and cannot be
-                undone.
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 uppercase">
+                ARE YOU SURE YOU WANT TO RESET ALL CALENDAR DATA? THIS WILL REMOVE ALL EVENTS YOU'VE ADDED AND CANNOT BE
+                UNDONE.
               </p>
             </div>
 
@@ -1519,15 +1534,15 @@ export default function Calendar() {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowResetConfirm(false)}
-                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 uppercase"
                 >
-                  Cancel
+                  CANCEL
                 </button>
                 <button
                   onClick={handleResetData}
-                  className="rounded-md bg-red-600 dark:bg-red-700 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white hover:bg-red-700 dark:hover:bg-red-800"
+                  className="rounded-md bg-red-600 dark:bg-red-700 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white hover:bg-red-700 dark:hover:bg-red-800 uppercase"
                 >
-                  Reset Data
+                  RESET DATA
                 </button>
               </div>
             </div>
@@ -1545,7 +1560,9 @@ export default function Calendar() {
             {/* Modal Header */}
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-medium tracking-tight dark:text-white">Share Calendar</h3>
+                <h3 className="font-mono text-sm font-medium tracking-tight dark:text-white uppercase">
+                  SHARE CALENDAR
+                </h3>
                 <button
                   onClick={() => setShowShareModal(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
@@ -1571,8 +1588,8 @@ export default function Calendar() {
 
             {/* Modal Content */}
             <div className="p-4 dark:text-gray-200">
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                Share this link to show others this calendar view:
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 uppercase">
+                SHARE THIS LINK TO SHOW OTHERS THIS CALENDAR VIEW:
               </p>
               <div className="flex items-center gap-2">
                 <input
@@ -1580,14 +1597,14 @@ export default function Calendar() {
                   type="text"
                   value={shareUrl}
                   readOnly
-                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-xs focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-xs focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white uppercase"
                 />
                 <button
                   id="copy-button"
                   onClick={copyShareUrl}
-                  className="rounded-md bg-black dark:bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 whitespace-nowrap"
+                  className="rounded-md bg-black dark:bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 whitespace-nowrap uppercase"
                 >
-                  Copy
+                  COPY
                 </button>
               </div>
             </div>
@@ -1597,9 +1614,9 @@ export default function Calendar() {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowShareModal(false)}
-                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 uppercase"
                 >
-                  Close
+                  CLOSE
                 </button>
               </div>
             </div>

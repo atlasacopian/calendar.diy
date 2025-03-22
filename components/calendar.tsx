@@ -1482,14 +1482,14 @@ export default function Calendar() {
       )}
 
       {/* Buy Me A Coffee Button - Centered at bottom */}
-      <div className="fixed bottom-4 left-0 right-0 z-10 flex justify-center">
+      <div className="fixed bottom-2 left-0 right-0 z-10 flex justify-center">
         <a
           href="https://www.buymeacoffee.com/atlasacopian"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-3 py-1.5 bg-black text-white rounded-md text-xs font-mono shadow-md transition-all hover:bg-gray-800 hover:scale-105"
+          className="inline-flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-200 text-gray-700 rounded text-[10px] font-mono shadow-sm transition-all hover:bg-gray-50"
         >
-          <span className="text-yellow-400 text-sm">☕</span>
+          <span>☕</span>
           <span>buy me a coffee</span>
         </a>
       </div>

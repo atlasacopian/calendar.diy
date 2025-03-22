@@ -815,7 +815,7 @@ export default function Calendar() {
                       "block", // Make sure it's displayed as a block
                     )}
                   >
-                    {event.content}
+                    <span className="inline-block w-3">+</span> {event.content}
                   </span>
                 </div>
               )
@@ -910,6 +910,23 @@ export default function Calendar() {
       setEventContent("")
       setSelectedColor("text-black")
     }
+  }
+
+  // Add a function to handle event reordering
+  const handleReorderEvents = (dragIndex: number, hoverIndex: number) => {
+    const draggedEvent = eventsForSelectedDate[dragIndex]
+
+    // Create new array with reordered events
+    const updatedDayEvents = [...eventsForSelectedDate]
+    updatedDayEvents.splice(dragIndex, 1)
+    updatedDayEvents.splice(hoverIndex, 0, draggedEvent)
+
+    // Update the state
+    setEventsForSelectedDate(updatedDayEvents)
+
+    // Update the global events array
+    const updatedEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
+    setEvents([...updatedEvents, ...updatedDayEvents])
   }
 
   // Add a useEffect to ensure events are properly loaded from localStorage on mobile
@@ -1186,17 +1203,34 @@ export default function Calendar() {
                     Events on {selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""}
                   </h4>
                   <div className="space-y-2">
-                    {eventsForSelectedDate.map((event) => (
+                    {eventsForSelectedDate.map((event, index) => (
                       <div
                         key={event.id}
                         className={cn(
                           "p-2 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-start",
                           editingEventId === event.id ? "bg-gray-50 dark:bg-gray-700" : "",
+                          "cursor-move",
                         )}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("text/plain", index.toString())
+                          e.currentTarget.style.opacity = "0.5"
+                        }}
+                        onDragEnd={(e) => {
+                          e.currentTarget.style.opacity = "1"
+                        }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          const dragIndex = Number.parseInt(e.dataTransfer.getData("text/plain"))
+                          if (dragIndex !== index) {
+                            handleReorderEvents(dragIndex, index)
+                          }
+                        }}
                       >
                         <div className="flex-1">
                           <p className={cn("text-xs break-words", event.color || "text-black dark:text-white")}>
-                            {event.content}
+                            <span className="inline-block w-3">+</span> {event.content}
                           </p>
                         </div>
                         <div className="flex space-x-1 ml-2">
@@ -1272,7 +1306,21 @@ export default function Calendar() {
               </div>
 
               <div className="mb-2 sm:mb-3">
-                <label className="mb-1 block font-mono text-xs text-gray-700 dark:text-gray-300">Color</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block font-mono text-xs text-gray-700 dark:text-gray-300">Color</label>
+                  <button
+                    onClick={handleSaveEvent}
+                    disabled={!eventContent.trim()}
+                    className={cn(
+                      "rounded-md px-2 py-1 font-mono text-xs",
+                      eventContent.trim()
+                        ? "bg-gray-100 border border-gray-300 text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        : "bg-gray-100 border border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500 cursor-not-allowed",
+                    )}
+                  >
+                    Add Event
+                  </button>
+                </div>
                 <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {colorOptions.map((color) => (
                     <button
@@ -1312,7 +1360,7 @@ export default function Calendar() {
 
               {/* Action buttons for the form */}
               <div className="flex justify-end gap-2 mt-4">
-                {editingEventId ? (
+                {editingEventId && (
                   <>
                     <button
                       onClick={() => {
@@ -1331,19 +1379,6 @@ export default function Calendar() {
                       Update Event
                     </button>
                   </>
-                ) : (
-                  <button
-                    onClick={handleSaveEvent}
-                    disabled={!eventContent.trim()}
-                    className={cn(
-                      "rounded-md px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs",
-                      eventContent.trim()
-                        ? "bg-gray-100 border border-gray-300 text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        : "bg-gray-100 border border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500 cursor-not-allowed",
-                    )}
-                  >
-                    Add Event
-                  </button>
                 )}
               </div>
             </div>
@@ -1353,9 +1388,9 @@ export default function Calendar() {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleCancelEdit}
-                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="rounded-md bg-gray-100 border border-gray-300 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                 >
-                  Done
+                  Save
                 </button>
               </div>
             </div>

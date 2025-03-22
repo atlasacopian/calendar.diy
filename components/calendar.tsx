@@ -336,11 +336,13 @@ export default function Calendar() {
 
     // Add month/year header
     const header = document.createElement("h2")
-    header.textContent = format(currentDate, "MMMM yyyy")
+    header.textContent = format(currentDate, "MMMM yyyy").toUpperCase()
     header.style.padding = "20px"
     header.style.margin = "0"
     header.style.fontSize = "24px"
     header.style.fontWeight = "300"
+    header.style.textAlign = "center"
+    header.style.textTransform = "uppercase"
     printableDiv.appendChild(header)
 
     // Create calendar grid
@@ -371,7 +373,14 @@ export default function Calendar() {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
+      const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
+
+      // HARDCODED SOLUTION: Only highlight March 21, 2025
+      const isMarch21 =
+        currentDate.getMonth() === 2 && // March is month 2 (0-indexed)
+        day === 21 &&
+        currentDate.getFullYear() === 2025
 
       const dayCell = document.createElement("div")
       dayCell.style.position = "relative"
@@ -393,11 +402,41 @@ export default function Calendar() {
       dayNumber.style.fontSize = "14px"
       dayNumber.style.color = "#999"
 
+      // Apply special styling for March 21, 2025
+      if (isMarch21) {
+        dayCell.style.boxShadow = "inset 0 0 0 1px black"
+        dayNumber.style.backgroundColor = "black"
+        dayNumber.style.color = "white"
+        dayNumber.style.borderRadius = "50%"
+        dayNumber.style.width = "20px"
+        dayNumber.style.height = "20px"
+        dayNumber.style.display = "flex"
+        dayNumber.style.alignItems = "center"
+        dayNumber.style.justifyContent = "center"
+      }
+
       dayCell.appendChild(dayNumber)
 
-      // Add events (but not holidays)
+      // Add holidays
+      const holidaysContainer = document.createElement("div")
+      holidaysContainer.style.marginTop = "25px"
+
+      dayHolidays.forEach((holiday) => {
+        const holidayDiv = document.createElement("div")
+        holidayDiv.textContent = holiday.name
+        holidayDiv.style.fontSize = "9px"
+        holidayDiv.style.textTransform = "uppercase"
+        holidayDiv.style.letterSpacing = "0.05em"
+        holidayDiv.style.color = "#666"
+        holidayDiv.style.marginBottom = "3px"
+        holidaysContainer.appendChild(holidayDiv)
+      })
+
+      dayCell.appendChild(holidaysContainer)
+
+      // Add events
       const eventsContainer = document.createElement("div")
-      eventsContainer.style.marginTop = "25px" // Increased top margin since we're not showing holidays
+      eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "25px"
 
       dayEvents.forEach((event) => {
         const eventDiv = document.createElement("div")

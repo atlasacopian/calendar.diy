@@ -187,7 +187,7 @@ export default function Calendar() {
     if (!viewportMeta) {
       // Create it if it doesn't exist
       viewportMeta = document.createElement("meta")
-      viewportMeta.name = "viewport"
+      viewportMeta.setAttribute("name", "viewport")
       document.head.appendChild(viewportMeta)
     }
 
@@ -685,7 +685,7 @@ export default function Calendar() {
 
       {/* Event Modal - Properly centered on desktop, top-aligned on mobile */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div
             ref={modalRef}
             className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[60vh] sm:max-h-[90vh] flex flex-col"

@@ -259,12 +259,15 @@ export default function Calendar() {
 
   // Helper function to check if a date is today
   const isActuallyToday = (date: Date) => {
+    // Create a fresh date object for today with time set to midnight
     const today = new Date()
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    )
+    const todayWithoutTime = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+    // Create a date object for the comparison date with time set to midnight
+    const dateWithoutTime = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+    // Compare the dates using their time values
+    return todayWithoutTime.getTime() === dateWithoutTime.getTime()
   }
 
   // Download calendar as image
@@ -481,6 +484,7 @@ export default function Calendar() {
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
+
       const isTodayDate = isActuallyToday(date)
 
       days.push(

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Calendar from "@/components/calendar-static"
 
 export const metadata: Metadata = {
-  title: "Editable Calendar Template – No Signup | calendar.diy",
+  title: "Editable Calendar Template",
   description:
     "A clean, free, editable calendar you can use instantly. No account. No clutter. Just a simple calendar for your projects, schedules, or planning.",
 }

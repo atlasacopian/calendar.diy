@@ -28,10 +28,10 @@ export const metadata: Metadata = {
   },
   // Add Twitter card metadata
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "calendar.diy",
     description: "A minimalist project calendar",
-    images: ["/og-image.png"],
+    images: ["/favicon.svg"],
   },
 }
 
@@ -56,6 +56,10 @@ export default function RootLayout({
         {/* Force favicon refresh with a timestamp query parameter */}
         <link rel="icon" href={`/favicon.svg?v=${Date.now()}`} type="image/svg+xml" />
         <link rel="apple-touch-icon" href={`/apple-icon.png?v=${Date.now()}`} />
+
+        {/* Add direct meta tags for social sharing */}
+        <meta property="og:image" content="/favicon.svg" />
+        <meta name="twitter:image" content="/favicon.svg" />
       </head>
       <body>{children}</body>
     </html>

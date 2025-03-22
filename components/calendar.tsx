@@ -332,29 +332,9 @@ export default function Calendar() {
         // Check if we already have 2 events for this day
         const dayEvents = events.filter((event) => isSameDay(event.date, selectedDate))
         if (dayEvents.length >= 2) {
-          // If we already have 2 events, replace the oldest one
-          const oldestEvent = dayEvents[0]
-
-          // Create new event
-          const newEvent = {
-            id: Math.random().toString(36).substring(2, 11),
-            date: selectedDate,
-            content: eventContent,
-            color: selectedColor,
-          }
-
-          // Remove the oldest event and add the new one
-          const updatedEvents = events.filter((event) => event.id !== oldestEvent.id)
-          updatedEvents.push(newEvent)
-          setEvents(updatedEvents)
-
-          // Update events for selected date
-          const updatedDayEvents = eventsForSelectedDate.filter((event) => event.id !== oldestEvent.id)
-          updatedDayEvents.push(newEvent)
-          setEventsForSelectedDate(updatedDayEvents)
-
-          // Force save to localStorage immediately
-          localStorage.setItem("calendarEvents", JSON.stringify(updatedEvents))
+          // If we already have 2 events, don't add more
+          alert("Maximum of 2 events per day. Please edit or delete an existing event.")
+          return
         } else {
           // We're adding a new event and we have less than 2 events
           const newEvent = {
@@ -685,7 +665,7 @@ export default function Calendar() {
 
       limitedEvents.forEach((event, index) => {
         const eventDiv = document.createElement("div")
-        eventDiv.textContent = event.content.toUpperCase()
+        eventDiv.textContent = event.content
         eventDiv.style.fontSize = "11px"
         eventDiv.style.fontWeight = "500"
         eventDiv.style.wordBreak = "break-word"
@@ -878,7 +858,7 @@ export default function Calendar() {
             ))}
           </div>
 
-          <div className="mt-0.5 md:mt-1 overflow-hidden flex flex-col space-y-1 h-[calc(100%-20px)]">
+          <div className="mt-0 overflow-hidden flex flex-col space-y-1 h-[calc(100%-16px)]">
             {limitedEvents.map((event, index) => {
               // Ensure color is in text- format for backward compatibility
               let textColorClass = event.color || "text-black dark:text-white"
@@ -902,7 +882,7 @@ export default function Calendar() {
                   >
                     <span
                       className={cn(
-                        "font-mono text-[10px] md:text-[10px] font-medium cursor-move uppercase",
+                        "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
                         textColorClass,
                         "hover:underline",
                         "max-w-full", // Ensure text doesn't overflow
@@ -910,7 +890,7 @@ export default function Calendar() {
                         "line-clamp-2", // Allow up to 2 lines before truncating
                       )}
                     >
-                      {event.content.toUpperCase()}
+                      {event.content}
                     </span>
                   </div>
                 </React.Fragment>
@@ -987,8 +967,8 @@ export default function Calendar() {
         -webkit-box-orient: vertical;
       }
       
-      /* Make all text uppercase */
-      .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span, div, a, label, input, textarea {
+      /* Make most text uppercase except user input */
+      .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span:not(.preserve-case), div:not(.preserve-case), a, label {
         text-transform: uppercase !important;
       }
 
@@ -1350,9 +1330,12 @@ export default function Calendar() {
                       >
                         <div className="flex-1">
                           <p
-                            className={cn("text-xs break-words uppercase", event.color || "text-black dark:text-white")}
+                            className={cn(
+                              "text-xs break-words preserve-case",
+                              event.color || "text-black dark:text-white",
+                            )}
                           >
-                            {event.content.toUpperCase()}
+                            {event.content}
                           </p>
                         </div>
                         <button
@@ -1402,7 +1385,7 @@ export default function Calendar() {
                   onChange={(e) => setEventContent(e.target.value)}
                   onKeyDown={handleTextareaKeyDown}
                   placeholder={editingEventId ? "EDIT EVENT DETAILS..." : "ADD EVENT DETAILS..."}
-                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-base md:text-sm focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white uppercase"
+                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-base md:text-sm focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white"
                   rows={isMobile ? 2 : 3}
                 />
               </div>

@@ -41,6 +41,7 @@ export default function Calendar() {
   const modalRef = useRef<HTMLDivElement>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
   const calendarContentRef = useRef<HTMLDivElement>(null)
+  const fullCalendarRef = useRef<HTMLDivElement>(null)
 
   // Check if device is mobile
   useEffect(() => {
@@ -216,7 +217,7 @@ export default function Calendar() {
 
   // Download calendar as image
   const downloadCalendarAsImage = async () => {
-    if (!calendarContentRef.current) return
+    if (!fullCalendarRef.current) return
 
     try {
       setIsDownloading(true)
@@ -227,8 +228,8 @@ export default function Calendar() {
         buttonsContainer.classList.add("opacity-0")
       }
 
-      // Capture the calendar content
-      const canvas = await html2canvas(calendarContentRef.current, {
+      // Capture the full calendar including header
+      const canvas = await html2canvas(fullCalendarRef.current, {
         backgroundColor: "white",
         scale: 2, // Higher resolution
         logging: false,
@@ -408,66 +409,68 @@ export default function Calendar() {
   return (
     <>
       <div
-        ref={calendarRef}
-        className="calendar-container overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+        ref={fullCalendarRef}
+        className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
       >
-        <div className="border-b border-gray-100 bg-gray-50 p-2 md:p-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-            <h2 className="font-mono text-lg md:text-xl font-light tracking-tight">
-              {format(currentDate, "MMMM yyyy")}
-            </h2>
-            <div className="calendar-buttons flex flex-wrap items-center gap-1 md:gap-2 transition-opacity duration-300">
-              <button
-                onClick={downloadCalendarAsImage}
-                className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
-                title="Download as Image"
-                disabled={isDownloading}
-              >
-                <Camera className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                <span className="hidden xs:inline">Image</span>
-              </button>
-              <button
-                onClick={exportToIcal}
-                className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
-                title="Export to iCal"
-              >
-                <Download className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                <span className="hidden xs:inline">iCal</span>
-              </button>
-              <button
-                onClick={exportToGoogleCalendar}
-                className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
-                title="Export to Google Calendar"
-              >
-                <CalendarIcon className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                <span className="hidden xs:inline">Google</span>
-              </button>
-              <button
-                onClick={handlePreviousMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
-              >
-                <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
-              </button>
-              <button
-                onClick={handleNextMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
-              >
-                <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
-              </button>
+        <div ref={calendarRef} className="calendar-container">
+          <div className="border-b border-gray-100 bg-gray-50 p-2 md:p-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+              <h2 className="font-mono text-lg md:text-xl font-light tracking-tight">
+                {format(currentDate, "MMMM yyyy")}
+              </h2>
+              <div className="calendar-buttons flex flex-wrap items-center gap-1 md:gap-2 transition-opacity duration-300">
+                <button
+                  onClick={downloadCalendarAsImage}
+                  className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                  title="Download as Image"
+                  disabled={isDownloading}
+                >
+                  <Camera className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  <span className="hidden xs:inline">Image</span>
+                </button>
+                <button
+                  onClick={exportToIcal}
+                  className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                  title="Export to iCal"
+                >
+                  <Download className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  <span className="hidden xs:inline">iCal</span>
+                </button>
+                <button
+                  onClick={exportToGoogleCalendar}
+                  className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                  title="Export to Google Calendar"
+                >
+                  <CalendarIcon className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  <span className="hidden xs:inline">Google</span>
+                </button>
+                <button
+                  onClick={handlePreviousMonth}
+                  className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
+                >
+                  <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
+                </button>
+                <button
+                  onClick={handleNextMonth}
+                  className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
+                >
+                  <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div ref={calendarContentRef} className="grid grid-cols-7">
-          {(isMobile ? weekDaysMobile : weekDays).map((day) => (
-            <div
-              key={day}
-              className="border-b border-r border-gray-100 bg-gray-50 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500"
-            >
-              {day}
-            </div>
-          ))}
-          {renderCalendar()}
+          <div ref={calendarContentRef} className="grid grid-cols-7">
+            {(isMobile ? weekDaysMobile : weekDays).map((day) => (
+              <div
+                key={day}
+                className="border-b border-r border-gray-100 bg-gray-50 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500"
+              >
+                {day}
+              </div>
+            ))}
+            {renderCalendar()}
+          </div>
         </div>
       </div>
 

@@ -199,6 +199,13 @@ export default function Calendar() {
     }
   }, [])
 
+  // Add a useEffect to force a re-render with the correct date on component mount
+  // Add this after the other useEffect hooks
+  useEffect(() => {
+    // Force a re-render with the current date on component mount
+    setCurrentDate(new Date())
+  }, [])
+
   const handlePreviousMonth = () => {
     setCurrentDate(subMonths(currentDate, 1))
   }
@@ -259,15 +266,19 @@ export default function Calendar() {
 
   // Helper function to check if a date is today
   const isActuallyToday = (date: Date) => {
-    // Create a fresh date object for today with time set to midnight
-    const today = new Date()
-    const todayWithoutTime = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    // Get current date components
+    const now = new Date()
+    const currentDay = now.getDate()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
 
-    // Create a date object for the comparison date with time set to midnight
-    const dateWithoutTime = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    // Get comparison date components
+    const day = date.getDate()
+    const month = date.getMonth()
+    const year = date.getFullYear()
 
-    // Compare the dates using their time values
-    return todayWithoutTime.getTime() === dateWithoutTime.getTime()
+    // Compare date components directly
+    return day === currentDay && month === currentMonth && year === currentYear
   }
 
   // Download calendar as image
@@ -467,6 +478,10 @@ export default function Calendar() {
 
   // Generate calendar grid
   const renderCalendar = () => {
+    // Debug current date
+    const now = new Date()
+    console.log("Current date:", now.getDate(), now.getMonth(), now.getFullYear())
+
     const daysInMonth = getDaysInMonth(currentDate)
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
     const startingDayOfWeek = getDay(firstDayOfMonth)
@@ -485,7 +500,11 @@ export default function Calendar() {
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
 
-      const isTodayDate = isActuallyToday(date)
+      const now = new Date()
+      const isTodayDate =
+        date.getDate() === now.getDate() &&
+        date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear()
 
       days.push(
         <div

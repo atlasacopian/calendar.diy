@@ -143,3 +143,36 @@ html {
   }
 }
 
+/* Line clamp utility for truncating text after a certain number of lines */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Prevent excessive scrolling on mobile */
+@media (max-width: 640px) {
+  .calendar-day {
+    height: auto !important;
+    min-height: 4rem;
+  }
+
+  .calendar-day > div:last-child {
+    margin-bottom: 0.25rem;
+  }
+
+  /* Improve modal positioning on mobile */
+  .fixed.inset-0.z-50.flex.items-center.justify-center {
+    align-items: flex-start;
+    padding-top: 2rem;
+  }
+}
+

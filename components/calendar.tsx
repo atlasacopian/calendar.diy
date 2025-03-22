@@ -45,6 +45,8 @@ export default function Calendar() {
   const [dragOverDate, setDragOverDate] = useState<Date | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareUrl, setShareUrl] = useState("")
+  const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -291,35 +293,52 @@ export default function Calendar() {
 
   const handleDayClick = (day: Date) => {
     setSelectedDate(day)
-    const existingEvent = events.find((event) => isSameDay(event.date, day))
-    setEventContent(existingEvent?.content || "")
-    setSelectedColor(existingEvent?.color || "text-black")
+    const existingEvents = events.filter((event) => isSameDay(event.date, day))
+    setEventsForSelectedDate(existingEvents)
+
+    // If there are no events, prepare to create a new one
+    if (existingEvents.length === 0) {
+      setEditingEventId(null)
+      setEventContent("")
+      setSelectedColor("text-black")
+    } else {
+      // Don't pre-select any event for editing
+      setEditingEventId(null)
+      setEventContent("")
+      setSelectedColor("text-black")
+    }
+
     setShowModal(true)
   }
 
   const handleSaveEvent = () => {
     if (!selectedDate) return
 
-    // Remove existing event for this day if it exists
-    const filteredEvents = events.filter((event) => !isSameDay(event.date, selectedDate))
-
-    // Add new event if content is not empty
     if (eventContent.trim()) {
-      setEvents([
-        ...filteredEvents,
-        {
+      // If we're editing an existing event
+      if (editingEventId) {
+        setEvents(
+          events.map((event) =>
+            event.id === editingEventId ? { ...event, content: eventContent, color: selectedColor } : event,
+          ),
+        )
+      } else {
+        // We're adding a new event
+        const newEvent = {
           id: Math.random().toString(36).substring(2, 11),
           date: selectedDate,
           content: eventContent,
           color: selectedColor,
-        },
-      ])
-    } else {
-      setEvents(filteredEvents)
+        }
+        setEvents([...events, newEvent])
+
+        // Add to the current day's events
+        setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
+      }
     }
 
-    setShowModal(false)
-    setSelectedDate(null)
+    // Reset the form for adding another event
+    setEditingEventId(null)
     setEventContent("")
     setSelectedColor("text-black")
   }
@@ -792,10 +811,11 @@ export default function Calendar() {
                 >
                   <span
                     className={cn(
-                      "font-mono text-[8px] md:text-[10px] font-medium truncate cursor-move",
+                      "font-mono text-[8px] md:text-[10px] font-medium break-words cursor-move",
                       textColorClass,
                       "hover:underline",
                     )}
+                    style={{ wordBreak: "break-word", whiteSpace: "normal" }}
                   >
                     {event.content}
                   </span>
@@ -863,6 +883,31 @@ export default function Calendar() {
       document.head.removeChild(style)
     }
   }, [])
+
+  // Add a function to edit an existing event
+  const handleEditEvent = (event: CalendarEvent) => {
+    setEditingEventId(event.id)
+    setEventContent(event.content)
+    setSelectedColor(event.color || "text-black")
+  }
+
+  // Add a function to delete an event
+  const handleDeleteEvent = (eventId: string) => {
+    // Remove from global events
+    const updatedEvents = events.filter((event) => event.id !== eventId)
+    setEvents(updatedEvents)
+
+    // Remove from current day's events
+    const updatedDayEvents = eventsForSelectedDate.filter((event) => event.id !== eventId)
+    setEventsForSelectedDate(updatedDayEvents)
+
+    // Reset form if we were editing this event
+    if (editingEventId === eventId) {
+      setEditingEventId(null)
+      setEventContent("")
+      setSelectedColor("text-black")
+    }
+  }
 
   return (
     <div className="flex flex-col space-y-4">
@@ -1091,12 +1136,85 @@ export default function Calendar() {
 
             {/* Modal Content */}
             <div className="p-2 sm:p-3 overflow-y-auto flex-grow dark:text-gray-200">
+              {/* Existing events for this day */}
+              {eventsForSelectedDate.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="font-mono text-xs font-medium mb-2 text-gray-700 dark:text-gray-300">
+                    Events on {selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""}
+                  </h4>
+                  <div className="space-y-2">
+                    {eventsForSelectedDate.map((event) => (
+                      <div
+                        key={event.id}
+                        className={cn(
+                          "p-2 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-start",
+                          editingEventId === event.id ? "bg-gray-50 dark:bg-gray-700" : "",
+                        )}
+                      >
+                        <div className="flex-1">
+                          <p className={cn("text-xs break-words", event.color || "text-black dark:text-white")}>
+                            {event.content}
+                          </p>
+                        </div>
+                        <div className="flex space-x-1 ml-2">
+                          <button
+                            onClick={() => handleEditEvent(event)}
+                            className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600"
+                            title="Edit event"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-3 w-3 text-gray-500 dark:text-gray-400"
+                            >
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600"
+                            title="Delete event"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-3 w-3 text-gray-500 dark:text-gray-400"
+                            >
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <line x1="10" y1="11" x2="10" y2="17"></line>
+                              <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Form for adding/editing an event */}
               <div className="mb-2 sm:mb-3">
                 <label
                   htmlFor="event-content"
                   className="mb-1 block font-mono text-xs text-gray-700 dark:text-gray-300"
                 >
-                  Event
+                  {editingEventId ? "Edit Event" : "Add New Event"}
                 </label>
                 <textarea
                   ref={textareaRef}
@@ -1104,7 +1222,7 @@ export default function Calendar() {
                   value={eventContent}
                   onChange={(e) => setEventContent(e.target.value)}
                   onKeyDown={handleTextareaKeyDown}
-                  placeholder="Add event details..."
+                  placeholder={editingEventId ? "Edit event details..." : "Add event details..."}
                   className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-base md:text-sm focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white"
                   rows={isMobile ? 2 : 3}
                 />
@@ -1148,6 +1266,43 @@ export default function Calendar() {
                   ))}
                 </div>
               </div>
+
+              {/* Action buttons for the form */}
+              <div className="flex justify-end gap-2 mt-4">
+                {editingEventId ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setEditingEventId(null)
+                        setEventContent("")
+                        setSelectedColor("text-black")
+                      }}
+                      className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      Cancel Edit
+                    </button>
+                    <button
+                      onClick={handleSaveEvent}
+                      className="rounded-md bg-black dark:bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                    >
+                      Update Event
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={handleSaveEvent}
+                    disabled={!eventContent.trim()}
+                    className={cn(
+                      "rounded-md px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs",
+                      eventContent.trim()
+                        ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed",
+                    )}
+                  >
+                    Add Event
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Modal Footer */}
@@ -1157,13 +1312,7 @@ export default function Calendar() {
                   onClick={handleCancelEdit}
                   className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveEvent}
-                  className="rounded-md bg-black dark:bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                >
-                  Save
+                  Done
                 </button>
               </div>
             </div>

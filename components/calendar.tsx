@@ -342,6 +342,9 @@ export default function Calendar() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSaveEvent()
+      // Close the modal after saving
+      setShowModal(false)
+      setSelectedDate(null)
     }
   }
 

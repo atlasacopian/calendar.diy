@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect, useRef, useState } from "react"
-import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, startOfMonth, isToday } from "date-fns"
+import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToday } from "date-fns"
 import html2canvas from "html2canvas"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -102,11 +102,10 @@ export default function Calendar() {
     if (savedDarkMode) {
       const isDark = JSON.parse(savedDarkMode)
       setIsDarkMode(isDark)
-      if (isDark) {
-        document.documentElement.classList.add("dark")
-      } else {
-        document.documentElement.classList.remove("dark")
-      }
+    } else {
+      // Check if system prefers dark mode
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+      setIsDarkMode(prefersDark)
     }
 
     const savedEvents = localStorage.getItem("calendarEvents")
@@ -170,11 +169,6 @@ export default function Calendar() {
   // Save dark mode preference
   useEffect(() => {
     localStorage.setItem("calendarDarkMode", JSON.stringify(isDarkMode))
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-    }
   }, [isDarkMode])
 
   // Focus textarea when modal opens
@@ -374,9 +368,17 @@ export default function Calendar() {
     setShowResetConfirm(false)
   }
 
-  // Toggle dark mode
+  // Toggle dark mode for the entire page
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
+    const newDarkMode = !isDarkMode
+    setIsDarkMode(newDarkMode)
+
+    // Apply dark mode to the entire document
+    if (newDarkMode) {
+      document.documentElement.classList.add("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+    }
   }
 
   // Handle drag start for events
@@ -714,59 +716,6 @@ export default function Calendar() {
   }
 
   // Generate mini calendar for navigation
-  const renderMiniCalendar = () => {
-    const daysInMonth = getDaysInMonth(currentDate)
-    const firstDayOfMonth = startOfMonth(currentDate)
-    const startingDayOfWeek = getDay(firstDayOfMonth)
-
-    const miniDays = []
-
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      miniDays.push(<div key={`mini-empty-${i}`} className="w-5 h-5"></div>)
-    }
-
-    // Add cells for each day of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      const hasEvent = events.some((event) => isSameDay(event.date, date))
-      const isCurrentDay = isToday(date)
-
-      miniDays.push(
-        <button
-          key={`mini-day-${day}`}
-          onClick={() => handleDayClick(date)}
-          className={cn(
-            "w-5 h-5 flex items-center justify-center text-[10px] rounded-full transition-colors",
-            isCurrentDay ? "bg-black text-white dark:bg-white dark:text-black" : "",
-            hasEvent && !isCurrentDay ? "border border-gray-300 dark:border-gray-600" : "",
-            "hover:bg-gray-100 dark:hover:bg-gray-800",
-          )}
-        >
-          {day}
-        </button>,
-      )
-    }
-
-    return (
-      <div className="mini-calendar p-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 shadow-sm">
-        <div className="text-xs font-mono mb-1 text-center text-gray-600 dark:text-gray-400">
-          {format(currentDate, "MMMM yyyy")}
-        </div>
-        <div className="grid grid-cols-7 gap-1">
-          {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
-            <div
-              key={`mini-header-${i}`}
-              className="w-5 h-5 flex items-center justify-center text-[8px] text-gray-500 dark:text-gray-400"
-            >
-              {day}
-            </div>
-          ))}
-          {miniDays}
-        </div>
-      </div>
-    )
-  }
 
   // Generate calendar grid
   const renderCalendar = () => {
@@ -965,7 +914,7 @@ export default function Calendar() {
   }, [])
 
   return (
-    <div className={cn("flex flex-col space-y-4", isDarkMode ? "dark" : "")}>
+    <div className="flex flex-col space-y-4">
       <div
         ref={fullCalendarRef}
         className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm transition-colors duration-200"
@@ -993,36 +942,48 @@ export default function Calendar() {
                 </svg>
               </button>
 
-              {/* Mini calendar toggle for mobile */}
-              {isMobile && (
-                <div className="relative group">
-                  <button className="text-xs font-mono text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
-                    📅
-                  </button>
-                  <div className="absolute left-0 top-full mt-1 z-10 hidden group-hover:block">
-                    {renderMiniCalendar()}
-                  </div>
-                </div>
-              )}
+              {/* Mini calendar toggle removed */}
             </div>
 
             <div className="flex items-center gap-2">
               <h2 className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center dark:text-white transition-colors duration-200">
                 {format(currentDate, "MMMM yyyy")}
               </h2>
-              <span className="text-xl md:text-2xl" aria-hidden="true">
-                🗓️
-              </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={toggleDarkMode}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700"
-                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {isDarkMode ? <Sun className="h-3 w-3 md:h-4 md:w-4" /> : <Moon className="h-3 w-3 md:h-4 md:w-4" />}
-              </button>
+            <div className="flex items-center">
+              <div className="flex items-center">
+                <button
+                  onClick={toggleDarkMode}
+                  className="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 dark:bg-gray-700 transition-colors duration-200 ease-in-out focus:outline-none"
+                  role="switch"
+                  aria-checked={isDarkMode}
+                  aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  <span
+                    className={`${
+                      isDarkMode ? "translate-x-4" : "translate-x-0"
+                    } pointer-events-none relative inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                  >
+                    <span
+                      className={`${
+                        isDarkMode ? "opacity-0 duration-100 ease-out" : "opacity-100 duration-200 ease-in"
+                      } absolute inset-0 flex h-full w-full items-center justify-center transition-opacity`}
+                      aria-hidden="true"
+                    >
+                      <Moon className="h-2 w-2 text-gray-400" />
+                    </span>
+                    <span
+                      className={`${
+                        isDarkMode ? "opacity-100 duration-200 ease-in" : "opacity-0 duration-100 ease-out"
+                      } absolute inset-0 flex h-full w-full items-center justify-center transition-opacity`}
+                      aria-hidden="true"
+                    >
+                      <Sun className="h-2 w-2 text-yellow-400" />
+                    </span>
+                  </span>
+                </button>
+              </div>
 
               <button
                 onClick={handleNextMonth}
@@ -1047,12 +1008,7 @@ export default function Calendar() {
           </div>
 
           <div className="flex">
-            {/* Mini calendar for desktop */}
-            {!isMobile && (
-              <div className="hidden md:block w-48 p-4 border-r border-gray-100 dark:border-gray-800 transition-colors duration-200">
-                {renderMiniCalendar()}
-              </div>
-            )}
+            {/* Mini calendar removed */}
 
             <div className="flex-1">
               <AnimatePresence mode="wait">

@@ -84,9 +84,13 @@ export default async function Image() {
           fontWeight: 300,
           letterSpacing: "-0.05em",
           color: "#333",
+          display: "flex",
+          alignItems: "center",
+          gap: "16px",
         }}
       >
-        calendar.diy
+        <span style={{ fontSize: 72 }}>📅</span>
+        <span>calendar.diy</span>
       </div>
 
       <div

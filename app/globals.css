@@ -12,6 +12,7 @@ body {
   background: rgb(var(--background-rgb));
   font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
   -webkit-tap-highlight-color: transparent;
+  text-transform: uppercase;
 }
 
 .dark body {
@@ -174,5 +175,23 @@ html {
     align-items: flex-start;
     padding-top: 2rem;
   }
+}
+
+/* Make all text uppercase */
+button,
+input,
+textarea,
+label,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+a {
+  text-transform: uppercase !important;
 }
 

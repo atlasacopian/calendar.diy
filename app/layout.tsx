@@ -11,12 +11,13 @@ export const metadata: Metadata = {
   },
 }
 
+// Update the viewport settings in layout.tsx to prevent zooming
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
   minimumScale: 1,
-  userScalable: true,
+  userScalable: false,
   viewportFit: "cover",
 }
 

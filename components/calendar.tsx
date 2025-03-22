@@ -3,8 +3,9 @@
 import type React from "react"
 
 import { useEffect, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, X, Check, CalendarIcon, Download } from "lucide-react"
+import { ChevronLeft, ChevronRight, X, Check, CalendarIcon, Download, Camera } from "lucide-react"
 import { addMonths, format, getDay, getDaysInMonth, isSameDay, isToday, subMonths } from "date-fns"
+import html2canvas from "html2canvas"
 
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
@@ -34,9 +35,11 @@ export default function Calendar() {
   const [eventContent, setEventContent] = useState("")
   const [selectedColor, setSelectedColor] = useState("text-black")
   const [holidays, setHolidays] = useState<Holiday[]>([])
+  const [isDownloading, setIsDownloading] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
+  const calendarContentRef = useRef<HTMLDivElement>(null)
 
   // Load events from localStorage on component mount
   useEffect(() => {
@@ -189,6 +192,46 @@ export default function Calendar() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSaveEvent()
+    }
+  }
+
+  // Download calendar as image
+  const downloadCalendarAsImage = async () => {
+    if (!calendarContentRef.current) return
+
+    try {
+      setIsDownloading(true)
+
+      // Hide the buttons during capture
+      const buttonsContainer = calendarRef.current?.querySelector(".calendar-buttons")
+      if (buttonsContainer) {
+        buttonsContainer.classList.add("opacity-0")
+      }
+
+      // Capture the calendar content
+      const canvas = await html2canvas(calendarContentRef.current, {
+        backgroundColor: "white",
+        scale: 2, // Higher resolution
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+      })
+
+      // Show the buttons again
+      if (buttonsContainer) {
+        buttonsContainer.classList.remove("opacity-0")
+      }
+
+      // Convert to image and download
+      const image = canvas.toDataURL("image/png")
+      const link = document.createElement("a")
+      link.href = image
+      link.download = `calendar-${format(currentDate, "MMMM-yyyy")}.png`
+      link.click()
+    } catch (error) {
+      console.error("Error generating calendar image:", error)
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -346,7 +389,16 @@ export default function Calendar() {
         <div className="border-b border-gray-100 bg-gray-50 p-4">
           <div className="flex items-center justify-between">
             <h2 className="font-mono text-xl font-light tracking-tight">{format(currentDate, "MMMM yyyy")}</h2>
-            <div className="flex items-center gap-2">
+            <div className="calendar-buttons flex items-center gap-2 transition-opacity duration-300">
+              <button
+                onClick={downloadCalendarAsImage}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                title="Download as Image"
+                disabled={isDownloading}
+              >
+                <Camera className="h-3 w-3" />
+                <span>Image</span>
+              </button>
               <button
                 onClick={exportToIcal}
                 className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
@@ -379,7 +431,7 @@ export default function Calendar() {
           </div>
         </div>
 
-        <div className="grid grid-cols-7">
+        <div ref={calendarContentRef} className="grid grid-cols-7">
           {weekDays.map((day) => (
             <div
               key={day}

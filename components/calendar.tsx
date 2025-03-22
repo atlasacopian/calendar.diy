@@ -45,9 +45,6 @@ export default function Calendar() {
   const fullCalendarRef = useRef<HTMLDivElement>(null)
   const printableCalendarRef = useRef<HTMLDivElement>(null)
 
-  // Store the actual today's date to ensure it doesn't change when navigating months
-  const todayDate = useRef(new Date())
-
   // Check if device is mobile
   useEffect(() => {
     const checkIfMobile = () => {
@@ -261,15 +258,18 @@ export default function Calendar() {
     }
   }
 
-  // Replace the isActuallyToday function with this corrected version
   // Helper function to check if a date is today
   const isActuallyToday = (date: Date) => {
+    // Get the current date with time set to midnight for accurate comparison
     const today = new Date()
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    )
+    today.setHours(0, 0, 0, 0)
+
+    // Set the comparison date to midnight as well
+    const compareDate = new Date(date)
+    compareDate.setHours(0, 0, 0, 0)
+
+    // Compare the dates
+    return today.getTime() === compareDate.getTime()
   }
 
   // Create a temporary printable version of the calendar
@@ -683,16 +683,16 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Event Modal - Optimized for mobile */}
+      {/* Event Modal - Properly centered on desktop, top-aligned on mobile */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-50 backdrop-blur-sm p-2 pt-4 sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div
             ref={modalRef}
             className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[60vh] sm:max-h-[90vh] flex flex-col"
             style={{ marginTop: isMobile ? "0" : "auto" }}
           >
             {/* Modal Header */}
-            <div className="border-b border-gray-100 bg-gray-50 p-2 flex-shrink-0">
+            <div className="border-b border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <h3 className="font-mono text-sm font-light tracking-tight">
                   {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Add Event"}
@@ -707,8 +707,8 @@ export default function Calendar() {
             </div>
 
             {/* Modal Content */}
-            <div className="p-2 overflow-y-auto flex-grow">
-              <div className="mb-2">
+            <div className="p-2 sm:p-3 overflow-y-auto flex-grow">
+              <div className="mb-2 sm:mb-3">
                 <label htmlFor="event-content" className="mb-1 block font-mono text-xs text-gray-700">
                   Event
                 </label>
@@ -724,14 +724,14 @@ export default function Calendar() {
                 />
               </div>
 
-              <div className="mb-2">
+              <div className="mb-2 sm:mb-3">
                 <label className="mb-1 block font-mono text-xs text-gray-700">Color</label>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {colorOptions.map((color) => (
                     <button
                       key={color.value}
                       className={cn(
-                        "flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200",
+                        "flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full transition-all duration-200",
                         color.bg,
                         color.text,
                         selectedColor === color.value ? "ring-1 ring-gray-400 ring-offset-1" : "",
@@ -740,7 +740,7 @@ export default function Calendar() {
                       onClick={() => setSelectedColor(color.value)}
                       type="button"
                     >
-                      {selectedColor === color.value && <Check className="h-2.5 w-2.5" />}
+                      {selectedColor === color.value && <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3" />}
                     </button>
                   ))}
                 </div>
@@ -748,17 +748,17 @@ export default function Calendar() {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t border-gray-100 bg-gray-50 p-2 flex-shrink-0">
+            <div className="border-t border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleCancelEdit}
-                  className="rounded-md border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 transition-colors hover:bg-gray-50"
+                  className="rounded-md border border-gray-200 bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 transition-colors hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEvent}
-                  className="rounded-md bg-black px-2 py-1 font-mono text-xs text-white transition-colors hover:bg-gray-800"
+                  className="rounded-md bg-black px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white transition-colors hover:bg-gray-800"
                 >
                   Save
                 </button>

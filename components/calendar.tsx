@@ -280,3 +280,133 @@ export default function Calendar() {
                     className={cn(
                       "font-mono text-[10px] uppercase tracking-wider",
                       holiday.type === "federal" ? "text-gray-500" : "",
+                      holiday.type === "religious" ? "text-indigo-500" : "",
+                      holiday.type === "international" ? "text-cyan-600" : "",
+                      holiday.type === "observance" ? "text-amber-500" : ""
+                    )}
+                  >
+                    {holiday.name}
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-1 space-y-1">
+                {dayEvents.map((event, index) => {
+                  // Ensure color is in text- format for backward compatibility
+                  let textColorClass = event.color || "text-black";
+                  if (textColorClass.startsWith("bg-")) {
+                    textColorClass = textColorClass.replace("bg-", "text-");
+                  }
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className="flex items-start justify-between"
+                    >
+                      <span className={cn("font-mono text-xs font-medium", textColorClass)}>
+                        {event.content}
+                      </span>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSyncClick(event);
+                        }}
+                        className="mt-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                      >
+                        <Share2 className="h-3 w-3 text-gray-400 hover:text-black" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+          
+          {!isEditing && (
+            <div className={cn(
+              "absolute bottom-0 left-0 h-0.5 w-full bg-black opacity-0 transition-opacity duration-300",
+              isHovering === day ? "opacity-100" : ""
+            )} />
+          )}
+        </div>
+      );
+    }
+    
+    return days;
+  };
+
+  const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+  return (
+    <div className="calendar-container">
+      <div className="mb-8 flex items-center justify-between">
+        <h2 className="font-mono text-2xl font-light uppercase tracking-tight">
+          {format(currentDate, "MMMM yyyy")}
+        </h2>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleTodayClick}
+            className="h-8 rounded-none font-mono text-xs tracking-wider hover:bg-gray-50"
+          >
+            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+            TODAY
+          </Button>
+          <HolidayFilter 
+            selectedTypes={selectedHolidayTypes}
+            onToggleType={toggleHolidayType}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSyncClick()}
+            className="h-8 rounded-none font-mono text-xs tracking-wider hover:bg-gray-50"
+          >
+            <Share2 className="mr-2 h-3.5 w-3.5" />
+            SYNC
+          </Button>
+          <div className="flex">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handlePreviousMonth}
+              className="h-8 w-8 rounded-none border-black transition-all duration-200 hover:bg-black hover:text-white"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleNextMonth}
+              className="h-8 w-8 rounded-none border-black transition-all duration-200 hover:bg-black hover:text-white"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-0">
+        {weekDays.map((day) => (
+          <div 
+            key={day} 
+            className="pb-3 text-center font-mono text-xs font-light tracking-wider text-gray-500"
+          >
+            {day}
+          </div>
+        ))}
+        {renderCalendar()}
+      </div>
+      
+      <HolidayLegend selectedTypes={selectedHolidayTypes} />
+
+      <SyncModal 
+        isOpen={isSyncModalOpen}
+        onOpenChange={setIsSyncModalOpen}
+        events={events}
+        selectedEvent={selectedEvent}
+      />
+    </div>
+  );
+}

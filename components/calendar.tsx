@@ -430,7 +430,7 @@ export default function Calendar() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = "calendar-diy.ics"
+    link.download = "calendar.diy.ics"
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

@@ -316,7 +316,13 @@ export default function Calendar() {
           content: eventContent,
           color: selectedColor,
         }
-        setEvents([...events, newEvent])
+
+        // Add the new event to the events array
+        const updatedEvents = [...events, newEvent]
+        setEvents(updatedEvents)
+
+        // Force save to localStorage immediately
+        localStorage.setItem("calendarEvents", JSON.stringify(updatedEvents))
 
         // Add to the current day's events
         setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
@@ -327,6 +333,12 @@ export default function Calendar() {
     setEditingEventId(null)
     setEventContent("")
     setSelectedColor("text-black")
+
+    // Always close the modal after saving on mobile
+    if (isMobile) {
+      setShowModal(false)
+      setSelectedDate(null)
+    }
   }
 
   const handleCancelEdit = () => {
@@ -804,9 +816,11 @@ export default function Calendar() {
                 >
                   <span
                     className={cn(
-                      "font-mono text-[8px] md:text-[10px] font-medium truncate cursor-move",
+                      "font-mono text-[10px] md:text-[10px] font-medium truncate cursor-move",
                       textColorClass,
                       "hover:underline",
+                      "max-w-full", // Ensure text doesn't overflow
+                      "block", // Make sure it's displayed as a block
                     )}
                   >
                     {event.content}
@@ -905,6 +919,19 @@ export default function Calendar() {
       setSelectedColor("text-black")
     }
   }
+
+  // Add a useEffect to ensure events are properly loaded from localStorage on mobile
+  useEffect(() => {
+    // This will force a re-render of the calendar when the events change
+    // which helps ensure events are displayed properly on mobile
+    const calendarElement = calendarContentRef.current
+    if (calendarElement) {
+      calendarElement.style.opacity = "0.99"
+      setTimeout(() => {
+        if (calendarElement) calendarElement.style.opacity = "1"
+      }, 10)
+    }
+  }, [events])
 
   return (
     <div className="flex flex-col space-y-4">

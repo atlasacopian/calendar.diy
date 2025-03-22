@@ -484,7 +484,8 @@ export default function Calendar() {
   // Share current month view
   const handleShare = () => {
     const url = new URL(window.location.href)
-    url.searchParams.set("date", format(currentDate, "yyyy-MM-dd"))
+    // Format the date to include year and month for proper sharing
+    url.searchParams.set("date", format(currentDate, "yyyy-MM"))
     setShareUrl(url.toString())
     setShowShareModal(true)
   }
@@ -858,7 +859,7 @@ export default function Calendar() {
             ))}
           </div>
 
-          <div className="mt-0 overflow-hidden flex flex-col space-y-1 h-[calc(100%-16px)]">
+          <div className="mt-0 pt-0 overflow-visible flex flex-col space-y-1 h-[calc(100%-12px)]">
             {limitedEvents.map((event, index) => {
               // Ensure color is in text- format for backward compatibility
               let textColorClass = event.color || "text-black dark:text-white"
@@ -887,7 +888,8 @@ export default function Calendar() {
                         "hover:underline",
                         "max-w-full", // Ensure text doesn't overflow
                         "block", // Make sure it's displayed as a block
-                        "line-clamp-2", // Allow up to 2 lines before truncating
+                        "overflow-visible", // Allow text to be visible
+                        "break-words", // Break words to prevent overflow
                       )}
                     >
                       {event.content}
@@ -957,14 +959,15 @@ export default function Calendar() {
       }
       
       /* Ensure text doesn't overflow and is properly truncated */
-      .calendar-day .truncate {
+      .calendar-day .truncate, .calendar-day .line-clamp-2 {
         white-space: normal;
         overflow: visible;
         word-break: break-word;
         max-width: 100%;
         display: -webkit-box;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
+        text-overflow: ellipsis;
       }
       
       /* Make most text uppercase except user input */
@@ -975,6 +978,18 @@ export default function Calendar() {
       /* Add body class to prevent scrolling when modal is open */
       body.modal-open {
         overflow: hidden;
+      }
+
+      /* Make sure text is preserved as lowercase in inputs */
+      input, textarea {
+        text-transform: none !important;
+      }
+
+      /* Ensure event text is not cut off */
+      .preserve-case {
+        text-transform: none !important;
+        overflow: visible !important;
+        word-break: break-word !important;
       }
     `
     document.head.appendChild(style)
@@ -1308,7 +1323,7 @@ export default function Calendar() {
                           editingEventId === event.id
                             ? "bg-gray-50 dark:bg-gray-700"
                             : "hover:bg-gray-50 dark:hover:bg-gray-700",
-                          "cursor-pointer",
+                          "cursor-move relative",
                         )}
                         onClick={() => handleEditEvent(event)}
                         draggable
@@ -1338,32 +1353,55 @@ export default function Calendar() {
                             {event.content}
                           </p>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation() // Prevent triggering the parent onClick
-                            handleDeleteEvent(event.id)
-                          }}
-                          className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 ml-2"
-                          title="Delete event"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-3 w-3 text-gray-500 dark:text-gray-400"
+                        <div className="flex items-center">
+                          <div className="mr-2 cursor-move text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-3 w-3"
+                            >
+                              <circle cx="9" cy="5" r="1"></circle>
+                              <circle cx="9" cy="12" r="1"></circle>
+                              <circle cx="9" cy="19" r="1"></circle>
+                              <circle cx="15" cy="5" r="1"></circle>
+                              <circle cx="15" cy="12" r="1"></circle>
+                              <circle cx="15" cy="19" r="1"></circle>
+                            </svg>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation() // Prevent triggering the parent onClick
+                              handleDeleteEvent(event.id)
+                            }}
+                            className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600"
+                            title="Delete event"
                           >
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                          </svg>
-                        </button>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-3 w-3 text-gray-500 dark:text-gray-400"
+                            >
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <line x1="10" y1="11" x2="10" y2="17"></line>
+                              <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1384,8 +1422,9 @@ export default function Calendar() {
                   value={eventContent}
                   onChange={(e) => setEventContent(e.target.value)}
                   onKeyDown={handleTextareaKeyDown}
-                  placeholder={editingEventId ? "EDIT EVENT DETAILS..." : "ADD EVENT DETAILS..."}
-                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-base md:text-sm focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white"
+                  placeholder={editingEventId ? "Edit event details..." : "Add event details..."}
+                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-base md:text-sm focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white preserve-case"
+                  style={{ textTransform: "none" }}
                   rows={isMobile ? 2 : 3}
                 />
               </div>

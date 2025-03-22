@@ -29,9 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Add direct link tags for favicons to ensure they load */}
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/apple-icon.png" />
+        {/* Force favicon refresh with a timestamp query parameter */}
+        <link rel="icon" href={`/favicon.svg?v=${Date.now()}`} type="image/svg+xml" />
+        <link rel="apple-touch-icon" href={`/apple-icon.png?v=${Date.now()}`} />
       </head>
       <body>{children}</body>
     </html>

@@ -547,33 +547,21 @@ export default function Calendar() {
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
-    .calendar-day {
-      position: relative;
-    }
-    .calendar-day:hover {
-      background-color: rgba(249, 250, 251, 1) !important;
-    }
-    .calendar-day::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      height: 2px;
-      width: 100%;
-      background-color: black;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    .calendar-day:hover::after {
-      opacity: 1;
-    }
-    
-    /* Explicitly remove any styling for day 22 */
-    .calendar-day:nth-child(29) .rounded-full {
-      background-color: transparent !important;
-      color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
-    }
-  `
+  .calendar-day {
+    position: relative;
+  }
+  .calendar-day:hover {
+    background-color: rgba(249, 250, 251, 1) !important;
+  }
+  
+  /* Remove the ::after pseudo-element that creates the black bar */
+  
+  /* Explicitly remove any styling for day 22 */
+  .calendar-day:nth-child(29) .rounded-full {
+    background-color: transparent !important;
+    color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
+  }
+`
     document.head.appendChild(style)
 
     return () => {

@@ -283,7 +283,7 @@ export default function Calendar() {
       const image = canvas.toDataURL("image/png")
       const link = document.createElement("a")
       link.href = image
-      link.download = `calendar-${format(currentDate, "MMMM-yyyy")}.png`
+      link.download = `calendar.diy_${format(currentDate, "MMMM_yyyy")}.png`
       link.click()
     } catch (error) {
       console.error("Error generating calendar image:", error)

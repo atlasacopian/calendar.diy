@@ -652,14 +652,15 @@ export default function Calendar() {
 
       {/* Event Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 pt-8 sm:items-center sm:p-4">
           <div
             ref={modalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[90vh] flex flex-col"
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[80vh] sm:max-h-[90vh] flex flex-col"
+            style={{ marginTop: isMobile ? "0" : "auto" }}
           >
-            <div className="border-b border-gray-100 bg-gray-50 p-3 md:p-4 flex-shrink-0">
+            <div className="border-b border-gray-100 bg-gray-50 p-2 sm:p-3 md:p-4 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-base md:text-lg font-light tracking-tight">
+                <h3 className="font-mono text-sm sm:text-base md:text-lg font-light tracking-tight">
                   {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Add Event"}
                 </h3>
                 <button
@@ -671,9 +672,12 @@ export default function Calendar() {
               </div>
             </div>
 
-            <div className="p-3 md:p-4 overflow-y-auto flex-grow">
-              <div className="mb-4">
-                <label htmlFor="event-content" className="mb-2 block font-mono text-xs md:text-sm text-gray-700">
+            <div className="p-2 sm:p-3 md:p-4 overflow-y-auto flex-grow">
+              <div className="mb-3 sm:mb-4">
+                <label
+                  htmlFor="event-content"
+                  className="mb-1 sm:mb-2 block font-mono text-xs md:text-sm text-gray-700"
+                >
                   Event
                 </label>
                 <textarea
@@ -684,18 +688,18 @@ export default function Calendar() {
                   onKeyDown={handleTextareaKeyDown}
                   placeholder="Add event details..."
                   className="w-full rounded-md border border-gray-200 p-2 font-mono text-xs md:text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-                  rows={3}
+                  rows={isMobile ? 2 : 3}
                 />
               </div>
 
-              <div className="mb-4 md:mb-6">
-                <label className="mb-2 block font-mono text-xs md:text-sm text-gray-700">Color</label>
+              <div className="mb-3 sm:mb-4 md:mb-6">
+                <label className="mb-1 sm:mb-2 block font-mono text-xs md:text-sm text-gray-700">Color</label>
                 <div className="flex flex-wrap gap-2">
                   {colorOptions.map((color) => (
                     <button
                       key={color.value}
                       className={cn(
-                        "flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full transition-all duration-200",
+                        "flex h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 items-center justify-center rounded-full transition-all duration-200",
                         color.bg,
                         color.text,
                         selectedColor === color.value ? "ring-2 ring-gray-400 ring-offset-2" : "",
@@ -711,17 +715,17 @@ export default function Calendar() {
               </div>
             </div>
 
-            <div className="border-t border-gray-100 bg-gray-50 p-3 md:p-4 flex-shrink-0">
+            <div className="border-t border-gray-100 bg-gray-50 p-2 sm:p-3 md:p-4 flex-shrink-0">
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleCancelEdit}
-                  className="rounded-md border border-gray-200 bg-white px-3 py-1.5 md:px-4 md:py-2 font-mono text-xs md:text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                  className="rounded-md border border-gray-200 bg-white px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 font-mono text-xs md:text-sm text-gray-700 transition-colors hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEvent}
-                  className="rounded-md bg-black px-3 py-1.5 md:px-4 md:py-2 font-mono text-xs md:text-sm text-white transition-colors hover:bg-gray-800"
+                  className="rounded-md bg-black px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 font-mono text-xs md:text-sm text-white transition-colors hover:bg-gray-800"
                 >
                   Save
                 </button>

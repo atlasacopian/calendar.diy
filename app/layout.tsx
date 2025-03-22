@@ -4,8 +4,9 @@ import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
-  title: "calendar.diy",
-  description: "A minimalist project calendar",
+  title: "Free Editable Calendar Template – No Signup | calendar.diy",
+  description:
+    "A clean, free, editable calendar you can use instantly. No account. No clutter. Just a simple calendar for your projects, schedules, or planning.",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
@@ -13,13 +14,14 @@ export const metadata: Metadata = {
   },
   // Add Open Graph metadata for social sharing
   openGraph: {
-    title: "calendar.diy",
-    description: "A minimalist project calendar",
+    title: "calendar.diy — Your Free Editable Calendar",
+    description:
+      "Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account needed.",
     url: "https://calendar.diy",
     siteName: "calendar.diy",
     images: [
       {
-        url: "/og-image.png",
+        url: "https://calendar.diy/calendar_og.jpg",
         width: 1200,
         height: 630,
         alt: "calendar.diy - A minimalist project calendar",
@@ -31,9 +33,10 @@ export const metadata: Metadata = {
   // Add Twitter card metadata
   twitter: {
     card: "summary",
-    title: "calendar.diy",
-    description: "A minimalist project calendar",
-    images: ["/og-image.png"],
+    title: "calendar.diy — Your Free Editable Calendar",
+    description:
+      "Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account needed.",
+    images: ["https://calendar.diy/calendar_og.jpg"],
   },
 }
 
@@ -60,8 +63,14 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-icon.png" />
 
         {/* Add direct meta tags for social sharing with calendar emoji */}
-        <meta property="og:title" content="calendar.diy" />
-        <meta name="twitter:title" content="calendar.diy" />
+        <meta property="og:title" content="calendar.diy — Your Free Editable Calendar" />
+        <meta
+          property="og:description"
+          content="Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account needed."
+        />
+        <meta property="og:image" content="https://calendar.diy/calendar_og.jpg" />
+        <meta property="og:url" content="https://calendar.diy" />
+        <meta property="og:type" content="website" />
       </head>
       <body className="bg-white transition-colors duration-200">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>

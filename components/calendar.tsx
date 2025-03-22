@@ -771,20 +771,14 @@ export default function Calendar() {
           </div>
 
           <div className="mt-4 md:mt-5 space-y-0.5 overflow-hidden">
-            {dayHolidays.map(
-              (holiday, index) =>
-                (
-                  <div
-                key={`holiday-${index}`}
-                className="font-mono text-[8px]  => (
+            {dayHolidays.map((holiday, index) => (
               <div
                 key={`holiday-${index}`}
-                className=\"font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
+                className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
               >
                 {holiday.name}
               </div>
-                ),
-            )}
+            ))}
           </div>
 
           <div className="mt-0.5 md:mt-1 space-y-0.5 md:space-y-1 overflow-hidden">
@@ -846,6 +840,11 @@ export default function Calendar() {
         background-color: rgba(30, 30, 30, 1) !important;
       }
 
+      /* Remove the ::after pseudo-element that creates the black bar */
+
+      /* Explicitly remove any styling for day 22 */
+      .calendar-day:nth-child(29) .rounded-full {
+        background-color: transparent !important;
       /* Remove the ::after pseudo-element that creates the black bar */
 
       /* Explicitly remove any styling for day 22 */

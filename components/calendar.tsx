@@ -327,6 +327,9 @@ export default function Calendar() {
         holidayDiv.style.textTransform = "uppercase"
         holidayDiv.style.color = "#666"
         holidayDiv.style.marginBottom = "2px"
+        holidayDiv.style.whiteSpace = "normal" // Allow text to wrap
+        holidayDiv.style.wordBreak = "break-word" // Break long words if needed
+        holidayDiv.style.lineHeight = "1.2"
         holidaysContainer.appendChild(holidayDiv)
       })
 
@@ -497,10 +500,9 @@ export default function Calendar() {
           key={day}
           onClick={() => handleDayClick(date)}
           className={cn(
-            "group relative h-16 md:h-20 border-b border-r border-gray-100 p-1 md:p-2 transition-all duration-300",
+            "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 p-1 md:p-2 transition-colors",
             isWeekend ? "bg-gray-50/30" : "",
             isTodayDate ? "ring-1 ring-inset ring-black" : "",
-            "hover:bg-gray-50", // Use CSS hover instead of React state
           )}
         >
           <div
@@ -516,7 +518,7 @@ export default function Calendar() {
             {dayHolidays.map((holiday, index) => (
               <div
                 key={`holiday-${index}`}
-                className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 truncate"
+                className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 whitespace-normal break-words"
               >
                 {holiday.name}
               </div>
@@ -540,8 +542,6 @@ export default function Calendar() {
               )
             })}
           </div>
-
-          <div className="absolute bottom-0 left-0 h-0.5 w-full bg-black opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>,
       )
     }
@@ -551,6 +551,38 @@ export default function Calendar() {
 
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
   const weekDaysMobile = ["S", "M", "T", "W", "T", "F", "S"]
+
+  // Add CSS for proper hover effects
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.textContent = `
+    .calendar-day {
+      position: relative;
+    }
+    .calendar-day:hover {
+      background-color: rgba(249, 250, 251, 1) !important;
+    }
+    .calendar-day::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      width: 100%;
+      background-color: black;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .calendar-day:hover::after {
+      opacity: 1;
+    }
+  `
+    document.head.appendChild(style)
+
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
 
   return (
     <>

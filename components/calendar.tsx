@@ -1480,6 +1480,22 @@ export default function Calendar() {
           </div>
         </div>
       )}
+
+      {/* Buy Me A Coffee Button */}
+      <div className="fixed bottom-4 right-4 z-10">
+        <a
+          href="https://www.buymeacoffee.com/atlasacopian"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block transition-transform hover:scale-105"
+        >
+          <img
+            src="https://cdn.buymeacoffee.com/buttons/v2/arial-yellow.png"
+            alt="Buy Me A Coffee"
+            className="h-10 sm:h-12 w-auto shadow-md rounded-md"
+          />
+        </a>
+      </div>
     </div>
   )
 }

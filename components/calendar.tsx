@@ -402,9 +402,8 @@ export default function Calendar() {
       dayNumber.style.fontSize = "14px"
       dayNumber.style.color = "#999"
 
-      // Apply special styling for March 21, 2025
+      // Apply special styling for March 21, 2025 - only circle, no box
       if (isMarch21) {
-        dayCell.style.boxShadow = "inset 0 0 0 1px black"
         dayNumber.style.backgroundColor = "black"
         dayNumber.style.color = "white"
         dayNumber.style.borderRadius = "50%"
@@ -559,7 +558,8 @@ export default function Calendar() {
           className={cn(
             "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 p-1 md:p-2 transition-colors",
             isWeekend ? "bg-gray-50/30" : "",
-            isMarch21 ? "ring-1 ring-inset ring-black" : "",
+            // Remove the ring/box around the day
+            // isMarch21 ? "ring-1 ring-inset ring-black" : "",
             // Explicitly remove any styling for March 22
             isMarch22 ? "!ring-0" : "",
           )}
@@ -646,12 +646,50 @@ export default function Calendar() {
         className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
       >
         <div ref={calendarRef} className="calendar-container">
-          <div className="border-b border-gray-100 bg-gray-50 p-2 md:p-4">
-            <div className="flex flex-col items-center justify-center">
-              <h2 className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center">
-                {format(currentDate, "MMMM yyyy")}
-              </h2>
-            </div>
+          <div className="border-b border-gray-100 bg-gray-50 p-2 md:p-4 flex items-center justify-between">
+            <button
+              onClick={handlePreviousMonth}
+              className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-3 w-3 md:h-4 md:w-4"
+              >
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
+            <h2 className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center">
+              {format(currentDate, "MMMM yyyy")}
+            </h2>
+
+            <button
+              onClick={handleNextMonth}
+              className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-3 w-3 md:h-4 md:w-4"
+              >
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
           </div>
 
           <div ref={calendarContentRef} className="grid grid-cols-7">
@@ -668,34 +706,13 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Calendar Controls - Now completely separate from the calendar */}
-      <div className="flex flex-wrap items-center justify-center gap-2 p-2 md:p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <button
-          onClick={handlePreviousMonth}
-          className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
-        >
-          {/* Render SVG directly instead of using the Lucide component */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3 md:h-4 md:w-4"
-          >
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
+      {/* Calendar Controls - Now free-floating without the gray background */}
+      <div className="flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">
         <button
           onClick={exportToIcal}
           className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
           title="Export to iCal"
         >
-          {/* Use the same calendar icon as Google */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="12"
@@ -720,7 +737,6 @@ export default function Calendar() {
           className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
           title="Export to Google Calendar"
         >
-          {/* Render SVG directly instead of using the Lucide component */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="12"
@@ -745,7 +761,6 @@ export default function Calendar() {
           className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
           title="Reset Calendar Data"
         >
-          {/* Render SVG directly instead of using the Lucide component */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="12"
@@ -771,7 +786,6 @@ export default function Calendar() {
           title="Download as Image"
           disabled={isDownloading}
         >
-          {/* Change to download arrow icon */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="12"
@@ -789,26 +803,6 @@ export default function Calendar() {
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
           <span>Screenshot</span>
-        </button>
-        <button
-          onClick={handleNextMonth}
-          className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
-        >
-          {/* Render SVG directly instead of using the Lucide component */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3 md:h-4 md:w-4"
-          >
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
         </button>
       </div>
 

@@ -333,6 +333,7 @@ export default function Calendar() {
     printableDiv.style.width = "1200px" // Fixed width to ensure consistency
     printableDiv.style.backgroundColor = "white"
     printableDiv.style.fontFamily = '"JetBrains Mono", monospace'
+    printableDiv.style.padding = "40px" // Add padding for more white space
 
     // Add month/year header
     const header = document.createElement("h2")
@@ -352,6 +353,8 @@ export default function Calendar() {
     grid.style.border = "1px solid #eee"
     grid.style.borderBottom = "none"
     grid.style.borderRight = "none"
+    grid.style.maxWidth = "900px" // Limit width for more white space
+    grid.style.margin = "0 auto" // Center the grid
 
     // Add day headers
     weekDays.forEach((day) => {
@@ -368,6 +371,17 @@ export default function Calendar() {
     })
 
     const daysInMonth = getDaysInMonth(currentDate)
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+    const startingDayOfWeek = getDay(firstDayOfMonth)
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      const emptyCell = document.createElement("div")
+      emptyCell.style.borderBottom = "1px solid #eee"
+      emptyCell.style.borderRight = "1px solid #eee"
+      emptyCell.style.height = "100px"
+      grid.appendChild(emptyCell)
+    }
 
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
@@ -387,7 +401,7 @@ export default function Calendar() {
       dayCell.style.padding = "10px"
       dayCell.style.borderBottom = "1px solid #eee"
       dayCell.style.borderRight = "1px solid #eee"
-      dayCell.style.height = "120px"
+      dayCell.style.height = "100px"
 
       if (isWeekend) {
         dayCell.style.backgroundColor = "#f9f9f9"
@@ -404,6 +418,7 @@ export default function Calendar() {
 
       // Apply special styling for March 21, 2025 - only circle, no box
       if (isMarch21) {
+        // Remove the box styling, only keep the circle for the number
         dayNumber.style.backgroundColor = "black"
         dayNumber.style.color = "white"
         dayNumber.style.borderRadius = "50%"
@@ -462,6 +477,43 @@ export default function Calendar() {
     }
 
     printableDiv.appendChild(grid)
+
+    // Add buttons container similar to what's shown on screen
+    const buttonsContainer = document.createElement("div")
+    buttonsContainer.style.display = "flex"
+    buttonsContainer.style.justifyContent = "center"
+    buttonsContainer.style.gap = "8px"
+    buttonsContainer.style.marginTop = "20px"
+
+    // Create button styles
+    const buttonStyle = {
+      display: "flex",
+      alignItems: "center",
+      gap: "4px",
+      padding: "4px 8px",
+      fontSize: "12px",
+      color: "#666",
+      border: "1px solid #e5e7eb",
+      borderRadius: "6px",
+      backgroundColor: "white",
+    }
+
+    // Add buttons (just for visual representation)
+    const buttonLabels = ["iCal", "Google", "Reset", "Screenshot"]
+    buttonLabels.forEach((label) => {
+      const button = document.createElement("div")
+      Object.assign(button.style, buttonStyle)
+      button.textContent = label
+      buttonsContainer.appendChild(button)
+    })
+
+    printableDiv.appendChild(buttonsContainer)
+
+    // Add more bottom padding
+    const bottomSpace = document.createElement("div")
+    bottomSpace.style.height = "40px"
+    printableDiv.appendChild(bottomSpace)
+
     document.body.appendChild(printableDiv)
 
     return printableDiv

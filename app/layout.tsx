@@ -40,6 +40,10 @@ export const metadata: Metadata = {
     images: ["https://calendar.diy/calendar_og.jpg"],
   },
   robots: "index, follow",
+  // Explicitly disable AMP
+  alternates: {
+    canonical: "https://calendar.diy",
+  },
 }
 
 // Update the viewport settings in layout.tsx to prevent zooming
@@ -73,6 +77,9 @@ export default function RootLayout({
         <meta property="og:image" content="https://calendar.diy/calendar_og.jpg" />
         <meta property="og:url" content="https://calendar.diy" />
         <meta property="og:type" content="website" />
+
+        {/* Explicitly disable AMP */}
+        <meta name="google" content="notranslate" />
       </head>
       <body className="bg-white transition-colors duration-200">
         {/* Visually hidden content for SEO */}
@@ -82,6 +89,33 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           {children}
         </ThemeProvider>
+
+        {/* Add client-side script after initial render */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Check if the page is being crawled by a bot
+              const isBot = /bot|googlebot|crawler|spider|robot|crawling/i.test(navigator.userAgent);
+              if (!isBot) {
+                // Load the dynamic calendar for real users
+                import('/components/calendar.js')
+                  .then(module => {
+                    const Calendar = module.default;
+                    const staticCalendar = document.querySelector('.calendar-full-container');
+                    if (staticCalendar && staticCalendar.parentNode) {
+                      // Replace static calendar with dynamic one when loaded
+                      const dynamicCalendar = document.createElement('div');
+                      dynamicCalendar.id = 'dynamic-calendar';
+                      staticCalendar.parentNode.replaceChild(dynamicCalendar, staticCalendar);
+                      // Initialize dynamic calendar
+                      new Calendar(dynamicCalendar);
+                    }
+                  })
+                  .catch(err => console.error('Failed to load dynamic calendar:', err));
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   )

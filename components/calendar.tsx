@@ -272,6 +272,34 @@ export default function Calendar() {
     return today.getTime() === compareDate.getTime()
   }
 
+  const downloadCalendarAsImage = async () => {
+    setIsDownloading(true)
+    try {
+      if (!fullCalendarRef.current) {
+        console.error("Calendar ref is null")
+        return
+      }
+
+      const canvas = await html2canvas(fullCalendarRef.current, {
+        useCORS: true, // Enable CORS to load images from different domains
+        scrollX: 0, // Ensure all content is captured
+        scrollY: 0,
+      })
+
+      const dataURL = canvas.toDataURL("image/png")
+      const link = document.createElement("a")
+      link.href = dataURL
+      link.download = `calendar-${format(currentDate, "MMMM-yyyy")}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (error) {
+      console.error("Error downloading calendar as image:", error)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   // Create a temporary printable version of the calendar
   const createPrintableCalendar = () => {
     // Create a temporary div for the printable calendar
@@ -320,9 +348,7 @@ export default function Calendar() {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
-      const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
-      // Remove any isToday check here - we don't want highlighting in the printable version
 
       const dayCell = document.createElement("div")
       dayCell.style.position = "relative"
@@ -334,7 +360,6 @@ export default function Calendar() {
       if (isWeekend) {
         dayCell.style.backgroundColor = "#f9f9f9"
       }
-      // No special styling for today in the printable version
 
       // Add day number
       const dayNumber = document.createElement("div")
@@ -347,28 +372,9 @@ export default function Calendar() {
 
       dayCell.appendChild(dayNumber)
 
-      // Add holidays
-      const holidaysContainer = document.createElement("div")
-      holidaysContainer.style.marginTop = "25px"
-
-      dayHolidays.forEach((holiday) => {
-        const holidayDiv = document.createElement("div")
-        holidayDiv.textContent = holiday.name
-        holidayDiv.style.fontSize = "10px"
-        holidayDiv.style.textTransform = "uppercase"
-        holidayDiv.style.color = "#666"
-        holidayDiv.style.marginBottom = "2px"
-        holidayDiv.style.whiteSpace = "normal" // Allow text to wrap
-        holidayDiv.style.wordBreak = "break-word" // Break long words if needed
-        holidayDiv.style.lineHeight = "1.2"
-        holidaysContainer.appendChild(holidayDiv)
-      })
-
-      dayCell.appendChild(holidaysContainer)
-
-      // Add events
+      // Add events (but not holidays)
       const eventsContainer = document.createElement("div")
-      eventsContainer.style.marginTop = "5px"
+      eventsContainer.style.marginTop = "25px" // Increased top margin since we're not showing holidays
 
       dayEvents.forEach((event) => {
         const eventDiv = document.createElement("div")
@@ -400,41 +406,6 @@ export default function Calendar() {
     return printableDiv
   }
 
-  // Download calendar as image
-  const downloadCalendarAsImage = async () => {
-    try {
-      setIsDownloading(true)
-
-      // Create a printable version of the calendar
-      const printableCalendar = createPrintableCalendar()
-
-      // Capture the printable calendar
-      const canvas = await html2canvas(printableCalendar, {
-        backgroundColor: "white",
-        scale: 2, // Higher resolution
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        width: 1200, // Fixed width
-        height: printableCalendar.offsetHeight,
-      })
-
-      // Remove the temporary element
-      document.body.removeChild(printableCalendar)
-
-      // Convert to image and download
-      const image = canvas.toDataURL("image/png")
-      const link = document.createElement("a")
-      link.href = image
-      link.download = `calendar-${format(currentDate, "MMMM-yyyy")}.png`
-      link.click()
-    } catch (error) {
-      console.error("Error generating calendar image:", error)
-    } finally {
-      setIsDownloading(false)
-    }
-  }
-
   // Export calendar to iCal format
   const exportToIcal = () => {
     let icalContent = [
@@ -445,7 +416,7 @@ export default function Calendar() {
       "METHOD:PUBLISH",
     ]
 
-    // Add events
+    // Add only user events (no holidays)
     events.forEach((event) => {
       const dateString = format(event.date, "yyyyMMdd")
       icalContent = [
@@ -456,22 +427,6 @@ export default function Calendar() {
         `DTSTART;VALUE=DATE:${dateString}`,
         `DTEND;VALUE=DATE:${dateString}`,
         `SUMMARY:${event.content}`,
-        "END:VEVENT",
-      ]
-    })
-
-    // Add holidays
-    holidays.forEach((holiday) => {
-      const dateString = format(holiday.date, "yyyyMMdd")
-      icalContent = [
-        ...icalContent,
-        "BEGIN:VEVENT",
-        `UID:holiday-${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`,
-        `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
-        `DTSTART;VALUE=DATE:${dateString}`,
-        `DTEND;VALUE=DATE:${dateString}`,
-        `SUMMARY:${holiday.name}`,
-        "CATEGORIES:HOLIDAY",
         "END:VEVENT",
       ]
     })

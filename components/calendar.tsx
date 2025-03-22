@@ -57,6 +57,67 @@ export default function Calendar() {
   const printableCalendarRef = useRef<HTMLDivElement>(null)
   const shareInputRef = useRef<HTMLInputElement>(null)
 
+  // Add this near the top of the component, after the state declarations
+  useEffect(() => {
+    try {
+      // Force light mode
+      setIsDarkMode(false)
+
+      // Apply light mode to document
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("dark")
+      }
+
+      // Initialize events from localStorage
+      if (typeof window !== "undefined" && window.localStorage) {
+        const savedEvents = localStorage.getItem("calendarEvents")
+        if (savedEvents) {
+          try {
+            // Convert any bg- color classes to text- color classes for backward compatibility
+            const parsedEvents = JSON.parse(savedEvents)
+            if (Array.isArray(parsedEvents)) {
+              const updatedEvents = parsedEvents.map((event) => {
+                let color = event.color || "text-black"
+                if (color.startsWith("bg-")) {
+                  color = color.replace("bg-", "text-")
+                }
+                return {
+                  ...event,
+                  id: event.id || Math.random().toString(36).substring(2, 11),
+                  date: new Date(event.date),
+                  color,
+                }
+              })
+              setEvents(updatedEvents)
+            } else {
+              console.error("Saved events is not an array:", parsedEvents)
+              setEvents([])
+            }
+          } catch (e) {
+            console.error("Error parsing saved events:", e)
+            setEvents([])
+          }
+        }
+
+        // Check URL for shared date
+        try {
+          const urlParams = new URLSearchParams(window.location.search)
+          const dateParam = urlParams.get("date")
+          if (dateParam) {
+            const sharedDate = new Date(dateParam)
+            if (!isNaN(sharedDate.getTime())) {
+              setCurrentDate(sharedDate)
+            }
+          }
+        } catch (e) {
+          console.error("Error parsing date from URL:", e)
+        }
+      }
+    } catch (error) {
+      console.error("Error in initialization:", error)
+    }
+  }, [])
+
   // Check if device is mobile
   useEffect(() => {
     const checkIfMobile = () => {
@@ -96,45 +157,7 @@ export default function Calendar() {
   }, [isMobile])
 
   // Load events from localStorage on component mount
-  useEffect(() => {
-    // Force light mode
-    setIsDarkMode(false)
-
-    // Apply light mode to document
-    document.documentElement.classList.remove("dark")
-
-    const savedEvents = localStorage.getItem("calendarEvents")
-    if (savedEvents) {
-      // Convert any bg- color classes to text- color classes for backward compatibility
-      const updatedEvents = JSON.parse(savedEvents).map((event: any) => {
-        let color = event.color || "text-black"
-        if (color.startsWith("bg-")) {
-          color = color.replace("bg-", "text-")
-        }
-        return {
-          ...event,
-          id: event.id || Math.random().toString(36).substring(2, 11),
-          date: new Date(event.date),
-          color,
-        }
-      })
-      setEvents(updatedEvents)
-    }
-
-    // Check URL for shared date
-    const urlParams = new URLSearchParams(window.location.search)
-    const dateParam = urlParams.get("date")
-    if (dateParam) {
-      try {
-        const sharedDate = new Date(dateParam)
-        if (!isNaN(sharedDate.getTime())) {
-          setCurrentDate(sharedDate)
-        }
-      } catch (e) {
-        console.error("Invalid date in URL")
-      }
-    }
-  }, [])
+  // Remove the original useEffect that loads events from localStorage
 
   // Load holidays for the years needed
   useEffect(() => {
@@ -830,7 +853,9 @@ export default function Calendar() {
 
   // Generate calendar grid
   const renderCalendar = () => {
-    if (!events) {
+    // Ensure events is defined and is an array
+    if (!Array.isArray(events)) {
+      console.error("Events is not an array:", events)
       return []
     }
 
@@ -927,7 +952,7 @@ export default function Calendar() {
                 <span
                   className={cn(
                     "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
-                    limitedEvents[0]?.color || "text-black dark:text-white",
+                    limitedEvents[0] && limitedEvents[0].color ? limitedEvents[0].color : "text-black dark:text-white",
                     "hover:underline",
                     "max-w-full", // Ensure text doesn't overflow
                     "block", // Make sure it's displayed as a block
@@ -935,7 +960,7 @@ export default function Calendar() {
                     "break-words", // Break words to prevent overflow
                   )}
                 >
-                  {limitedEvents[0].content}
+                  {limitedEvents[0] ? limitedEvents[0].content : ""}
                 </span>
               </div>
             ) : (
@@ -950,7 +975,9 @@ export default function Calendar() {
                   <span
                     className={cn(
                       "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
-                      limitedEvents[0]?.color || "text-black dark:text-white",
+                      limitedEvents[0] && limitedEvents[0].color
+                        ? limitedEvents[0].color
+                        : "text-black dark:text-white",
                       "hover:underline",
                       "max-w-full",
                       "block",
@@ -958,7 +985,7 @@ export default function Calendar() {
                       "break-words",
                     )}
                   >
-                    {limitedEvents[0].content}
+                    {limitedEvents[0] ? limitedEvents[0].content : ""}
                   </span>
                 </div>
 
@@ -974,7 +1001,9 @@ export default function Calendar() {
                   <span
                     className={cn(
                       "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
-                      limitedEvents[1]?.color || "text-black dark:text-white",
+                      limitedEvents[1] && limitedEvents[1].color
+                        ? limitedEvents[1].color
+                        : "text-black dark:text-white",
                       "hover:underline",
                       "max-w-full",
                       "block",
@@ -982,7 +1011,7 @@ export default function Calendar() {
                       "break-words",
                     )}
                   >
-                    {limitedEvents[1].content}
+                    {limitedEvents[1] ? limitedEvents[1].content : ""}
                   </span>
                 </div>
               </div>

@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useEffect, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, X, Check, CalendarIcon, Download, Camera } from "lucide-react"
 import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths } from "date-fns"
 import html2canvas from "html2canvas"
 
@@ -268,29 +267,36 @@ export default function Calendar() {
     )
   }
 
+  // Download calendar as image
   const downloadCalendarAsImage = async () => {
-    setIsDownloading(true)
     try {
-      if (!fullCalendarRef.current) {
-        console.error("Calendar ref is null")
-        return
-      }
+      setIsDownloading(true)
 
-      const canvas = await html2canvas(fullCalendarRef.current, {
-        useCORS: true, // Enable CORS to load images from different domains
-        scrollX: 0, // Ensure all content is captured
-        scrollY: 0,
+      // Create a printable version of the calendar
+      const printableCalendar = createPrintableCalendar()
+
+      // Capture the printable calendar
+      const canvas = await html2canvas(printableCalendar, {
+        backgroundColor: "white",
+        scale: 2, // Higher resolution
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        width: 1200, // Fixed width
+        height: printableCalendar.offsetHeight,
       })
 
-      const dataURL = canvas.toDataURL("image/png")
+      // Remove the temporary element
+      document.body.removeChild(printableCalendar)
+
+      // Convert to image and download
+      const image = canvas.toDataURL("image/png")
       const link = document.createElement("a")
-      link.href = dataURL
+      link.href = image
       link.download = `calendar-${format(currentDate, "MMMM-yyyy")}.png`
-      document.body.appendChild(link)
       link.click()
-      document.body.removeChild(link)
     } catch (error) {
-      console.error("Error downloading calendar as image:", error)
+      console.error("Error generating calendar image:", error)
     } finally {
       setIsDownloading(false)
     }
@@ -585,7 +591,22 @@ export default function Calendar() {
                   title="Download as Image"
                   disabled={isDownloading}
                 >
-                  <Camera className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  {/* Render SVG directly instead of using the Lucide component */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-2.5 w-2.5 md:h-3 md:w-3"
+                  >
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                    <circle cx="12" cy="13" r="3"></circle>
+                  </svg>
                   <span className="hidden xs:inline">Image</span>
                 </button>
                 <button
@@ -593,7 +614,23 @@ export default function Calendar() {
                   className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
                   title="Export to iCal"
                 >
-                  <Download className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  {/* Render SVG directly instead of using the Lucide component */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-2.5 w-2.5 md:h-3 md:w-3"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
                   <span className="hidden xs:inline">iCal</span>
                 </button>
                 <button
@@ -601,20 +638,65 @@ export default function Calendar() {
                   className="flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-0.5 md:px-2 md:py-1 text-[10px] md:text-xs text-gray-600 transition-colors hover:bg-gray-100"
                   title="Export to Google Calendar"
                 >
-                  <CalendarIcon className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  {/* Render SVG directly instead of using the Lucide component */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-2.5 w-2.5 md:h-3 md:w-3"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
                   <span className="hidden xs:inline">Google</span>
                 </button>
                 <button
                   onClick={handlePreviousMonth}
                   className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
                 >
-                  <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
+                  {/* Render SVG directly instead of using the Lucide component */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3 w-3 md:h-4 md:w-4"
+                  >
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
                 </button>
                 <button
                   onClick={handleNextMonth}
                   className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
                 >
-                  <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
+                  {/* Render SVG directly instead of using the Lucide component */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3 w-3 md:h-4 md:w-4"
+                  >
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
                 </button>
               </div>
             </div>
@@ -652,7 +734,22 @@ export default function Calendar() {
                   onClick={handleCancelEdit}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
                 >
-                  <X className="h-4 w-4" />
+                  {/* Render SVG directly instead of using the Lucide component */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
                 </button>
               </div>
             </div>
@@ -691,7 +788,22 @@ export default function Calendar() {
                       onClick={() => setSelectedColor(color.value)}
                       type="button"
                     >
-                      {selectedColor === color.value && <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3" />}
+                      {selectedColor === color.value && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-2.5 w-2.5 sm:h-3 sm:w-3"
+                        >
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      )}
                     </button>
                   ))}
                 </div>

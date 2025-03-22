@@ -187,12 +187,12 @@ export default function Calendar() {
     if (!viewportMeta) {
       // Create it if it doesn't exist
       viewportMeta = document.createElement("meta")
-      viewportMeta.setAttribute("name", "viewport")
+      viewportMeta.name = "viewport"
       document.head.appendChild(viewportMeta)
     }
 
     // Set the content to prevent zooming on input
-    viewportMeta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0")
+    viewportMeta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no")
 
     return () => {
       // Restore default behavior when component unmounts
@@ -260,16 +260,12 @@ export default function Calendar() {
 
   // Helper function to check if a date is today
   const isActuallyToday = (date: Date) => {
-    // Get the current date with time set to midnight for accurate comparison
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    // Set the comparison date to midnight as well
-    const compareDate = new Date(date)
-    compareDate.setHours(0, 0, 0, 0)
-
-    // Compare the dates
-    return today.getTime() === compareDate.getTime()
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    )
   }
 
   const downloadCalendarAsImage = async () => {
@@ -643,8 +639,8 @@ export default function Calendar() {
         <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div
             ref={modalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[60vh] sm:max-h-[90vh] flex flex-col"
-            style={{ marginTop: isMobile ? "0" : "auto" }}
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[80vh] sm:max-h-[90vh] flex flex-col"
+            style={{ marginTop: isMobile ? "10px" : "auto" }}
           >
             {/* Modal Header */}
             <div className="border-b border-gray-100 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
@@ -674,8 +670,8 @@ export default function Calendar() {
                   onChange={(e) => setEventContent(e.target.value)}
                   onKeyDown={handleTextareaKeyDown}
                   placeholder="Add event details..."
-                  className="w-full rounded-md border border-gray-200 p-2 font-mono text-sm md:text-xs focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-                  rows={2}
+                  className="w-full rounded-md border border-gray-200 p-2 font-mono text-base md:text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                  rows={isMobile ? 2 : 3}
                 />
               </div>
 

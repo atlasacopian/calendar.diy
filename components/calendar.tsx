@@ -181,11 +181,11 @@ export default function Calendar() {
   // Add meta tag to prevent zooming on input focus
   useEffect(() => {
     // Check if the meta tag already exists
-    let viewportMeta = document.querySelector('meta[name="viewport"]')
+    let viewportMeta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement
 
     if (!viewportMeta) {
       // Create it if it doesn't exist
-      viewportMeta = document.createElement("meta")
+      viewportMeta = document.createElement("meta") as HTMLMetaElement
       viewportMeta.name = "viewport"
       document.head.appendChild(viewportMeta)
     }

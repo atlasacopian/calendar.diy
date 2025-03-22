@@ -37,6 +37,7 @@ export default function Calendar() {
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const [isDownloading, setIsDownloading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [keyboardVisible, setKeyboardVisible] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
   const calendarRef = useRef<HTMLDivElement>(null)
@@ -64,6 +65,26 @@ export default function Calendar() {
       window.removeEventListener("resize", checkIfMobile)
     }
   }, [])
+
+  // Detect keyboard visibility on mobile
+  useEffect(() => {
+    if (!isMobile) return
+
+    const detectKeyboard = () => {
+      // On iOS, window.innerHeight changes when the keyboard appears
+      const isKeyboardVisible = window.innerHeight < window.outerHeight * 0.8
+      setKeyboardVisible(isKeyboardVisible)
+    }
+
+    window.addEventListener("resize", detectKeyboard)
+
+    // Initial check
+    detectKeyboard()
+
+    return () => {
+      window.removeEventListener("resize", detectKeyboard)
+    }
+  }, [isMobile])
 
   // Load events from localStorage on component mount
   useEffect(() => {
@@ -650,34 +671,33 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Event Modal */}
+      {/* Event Modal - Optimized for mobile */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 pt-8 sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-50 backdrop-blur-sm p-2 pt-4 sm:items-center sm:p-4">
           <div
             ref={modalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[80vh] sm:max-h-[90vh] flex flex-col"
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl max-h-[60vh] sm:max-h-[90vh] flex flex-col"
             style={{ marginTop: isMobile ? "0" : "auto" }}
           >
-            <div className="border-b border-gray-100 bg-gray-50 p-2 sm:p-3 md:p-4 flex-shrink-0">
+            {/* Modal Header */}
+            <div className="border-b border-gray-100 bg-gray-50 p-2 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm sm:text-base md:text-lg font-light tracking-tight">
+                <h3 className="font-mono text-sm font-light tracking-tight">
                   {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "Add Event"}
                 </h3>
                 <button
                   onClick={handleCancelEdit}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
                 >
-                  <X className="h-4 w-4 md:h-5 md:w-5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            <div className="p-2 sm:p-3 md:p-4 overflow-y-auto flex-grow">
-              <div className="mb-3 sm:mb-4">
-                <label
-                  htmlFor="event-content"
-                  className="mb-1 sm:mb-2 block font-mono text-xs md:text-sm text-gray-700"
-                >
+            {/* Modal Content */}
+            <div className="p-2 overflow-y-auto flex-grow">
+              <div className="mb-2">
+                <label htmlFor="event-content" className="mb-1 block font-mono text-xs text-gray-700">
                   Event
                 </label>
                 <textarea
@@ -687,45 +707,46 @@ export default function Calendar() {
                   onChange={(e) => setEventContent(e.target.value)}
                   onKeyDown={handleTextareaKeyDown}
                   placeholder="Add event details..."
-                  className="w-full rounded-md border border-gray-200 p-2 font-mono text-xs md:text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-                  rows={isMobile ? 2 : 3}
+                  className="w-full rounded-md border border-gray-200 p-2 font-mono text-xs focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                  rows={2}
                 />
               </div>
 
-              <div className="mb-3 sm:mb-4 md:mb-6">
-                <label className="mb-1 sm:mb-2 block font-mono text-xs md:text-sm text-gray-700">Color</label>
-                <div className="flex flex-wrap gap-2">
+              <div className="mb-2">
+                <label className="mb-1 block font-mono text-xs text-gray-700">Color</label>
+                <div className="flex flex-wrap gap-1.5">
                   {colorOptions.map((color) => (
                     <button
                       key={color.value}
                       className={cn(
-                        "flex h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 items-center justify-center rounded-full transition-all duration-200",
+                        "flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200",
                         color.bg,
                         color.text,
-                        selectedColor === color.value ? "ring-2 ring-gray-400 ring-offset-2" : "",
+                        selectedColor === color.value ? "ring-1 ring-gray-400 ring-offset-1" : "",
                       )}
                       title={color.name}
                       onClick={() => setSelectedColor(color.value)}
                       type="button"
                     >
-                      {selectedColor === color.value && <Check className="h-3 w-3 md:h-4 md:w-4" />}
+                      {selectedColor === color.value && <Check className="h-2.5 w-2.5" />}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-gray-100 bg-gray-50 p-2 sm:p-3 md:p-4 flex-shrink-0">
+            {/* Modal Footer */}
+            <div className="border-t border-gray-100 bg-gray-50 p-2 flex-shrink-0">
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleCancelEdit}
-                  className="rounded-md border border-gray-200 bg-white px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 font-mono text-xs md:text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                  className="rounded-md border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 transition-colors hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEvent}
-                  className="rounded-md bg-black px-2 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 font-mono text-xs md:text-sm text-white transition-colors hover:bg-gray-800"
+                  className="rounded-md bg-black px-2 py-1 font-mono text-xs text-white transition-colors hover:bg-gray-800"
                 >
                   Save
                 </button>

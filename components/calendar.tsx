@@ -848,7 +848,7 @@ export default function Calendar() {
             {day}
           </div>
 
-          <div className="mt-2 md:mt-2.5 space-y-0.5 overflow-hidden">
+          <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
             {dayHolidays.map((holiday, index) => (
               <div
                 key={`holiday-${index}`}
@@ -859,7 +859,7 @@ export default function Calendar() {
             ))}
           </div>
 
-          <div className="mt-0 pt-0 overflow-visible flex flex-col space-y-0.5 h-[calc(100%-12px)]">
+          <div className="mt-0 pt-0 overflow-visible flex flex-col h-[calc(100%-12px)]">
             {limitedEvents.map((event, index) => {
               // Ensure color is in text- format for backward compatibility
               let textColorClass = event.color || "text-black dark:text-white"
@@ -876,7 +876,7 @@ export default function Calendar() {
                 <React.Fragment key={index}>
                   {index > 0 && <div className="border-t border-gray-200 dark:border-gray-700 w-full my-0.5"></div>}
                   <div
-                    className={cn("min-h-0", limitedEvents.length > 1 ? (index === 0 ? "mb-auto" : "mt-auto") : "")}
+                    className={cn("min-h-0", limitedEvents.length > 1 ? (index === 0 ? "mb-0" : "mt-0") : "")}
                     draggable
                     onDragStart={(e) => handleDragStart(event, e)}
                     onDragEnd={handleDragEnd}

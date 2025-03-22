@@ -95,16 +95,35 @@ export default function Calendar() {
     }
   }, [showModal])
 
-  // Add keyboard navigation for changing months
+  // Add keyboard navigation for all interactions
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle keyboard navigation when modal is not open
-      if (showModal) return
-
-      if (e.key === "ArrowLeft") {
-        handlePreviousMonth()
-      } else if (e.key === "ArrowRight") {
-        handleNextMonth()
+      // Month navigation when modal is not open
+      if (!showModal) {
+        if (e.key === "ArrowLeft") {
+          handlePreviousMonth()
+        } else if (e.key === "ArrowRight") {
+          handleNextMonth()
+        } else if (e.key === "ArrowUp") {
+          // Go to previous year
+          setCurrentDate(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1))
+        } else if (e.key === "ArrowDown") {
+          // Go to next year
+          setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1))
+        } else if (e.key === "Home") {
+          // Go to current month
+          setCurrentDate(new Date())
+        } else if (e.key === "Escape") {
+          // Close any open dialogs or reset view
+          if (showModal) {
+            handleCancelEdit()
+          }
+        }
+      } else {
+        // When modal is open
+        if (e.key === "Escape") {
+          handleCancelEdit()
+        }
       }
     }
 
@@ -113,7 +132,7 @@ export default function Calendar() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [showModal])
+  }, [showModal, currentDate])
 
   const handlePreviousMonth = () => {
     setCurrentDate(subMonths(currentDate, 1))

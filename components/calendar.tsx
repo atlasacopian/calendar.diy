@@ -182,6 +182,27 @@ export default function Calendar() {
     }
   }, [showModal, currentDate])
 
+  // Add meta tag to prevent zooming on input focus
+  useEffect(() => {
+    // Check if the meta tag already exists
+    let viewportMeta = document.querySelector('meta[name="viewport"]')
+
+    if (!viewportMeta) {
+      // Create it if it doesn't exist
+      viewportMeta = document.createElement("meta")
+      viewportMeta.name = "viewport"
+      document.head.appendChild(viewportMeta)
+    }
+
+    // Set the content to prevent zooming on input
+    viewportMeta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0")
+
+    return () => {
+      // Restore default behavior when component unmounts
+      viewportMeta.setAttribute("content", "width=device-width, initial-scale=1")
+    }
+  }, [])
+
   const handlePreviousMonth = () => {
     setCurrentDate(subMonths(currentDate, 1))
   }
@@ -698,7 +719,7 @@ export default function Calendar() {
                   onChange={(e) => setEventContent(e.target.value)}
                   onKeyDown={handleTextareaKeyDown}
                   placeholder="Add event details..."
-                  className="w-full rounded-md border border-gray-200 p-2 font-mono text-xs focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+                  className="w-full rounded-md border border-gray-200 p-2 font-mono text-sm md:text-xs focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
                   rows={2}
                 />
               </div>

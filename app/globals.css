@@ -72,3 +72,28 @@ html {
   }
 }
 
+/* Calendar day hover styles */
+.calendar-day {
+  position: relative;
+}
+
+.calendar-day:hover {
+  background-color: rgba(249, 250, 251, 1) !important;
+}
+
+.calendar-day::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background-color: black;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.calendar-day:hover::after {
+  opacity: 1;
+}
+

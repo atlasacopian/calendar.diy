@@ -678,23 +678,19 @@ export default function Calendar() {
       eventsContainer.style.display = "flex"
       eventsContainer.style.flexDirection = "column"
       eventsContainer.style.height = "calc(100% - 30px)"
-      eventsContainer.style.justifyContent = dayEvents.length > 1 ? "space-between" : "flex-start"
+      eventsContainer.style.justifyContent = "space-between"
 
       // Limit to 2 events
       const limitedEvents = dayEvents.slice(0, 2)
 
       limitedEvents.forEach((event, index) => {
         const eventDiv = document.createElement("div")
+        eventDiv.textContent = event.content.toUpperCase()
         eventDiv.style.fontSize = "11px"
         eventDiv.style.fontWeight = "500"
-        eventDiv.style.marginBottom = "3px"
         eventDiv.style.wordBreak = "break-word"
         eventDiv.style.overflow = "hidden"
         eventDiv.style.maxWidth = "100%"
-        eventDiv.style.flex = "1"
-        eventDiv.style.display = "flex"
-        eventDiv.style.flexDirection = "column"
-        eventDiv.style.justifyContent = "center"
 
         // Convert Tailwind color classes to CSS colors
         let color = "#000"
@@ -707,17 +703,22 @@ export default function Calendar() {
 
         eventDiv.style.color = color
 
-        // Add the event text
-        eventDiv.textContent = event.content.toUpperCase()
-
-        // Add divider between events if there are multiple
         if (index === 0 && limitedEvents.length > 1) {
+          eventDiv.style.marginBottom = "auto"
+        } else if (index > 0) {
+          eventDiv.style.marginTop = "auto"
+        }
+
+        // Add to container
+        if (index === 0 && limitedEvents.length > 1) {
+          eventsContainer.appendChild(eventDiv)
+
+          // Add divider in the middle
           const divider = document.createElement("div")
           divider.style.height = "1px"
           divider.style.backgroundColor = "#eee"
           divider.style.width = "100%"
           divider.style.margin = "5px 0"
-          eventsContainer.appendChild(eventDiv)
           eventsContainer.appendChild(divider)
         } else {
           eventsContainer.appendChild(eventDiv)
@@ -877,7 +878,7 @@ export default function Calendar() {
             ))}
           </div>
 
-          <div className="mt-0.5 md:mt-1 overflow-hidden flex flex-col h-full">
+          <div className="mt-0.5 md:mt-1 overflow-hidden flex flex-col space-y-1 h-[calc(100%-20px)]">
             {limitedEvents.map((event, index) => {
               // Ensure color is in text- format for backward compatibility
               let textColorClass = event.color || "text-black dark:text-white"
@@ -892,11 +893,9 @@ export default function Calendar() {
 
               return (
                 <React.Fragment key={index}>
-                  {index > 0 && (
-                    <div className="border-t border-gray-200 dark:border-gray-700 my-1 flex-shrink-0"></div>
-                  )}
+                  {index > 0 && <div className="border-t border-gray-200 dark:border-gray-700 w-full"></div>}
                   <div
-                    className={cn("flex-1 min-h-0 flex items-center", limitedEvents.length > 1 ? "h-1/2" : "h-full")}
+                    className={cn("min-h-0", limitedEvents.length > 1 ? (index === 0 ? "mb-auto" : "mt-auto") : "")}
                     draggable
                     onDragStart={(e) => handleDragStart(event, e)}
                     onDragEnd={handleDragEnd}

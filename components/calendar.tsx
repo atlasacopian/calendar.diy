@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, X, Check } from "lucide-react"
+import { ChevronLeft, ChevronRight, X, Check, CalendarIcon, Download } from "lucide-react"
 import { addMonths, format, getDay, getDaysInMonth, isSameDay, isToday, subMonths } from "date-fns"
 
 import { cn } from "@/lib/utils"
@@ -34,6 +34,7 @@ export default function Calendar() {
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const [isHovering, setIsHovering] = useState<number | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
 
   // Load events from localStorage on component mount
   useEffect(() => {
@@ -72,6 +73,23 @@ export default function Calendar() {
   useEffect(() => {
     if (showModal && textareaRef.current) {
       textareaRef.current.focus()
+    }
+  }, [showModal])
+
+  // Close modal when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        setShowModal(false)
+      }
+    }
+
+    if (showModal) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [showModal])
 
@@ -124,6 +142,76 @@ export default function Calendar() {
     setSelectedColor("text-black")
   }
 
+  // Export calendar to iCal format
+  const exportToIcal = () => {
+    let icalContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Schedule.place//Calendar//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+    ]
+
+    // Add events
+    events.forEach((event) => {
+      const dateString = format(event.date, "yyyyMMdd")
+      icalContent = [
+        ...icalContent,
+        "BEGIN:VEVENT",
+        `UID:${dateString}-${Math.random().toString(36).substring(2, 11)}@schedule.place`,
+        `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
+        `DTSTART;VALUE=DATE:${dateString}`,
+        `DTEND;VALUE=DATE:${dateString}`,
+        `SUMMARY:${event.content}`,
+        "END:VEVENT",
+      ]
+    })
+
+    // Add holidays
+    holidays.forEach((holiday) => {
+      const dateString = format(holiday.date, "yyyyMMdd")
+      icalContent = [
+        ...icalContent,
+        "BEGIN:VEVENT",
+        `UID:holiday-${dateString}-${Math.random().toString(36).substring(2, 11)}@schedule.place`,
+        `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
+        `DTSTART;VALUE=DATE:${dateString}`,
+        `DTEND;VALUE=DATE:${dateString}`,
+        `SUMMARY:${holiday.name}`,
+        "CATEGORIES:HOLIDAY",
+        "END:VEVENT",
+      ]
+    })
+
+    icalContent.push("END:VCALENDAR")
+
+    // Create and download the file
+    const blob = new Blob([icalContent.join("\r\n")], { type: "text/calendar" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "schedule-place-calendar.ics"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  // Export to Google Calendar
+  const exportToGoogleCalendar = () => {
+    // Google Calendar can only handle one event at a time via URL
+    // So we'll just open a new event creation page
+    if (events.length === 0) {
+      alert("No events to export")
+      return
+    }
+
+    // Just use the first event as an example
+    const event = events[0]
+    const dateString = format(event.date, "yyyyMMdd")
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.content)}&dates=${dateString}/${dateString}`
+    window.open(url, "_blank")
+  }
+
   // Generate calendar grid
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentDate)
@@ -134,7 +222,7 @@ export default function Calendar() {
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} className="h-24 border-b border-r border-gray-100"></div>)
+      days.push(<div key={`empty-${i}`} className="h-20 border-b border-r border-gray-100"></div>)
     }
 
     // Add cells for each day of the month
@@ -152,18 +240,16 @@ export default function Calendar() {
           onMouseEnter={() => setIsHovering(day)}
           onMouseLeave={() => setIsHovering(null)}
           className={cn(
-            "group relative h-24 border-b border-r border-gray-100 p-2 transition-all duration-300",
+            "group relative h-20 border-b border-r border-gray-100 p-2 transition-all duration-300",
             isWeekend ? "bg-gray-50/30" : "",
             isTodayDate ? "ring-1 ring-inset ring-black" : "",
             isHovering === day ? "bg-gray-50" : "",
-            day === 22 ? "bg-gray-50 ring-1 ring-inset ring-black" : "", // Highlight current day for demo
           )}
         >
           <div
             className={cn(
               "absolute right-2 top-1 flex h-5 w-5 items-center justify-center rounded-full font-mono text-xs",
               isTodayDate ? "bg-black text-white" : "text-gray-400",
-              day === 22 ? "bg-black text-white" : "", // Highlight current day for demo
             )}
           >
             {day}
@@ -211,14 +297,30 @@ export default function Calendar() {
             <h2 className="font-mono text-xl font-light tracking-tight">{format(currentDate, "MMMM yyyy")}</h2>
             <div className="flex items-center gap-2">
               <button
+                onClick={exportToIcal}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                title="Export to iCal"
+              >
+                <Download className="h-3 w-3" />
+                <span>iCal</span>
+              </button>
+              <button
+                onClick={exportToGoogleCalendar}
+                className="flex items-center gap-1 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-100"
+                title="Export to Google Calendar"
+              >
+                <CalendarIcon className="h-3 w-3" />
+                <span>Google</span>
+              </button>
+              <button
                 onClick={handlePreviousMonth}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 onClick={handleNextMonth}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-200"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -242,7 +344,7 @@ export default function Calendar() {
       {/* Event Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl">
+          <div ref={modalRef} className="w-full max-w-md overflow-hidden rounded-lg bg-white shadow-xl">
             <div className="border-b border-gray-100 bg-gray-50 p-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-mono text-lg font-light tracking-tight">

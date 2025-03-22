@@ -683,12 +683,12 @@ export default function Calendar() {
 
         // Convert Tailwind color classes to CSS colors
         let color = "#000"
-        if (event.color?.includes("blue")) color = "#2563eb"
-        if (event.color?.includes("red")) color = "#dc2626"
-        if (event.color?.includes("yellow")) color = "#eab308"
-        if (event.color?.includes("orange")) color = "#f97316"
-        if (event.color?.includes("green")) color = "#16a34a"
-        if (event.color?.includes("purple")) color = "#9333ea"
+        if (event?.color?.includes("blue")) color = "#2563eb"
+        if (event?.color?.includes("red")) color = "#dc2626"
+        if (event?.color?.includes("yellow")) color = "#eab308"
+        if (event?.color?.includes("orange")) color = "#f97316"
+        if (event?.color?.includes("green")) color = "#16a34a"
+        if (event?.color?.includes("purple")) color = "#9333ea"
 
         eventDiv.style.color = color
         eventsContainer.appendChild(eventDiv)
@@ -710,12 +710,12 @@ export default function Calendar() {
 
         // Convert Tailwind color classes to CSS colors
         let color1 = "#000"
-        if (event1.color?.includes("blue")) color1 = "#2563eb"
-        if (event1.color?.includes("red")) color1 = "#dc2626"
-        if (event1.color?.includes("yellow")) color1 = "#eab308"
-        if (event1.color?.includes("orange")) color1 = "#f97316"
-        if (event1.color?.includes("green")) color1 = "#16a34a"
-        if (event1.color?.includes("purple")) color1 = "#9333ea"
+        if (event1?.color?.includes("blue")) color1 = "#2563eb"
+        if (event1?.color?.includes("red")) color1 = "#dc2626"
+        if (event1?.color?.includes("yellow")) color1 = "#eab308"
+        if (event1?.color?.includes("orange")) color1 = "#f97316"
+        if (event1?.color?.includes("green")) color1 = "#16a34a"
+        if (event1?.color?.includes("purple")) color1 = "#9333ea"
 
         eventDiv1.style.color = color1
         topEventContainer.appendChild(eventDiv1)
@@ -746,12 +746,12 @@ export default function Calendar() {
 
         // Convert Tailwind color classes to CSS colors
         let color2 = "#000"
-        if (event2.color?.includes("blue")) color2 = "#2563eb"
-        if (event2.color?.includes("red")) color2 = "#dc2626"
-        if (event2.color?.includes("yellow")) color2 = "#eab308"
-        if (event2.color?.includes("orange")) color2 = "#f97316"
-        if (event2.color?.includes("green")) color2 = "#16a34a"
-        if (event2.color?.includes("purple")) color2 = "#9333ea"
+        if (event2?.color?.includes("blue")) color2 = "#2563eb"
+        if (event2?.color?.includes("red")) color2 = "#dc2626"
+        if (event2?.color?.includes("yellow")) color2 = "#eab308"
+        if (event2?.color?.includes("orange")) color2 = "#f97316"
+        if (event2?.color?.includes("green")) color2 = "#16a34a"
+        if (event2?.color?.includes("purple")) color2 = "#9333ea"
 
         eventDiv2.style.color = color2
         bottomEventContainer.appendChild(eventDiv2)
@@ -830,6 +830,10 @@ export default function Calendar() {
 
   // Generate calendar grid
   const renderCalendar = () => {
+    if (!events) {
+      return []
+    }
+
     const daysInMonth = getDaysInMonth(currentDate)
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
     const startingDayOfWeek = getDay(firstDayOfMonth)
@@ -923,7 +927,7 @@ export default function Calendar() {
                 <span
                   className={cn(
                     "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
-                    limitedEvents[0].color || "text-black dark:text-white",
+                    limitedEvents[0]?.color || "text-black dark:text-white",
                     "hover:underline",
                     "max-w-full", // Ensure text doesn't overflow
                     "block", // Make sure it's displayed as a block
@@ -946,7 +950,7 @@ export default function Calendar() {
                   <span
                     className={cn(
                       "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
-                      limitedEvents[0].color || "text-black dark:text-white",
+                      limitedEvents[0]?.color || "text-black dark:text-white",
                       "hover:underline",
                       "max-w-full",
                       "block",
@@ -970,7 +974,7 @@ export default function Calendar() {
                   <span
                     className={cn(
                       "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
-                      limitedEvents[1].color || "text-black dark:text-white",
+                      limitedEvents[1]?.color || "text-black dark:text-white",
                       "hover:underline",
                       "max-w-full",
                       "block",

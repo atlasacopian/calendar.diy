@@ -32,7 +32,6 @@ export default function Calendar() {
   const [eventContent, setEventContent] = useState("")
   const [selectedColor, setSelectedColor] = useState("text-black")
   const [holidays, setHolidays] = useState<Holiday[]>([])
-  const [isHovering, setIsHovering] = useState<number | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
 
@@ -237,13 +236,11 @@ export default function Calendar() {
         <div
           key={day}
           onClick={() => handleDayClick(date)}
-          onMouseEnter={() => setIsHovering(day)}
-          onMouseLeave={() => setIsHovering(null)}
           className={cn(
             "group relative h-20 border-b border-r border-gray-100 p-2 transition-all duration-300",
             isWeekend ? "bg-gray-50/30" : "",
             isTodayDate ? "ring-1 ring-inset ring-black" : "",
-            isHovering === day ? "bg-gray-50" : "",
+            "hover:bg-gray-50", // Use CSS hover instead of React state
           )}
         >
           <div
@@ -279,7 +276,7 @@ export default function Calendar() {
             })}
           </div>
 
-          {isHovering === day && <div className="absolute bottom-0 left-0 h-0.5 w-full bg-black" />}
+          <div className="absolute bottom-0 left-0 h-0.5 w-full bg-black opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>,
       )
     }

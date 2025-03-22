@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Favicon</title>
+</head>
+<body>
+  <canvas id="favicon" width="64" height="64"></canvas>
+  <script>
+    const canvas = document.getElementById('favicon');
+    const ctx = canvas.getContext('2d');
+    ctx.font = '54px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🗓️', 32, 32);
+    
+    // Convert to image
+    const link = document.createElement('a');
+    link.download = 'favicon.ico';
+    link.href = canvas.toDataURL('image/x-icon');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  </script>
+</body>
+</html>
+

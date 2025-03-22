@@ -89,7 +89,7 @@ export default async function Image() {
           gap: "16px",
         }}
       >
-        <span style={{ fontSize: 72 }}>📅</span>
+        <span style={{ fontSize: 72 }}>🗓️</span>
         <span>calendar.diy</span>
       </div>
 

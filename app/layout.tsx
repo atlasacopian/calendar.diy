@@ -54,13 +54,22 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="light">
       <head>
-        {/* Force favicon refresh with a timestamp query parameter */}
-        <link rel="icon" href={`/favicon.svg?v=${Date.now()}`} type="image/svg+xml" />
-        <link rel="apple-touch-icon" href={`/apple-icon.png?v=${Date.now()}`} />
+        {/* Use calendar emoji as favicon */}
+        <link
+          rel="icon"
+          href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 fontSize=%2290%22>🗓️</text></svg>"
+          type="image/svg+xml"
+        />
 
-        {/* Add direct meta tags for social sharing */}
-        <meta property="og:image" content="/favicon.svg" />
-        <meta name="twitter:image" content="/favicon.svg" />
+        {/* Add direct meta tags for social sharing with calendar emoji */}
+        <meta
+          property="og:image"
+          content="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 fontSize=%2290%22>🗓️</text></svg>"
+        />
+        <meta
+          name="twitter:image"
+          content="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 fontSize=%2290%22>🗓️</text></svg>"
+        />
         <meta property="og:title" content="calendar.diy" />
         <meta name="twitter:title" content="calendar.diy" />
       </head>

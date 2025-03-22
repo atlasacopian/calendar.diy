@@ -240,9 +240,10 @@ export default function Calendar() {
     }
   }
 
+  // Replace the isActuallyToday function with this corrected version
   // Helper function to check if a date is today
   const isActuallyToday = (date: Date) => {
-    const today = todayDate.current
+    const today = new Date()
     return (
       date.getDate() === today.getDate() &&
       date.getMonth() === today.getMonth() &&
@@ -292,19 +293,7 @@ export default function Calendar() {
       grid.appendChild(dayHeader)
     })
 
-    // Generate calendar days
     const daysInMonth = getDaysInMonth(currentDate)
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    const startingDayOfWeek = getDay(firstDayOfMonth)
-
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      const emptyCell = document.createElement("div")
-      emptyCell.style.borderBottom = "1px solid #eee"
-      emptyCell.style.borderRight = "1px solid #eee"
-      emptyCell.style.height = "120px"
-      grid.appendChild(emptyCell)
-    }
 
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
@@ -312,6 +301,7 @@ export default function Calendar() {
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
+      // Remove any isToday check here - we don't want highlighting in the printable version
 
       const dayCell = document.createElement("div")
       dayCell.style.position = "relative"
@@ -323,6 +313,7 @@ export default function Calendar() {
       if (isWeekend) {
         dayCell.style.backgroundColor = "#f9f9f9"
       }
+      // No special styling for today in the printable version
 
       // Add day number
       const dayNumber = document.createElement("div")

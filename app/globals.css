@@ -72,7 +72,7 @@ html {
   }
 }
 
-/* Calendar day hover styles */
+/* Update the calendar day hover styles to remove the black bar */
 .calendar-day {
   position: relative;
 }
@@ -81,19 +81,22 @@ html {
   background-color: rgba(249, 250, 251, 1) !important;
 }
 
+/* Remove the ::after pseudo-element that creates the black bar */
+/* 
 .calendar-day::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  width: 100%;
-  background-color: black;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+content: "";
+position: absolute;
+bottom: 0;
+left: 0;
+height: 2px;
+width: 100%;
+background-color: black;
+opacity: 0;
+transition: opacity 0.2s ease;
 }
 
 .calendar-day:hover::after {
-  opacity: 1;
+opacity: 1;
 }
+*/
 

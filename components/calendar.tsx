@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, X, Check, CalendarIcon, Download } from "lucide-react"
 import { addMonths, format, getDay, getDaysInMonth, isSameDay, isToday, subMonths } from "date-fns"
@@ -34,6 +36,7 @@ export default function Calendar() {
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
+  const calendarRef = useRef<HTMLDivElement>(null)
 
   // Load events from localStorage on component mount
   useEffect(() => {
@@ -92,6 +95,26 @@ export default function Calendar() {
     }
   }, [showModal])
 
+  // Add keyboard navigation for changing months
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle keyboard navigation when modal is not open
+      if (showModal) return
+
+      if (e.key === "ArrowLeft") {
+        handlePreviousMonth()
+      } else if (e.key === "ArrowRight") {
+        handleNextMonth()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [showModal])
+
   const handlePreviousMonth = () => {
     setCurrentDate(subMonths(currentDate, 1))
   }
@@ -141,12 +164,21 @@ export default function Calendar() {
     setSelectedColor("text-black")
   }
 
+  // Handle Enter key in textarea
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Save on Enter without shift key (shift+enter allows for line breaks)
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSaveEvent()
+    }
+  }
+
   // Export calendar to iCal format
   const exportToIcal = () => {
     let icalContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//Schedule.place//Calendar//EN",
+      "PRODID:-//Calendar.diy//Calendar//EN",
       "CALSCALE:GREGORIAN",
       "METHOD:PUBLISH",
     ]
@@ -157,7 +189,7 @@ export default function Calendar() {
       icalContent = [
         ...icalContent,
         "BEGIN:VEVENT",
-        `UID:${dateString}-${Math.random().toString(36).substring(2, 11)}@schedule.place`,
+        `UID:${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`,
         `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
         `DTSTART;VALUE=DATE:${dateString}`,
         `DTEND;VALUE=DATE:${dateString}`,
@@ -172,7 +204,7 @@ export default function Calendar() {
       icalContent = [
         ...icalContent,
         "BEGIN:VEVENT",
-        `UID:holiday-${dateString}-${Math.random().toString(36).substring(2, 11)}@schedule.place`,
+        `UID:holiday-${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`,
         `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
         `DTSTART;VALUE=DATE:${dateString}`,
         `DTEND;VALUE=DATE:${dateString}`,
@@ -189,7 +221,7 @@ export default function Calendar() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = "schedule-place-calendar.ics"
+    link.download = "calendar-diy.ics"
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -288,7 +320,10 @@ export default function Calendar() {
 
   return (
     <>
-      <div className="calendar-container overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div
+        ref={calendarRef}
+        className="calendar-container overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+      >
         <div className="border-b border-gray-100 bg-gray-50 p-4">
           <div className="flex items-center justify-between">
             <h2 className="font-mono text-xl font-light tracking-tight">{format(currentDate, "MMMM yyyy")}</h2>
@@ -366,6 +401,7 @@ export default function Calendar() {
                   id="event-content"
                   value={eventContent}
                   onChange={(e) => setEventContent(e.target.value)}
+                  onKeyDown={handleTextareaKeyDown}
                   placeholder="Add event details..."
                   className="w-full rounded-md border border-gray-200 p-2 font-mono text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
                   rows={3}

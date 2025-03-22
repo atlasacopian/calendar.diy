@@ -9,6 +9,8 @@ export const size = {
   height: 32,
 }
 
+export const contentType = "image/x-icon"
+
 // Image generation
 export default function Favicon() {
   return new ImageResponse(

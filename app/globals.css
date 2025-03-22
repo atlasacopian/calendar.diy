@@ -211,3 +211,30 @@ a {
   text-transform: uppercase !important;
 }
 
+/* Add this to ensure text is not automatically capitalized in inputs and textareas */
+input,
+textarea {
+  text-transform: none !important;
+}
+
+/* Add this to ensure event text is preserved as entered */
+.preserve-case {
+  text-transform: none !important;
+}
+
+/* Ensure text doesn't get cut off in calendar cells */
+.calendar-day .line-clamp-2 {
+  -webkit-line-clamp: 3;
+  overflow: visible;
+  word-break: break-word;
+}
+
+/* Improve drag and drop visual feedback */
+.cursor-move {
+  cursor: grab;
+}
+
+.cursor-move:active {
+  cursor: grabbing;
+}
+

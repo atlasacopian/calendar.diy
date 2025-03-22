@@ -9,9 +9,14 @@ type ThemeProviderProps = {
   defaultTheme?: string
 }
 
-export function ThemeProvider({ children, attribute = "class", defaultTheme = "system" }: ThemeProviderProps) {
+export function ThemeProvider({
+  children,
+  attribute = "class",
+  defaultTheme = "system",
+  enableSystem = true,
+}: ThemeProviderProps & { enableSystem?: boolean }) {
   return (
-    <NextThemesProvider attribute={attribute} defaultTheme={defaultTheme}>
+    <NextThemesProvider attribute={attribute} defaultTheme={defaultTheme} enableSystem={enableSystem}>
       {children}
     </NextThemesProvider>
   )

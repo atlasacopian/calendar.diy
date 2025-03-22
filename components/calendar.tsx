@@ -594,7 +594,7 @@ export default function Calendar() {
     grid.style.border = "1px solid #eee"
     grid.style.borderBottom = "none"
     grid.style.borderRight = "none"
-    grid.style.maxWidth = "900px" // Limit width for more white space
+    grid.style.maxWidth = "1100px" // Increased width for more space
     grid.style.margin = "0 auto" // Center the grid
 
     // Add day headers
@@ -620,7 +620,7 @@ export default function Calendar() {
       const emptyCell = document.createElement("div")
       emptyCell.style.borderBottom = "1px solid #eee"
       emptyCell.style.borderRight = "1px solid #eee"
-      emptyCell.style.height = "100px"
+      emptyCell.style.height = "120px" // Increased height for more space
       emptyCell.style.backgroundColor = "white"
       grid.appendChild(emptyCell)
     }
@@ -641,7 +641,7 @@ export default function Calendar() {
       dayCell.style.padding = "10px"
       dayCell.style.borderBottom = "1px solid #eee"
       dayCell.style.borderRight = "1px solid #eee"
-      dayCell.style.height = "100px"
+      dayCell.style.height = "120px" // Increased height for more space
       dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
 
       // Add day number
@@ -652,12 +652,6 @@ export default function Calendar() {
       dayNumber.style.right = "10px"
       dayNumber.style.fontSize = "14px"
       dayNumber.style.color = "#999"
-
-      // Apply special styling for March 21, 2025 - only circle, no box
-      if (isMarch21) {
-        // We're removing the special styling for March 21 in the downloaded version
-        // No special styling will be applied to the day number
-      }
 
       dayCell.appendChild(dayNumber)
 
@@ -681,20 +675,26 @@ export default function Calendar() {
       // Add events
       const eventsContainer = document.createElement("div")
       eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "25px"
+      eventsContainer.style.display = "flex"
+      eventsContainer.style.flexDirection = "column"
+      eventsContainer.style.height = "calc(100% - 30px)"
+      eventsContainer.style.justifyContent = dayEvents.length > 1 ? "space-between" : "flex-start"
 
       // Limit to 2 events
       const limitedEvents = dayEvents.slice(0, 2)
 
-      limitedEvents.forEach((event) => {
+      limitedEvents.forEach((event, index) => {
         const eventDiv = document.createElement("div")
-        eventDiv.textContent = "• " + event.content.toUpperCase()
         eventDiv.style.fontSize = "11px"
         eventDiv.style.fontWeight = "500"
         eventDiv.style.marginBottom = "3px"
-        eventDiv.style.whiteSpace = "nowrap"
+        eventDiv.style.wordBreak = "break-word"
         eventDiv.style.overflow = "hidden"
-        eventDiv.style.textOverflow = "ellipsis"
         eventDiv.style.maxWidth = "100%"
+        eventDiv.style.flex = "1"
+        eventDiv.style.display = "flex"
+        eventDiv.style.flexDirection = "column"
+        eventDiv.style.justifyContent = "center"
 
         // Convert Tailwind color classes to CSS colors
         let color = "#000"
@@ -706,7 +706,22 @@ export default function Calendar() {
         if (event.color?.includes("purple")) color = "#9333ea"
 
         eventDiv.style.color = color
-        eventsContainer.appendChild(eventDiv)
+
+        // Add the event text
+        eventDiv.textContent = event.content.toUpperCase()
+
+        // Add divider between events if there are multiple
+        if (index === 0 && limitedEvents.length > 1) {
+          const divider = document.createElement("div")
+          divider.style.height = "1px"
+          divider.style.backgroundColor = "#eee"
+          divider.style.width = "100%"
+          divider.style.margin = "5px 0"
+          eventsContainer.appendChild(eventDiv)
+          eventsContainer.appendChild(divider)
+        } else {
+          eventsContainer.appendChild(eventDiv)
+        }
       })
 
       dayCell.appendChild(eventsContainer)
@@ -877,9 +892,11 @@ export default function Calendar() {
 
               return (
                 <React.Fragment key={index}>
-                  {index > 0 && <div className="border-t border-gray-200 dark:border-gray-700 my-0.5"></div>}
+                  {index > 0 && (
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-1 flex-shrink-0"></div>
+                  )}
                   <div
-                    className={cn("flex-1 min-h-0", limitedEvents.length > 1 ? "h-1/2" : "h-full")}
+                    className={cn("flex-1 min-h-0 flex items-center", limitedEvents.length > 1 ? "h-1/2" : "h-full")}
                     draggable
                     onDragStart={(e) => handleDragStart(event, e)}
                     onDragEnd={handleDragEnd}
@@ -1125,6 +1142,30 @@ export default function Calendar() {
       {/* Calendar Controls - Now free-floating without the gray background */}
       <div className="calendar-controls flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">
         <button
+          onClick={downloadCalendarAsImage}
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Download as Image"
+          disabled={isDownloading}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>SCREENSHOT</span>
+        </button>
+        <button
           onClick={exportToIcal}
           className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Export to iCal"
@@ -1171,30 +1212,6 @@ export default function Calendar() {
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
           <span>GOOGLE</span>
-        </button>
-        <button
-          onClick={downloadCalendarAsImage}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Download as Image"
-          disabled={isDownloading}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          <span>SCREENSHOT</span>
         </button>
         <button
           onClick={handleShare}
@@ -1447,28 +1464,7 @@ export default function Calendar() {
               </div>
 
               {/* Action buttons for the form */}
-              <div className="flex justify-end gap-2 mt-4">
-                {editingEventId && (
-                  <>
-                    <button
-                      onClick={() => {
-                        setEditingEventId(null)
-                        setEventContent("")
-                        setSelectedColor("text-black")
-                      }}
-                      className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 uppercase"
-                    >
-                      CANCEL EDIT
-                    </button>
-                    <button
-                      onClick={handleSaveEvent}
-                      className="rounded-md bg-gray-100 border border-gray-300 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 uppercase"
-                    >
-                      UPDATE EVENT
-                    </button>
-                  </>
-                )}
-              </div>
+              <div className="flex justify-end gap-2 mt-4">{/* Removed Cancel Edit and Update Event buttons */}</div>
             </div>
 
             {/* Modal Footer */}
@@ -1476,9 +1472,15 @@ export default function Calendar() {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={handleSaveAndClose}
-                  className="rounded-md bg-black dark:bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 uppercase"
+                  className={cn(
+                    "rounded-md px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs",
+                    eventContent.trim()
+                      ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed",
+                  )}
+                  disabled={!eventContent.trim()}
                 >
-                  ENTER
+                  SAVE
                 </button>
               </div>
             </div>

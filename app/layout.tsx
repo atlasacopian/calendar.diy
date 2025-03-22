@@ -1,6 +1,7 @@
 import type React from "react"
 import "./globals.css"
 import type { Metadata, Viewport } from "next"
+import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
   title: "calendar.diy",
@@ -51,19 +52,23 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Force favicon refresh with a timestamp query parameter */}
         <link rel="icon" href={`/favicon.svg?v=${Date.now()}`} type="image/svg+xml" />
         <link rel="apple-touch-icon" href={`/apple-icon.png?v=${Date.now()}`} />
 
-        {/* Add direct meta tags for social sharing with calendar emoji */}
+        {/* Add direct meta tags for social sharing */}
         <meta property="og:image" content="/favicon.svg" />
         <meta name="twitter:image" content="/favicon.svg" />
         <meta property="og:title" content="calendar.diy" />
         <meta name="twitter:title" content="calendar.diy" />
       </head>
-      <body>{children}</body>
+      <body className="bg-white dark:bg-gray-900 transition-colors duration-200">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   )
 }

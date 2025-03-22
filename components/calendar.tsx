@@ -104,13 +104,25 @@ export default function Calendar() {
     }
   }, [])
 
-  // Load holidays for current and next year
+  // Load holidays for the years needed
   useEffect(() => {
-    const currentYear = new Date().getFullYear()
-    const holidaysCurrentYear = getAllHolidays(currentYear)
-    const holidaysNextYear = getAllHolidays(currentYear + 1)
-    setHolidays([...holidaysCurrentYear, ...holidaysNextYear])
-  }, [])
+    // Get the current view year
+    const viewYear = currentDate.getFullYear()
+
+    // Get current system year
+    const systemYear = new Date().getFullYear()
+
+    // Create a set of years we need to load
+    const yearsToLoad = new Set([viewYear, viewYear - 1, viewYear + 1, systemYear, systemYear + 1])
+
+    // Load holidays for all needed years
+    const allHolidays: Holiday[] = []
+    yearsToLoad.forEach((year) => {
+      allHolidays.push(...getAllHolidays(year))
+    })
+
+    setHolidays(allHolidays)
+  }, [currentDate]) // Re-run when currentDate changes
 
   // Save events to localStorage whenever they change
   useEffect(() => {

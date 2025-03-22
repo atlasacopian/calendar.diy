@@ -7,7 +7,8 @@ export const metadata: Metadata = {
   title: "calendar.diy",
   description: "A minimalist project calendar",
   icons: {
-    icon: [{ url: "/favicon.ico", type: "image/x-icon" }],
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
     apple: "/apple-icon.png",
   },
   // Add Open Graph metadata for social sharing
@@ -55,20 +56,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className="light">
       <head>
         {/* Use calendar emoji as favicon - with Apple-style emoji */}
-        <link
-          rel="icon"
-          href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 fontSize=%2290%22>🗓️</text></svg>"
-        />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
 
         {/* Add direct meta tags for social sharing with calendar emoji */}
-        <meta
-          property="og:image"
-          content="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 fontSize=%2290%22>🗓️</text></svg>"
-        />
-        <meta
-          name="twitter:image"
-          content="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 fontSize=%2290%22>🗓️</text></svg>"
-        />
         <meta property="og:title" content="calendar.diy" />
         <meta name="twitter:title" content="calendar.diy" />
       </head>

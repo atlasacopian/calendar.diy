@@ -1384,17 +1384,14 @@ export default function Calendar() {
       )}
 
       {/* Share Modal */}
-      {showShareModal &&
-        (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="w-opacity: 0, scale: 0.95}}
-            transition={{ duration: 0.2 }}
-            className=\"w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl max-h-[90vh] flex flex-col"
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl max-h-[90vh] flex flex-col"
             style={{ margin: "auto" }}
           >
             {/* Modal Header */}
@@ -1460,7 +1457,7 @@ export default function Calendar() {
             </div>
           </motion.div>
         </div>
-        )}
+      )}
     </div>
   )
 }

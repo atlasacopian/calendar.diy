@@ -193,8 +193,8 @@ export default function ProjectGroups({
             key={group.id}
             className={cn(
               "flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs",
-              // Always use full color with white text
-              getBgFromTextColor(group.color) + " text-white",
+              // Always use full color with appropriate text color
+              getBgFromTextColor(group.color) + " " + (group.color === "text-black" ? "text-white" : "text-black"),
               // Just adjust opacity for inactive groups, no ring
               !group.active ? "opacity-60" : "",
             )}

@@ -2,17 +2,14 @@
 
 import type React from "react"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToday } from "date-fns"
 import html2canvas from "html2canvas"
 
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import { Share2 } from "lucide-react"
-
-// Add these imports at the top
-// Remove this line
-// import ProjectToggles from "@/components/project-toggles"
+import ColorFilter from "@/components/color-filter"
 
 type CalendarEvent = {
   id: string
@@ -52,14 +49,7 @@ export default function Calendar() {
   const [shareUrl, setShareUrl] = useState("")
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
-
-  // Add this state inside your component
-  // Remove this state
-  // const [projects, setProjects] = useState([
-  //   { id: "1", name: "WORK", color: "#2563eb", active: true },
-  //   { id: "2", name: "PERSONAL", color: "#16a34a", active: true },
-  //   { id: "3", name: "TRAVEL", color: "#f97316", active: true },
-  // ])
+  const [activeColorFilters, setActiveColorFilters] = useState<string[]>(colorOptions.map((color) => color.value))
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -69,6 +59,11 @@ export default function Calendar() {
   const fullCalendarRef = useRef<HTMLDivElement>(null)
   const printableCalendarRef = useRef<HTMLDivElement>(null)
   const shareInputRef = useRef<HTMLInputElement>(null)
+
+  // Handle color filter changes
+  const handleColorFilterChange = useCallback((activeColors: string[]) => {
+    setActiveColorFilters(activeColors)
+  }, [])
 
   // Add this near the top of the component, after the state declarations
   useEffect(() => {
@@ -168,9 +163,6 @@ export default function Calendar() {
       window.removeEventListener("resize", detectKeyboard)
     }
   }, [isMobile])
-
-  // Load events from localStorage on component mount
-  // Remove the original useEffect that loads events from localStorage
 
   // Load holidays for the years needed
   useEffect(() => {
@@ -345,28 +337,6 @@ export default function Calendar() {
 
     setShowModal(true)
   }
-
-  // Add these functions inside your component
-  // Remove these functions
-  // const handleToggleProject = (id: string) => {
-  //   setProjects(projects.map(project =>
-  //     project.id === id
-  //       ? { ...project, active: !project.active }
-  //       : project
-  //   ))
-  // }
-
-  // const handleAddProject = (name: string, color: string) => {
-  //   setProjects([
-  //     ...projects,
-  //     {
-  //       id: Math.random().toString(36).substring(2, 11),
-  //       name: name.toUpperCase(),
-  //       color,
-  //       active: true
-  //     }
-  //   ])
-  // }
 
   const handleSaveEvent = () => {
     if (!selectedDate) return
@@ -920,18 +890,16 @@ export default function Calendar() {
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      // Filter events based on active projects
-      // This assumes you've added a projectId field to your events
-      const dayEvents = events.filter((event) => isSameDay(event.date, date))
+      // Filter events based on active color filters
+      const dayEvents = events.filter(
+        (event) => isSameDay(event.date, date) && activeColorFilters.includes(event.color || "text-black"),
+      )
       // Limit to 2 events per day
       const limitedEvents = dayEvents.slice(0, 2)
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
       const isCurrentDay = isToday(date)
       const isDragOver = dragOverDate && isSameDay(dragOverDate, date)
-
-      // HARDCODED SOLUTION: Only highlight March 21, 2025 (and not the 22nd)
-      // Check  date)
 
       // HARDCODED SOLUTION: Only highlight March 21, 2025
       // Check if this is March 21, 2025
@@ -1218,18 +1186,6 @@ export default function Calendar() {
     }
   }, [events])
 
-  // Filter events based on active projects
-  // This assumes you've added a projectId field to your events
-  // Remove this
-  // const filteredEvents = events.filter((event) => {
-  //   // If no projectId is assigned, always show the event
-  //   if (!event.projectId) return true
-
-  //   // Find the project and check if it's active
-  //   const project = projects.find((p) => p.id === event.projectId)
-  //   return project?.active ?? true
-  // })
-
   return (
     <div className="flex flex-col space-y-4">
       <div
@@ -1309,14 +1265,8 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Then in your JSX, add this right after the calendar grid but before the buttons
-      (between the </div></div></div> of the calendar and the calendar controls div) */}
-      {/* Remove this component */}
-      {/* <ProjectToggles
-        projects={projects}
-        onToggleProject={handleToggleProject}
-        onAddProject={handleAddProject}
-      /> */}
+      {/* Color filter bar */}
+      <ColorFilter onFilterChange={handleColorFilterChange} />
 
       {/* Calendar Controls - Now free-floating without the gray background */}
       <div className="calendar-controls flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">
@@ -1581,7 +1531,7 @@ export default function Calendar() {
                               className="h-3 w-3 text-gray-500 dark:text-gray-400"
                             >
                               <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2"></path>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                             </svg>
                           </button>
                         </div>

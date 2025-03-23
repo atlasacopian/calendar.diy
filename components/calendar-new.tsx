@@ -1707,7 +1707,31 @@ export default function Calendar() {
                     return (
                       <button
                         key={group.id}
-                        onClick={() => setSelectedColor(group.color)}
+                        onClick={() => {
+                          // Set the selected color
+                          setSelectedColor(group.color)
+
+                          // If we're editing an existing event, immediately update it with the new color
+                          if (editingEventId) {
+                            // Update the event in the events array
+                            setEvents(
+                              events.map((event) =>
+                                event.id === editingEventId
+                                  ? { ...event, color: group.color, projectId: group.id }
+                                  : event,
+                              ),
+                            )
+
+                            // Update the events for selected date
+                            setEventsForSelectedDate(
+                              eventsForSelectedDate.map((event) =>
+                                event.id === editingEventId
+                                  ? { ...event, color: group.color, projectId: group.id }
+                                  : event,
+                              ),
+                            )
+                          }
+                        }}
                         className={cn(
                           "flex items-center rounded-md px-2 py-1 text-xs border border-transparent transition-colors",
                           // Always use the background color

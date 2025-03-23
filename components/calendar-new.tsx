@@ -1517,7 +1517,6 @@ export default function Calendar() {
         className="mt-12 flex justify-center" // Changed from mt-6 to mt-12 and added flex justify-center
       />
 
-      {/* Event Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div
@@ -1605,7 +1604,7 @@ export default function Calendar() {
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault()
-                                handleSaveAndClose() // Changed from handleSaveEvent() to handleSaveAndClose()
+                                handleSaveAndClose()
                               }
                             }}
                             className={cn(
@@ -1630,7 +1629,7 @@ export default function Calendar() {
                                 e.stopPropagation()
                                 handleDeleteEvent(event.id)
                               }}
-                              className="ml-2 text-gray-400 hover:text-red-500"
+                              className="ml-2 text-gray-400 hover:text-gray-600"
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -1663,7 +1662,7 @@ export default function Calendar() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault()
-                          handleSaveAndClose() // Changed from handleSaveEvent() to handleSaveAndClose()
+                          handleSaveAndClose()
                         }
                       }}
                       className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case resize-none"
@@ -1683,7 +1682,7 @@ export default function Calendar() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault()
-                          handleSaveAndClose() // Changed from handleSaveEvent() to handleSaveAndClose()
+                          handleSaveAndClose()
                         }
                       }}
                       className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case resize-none"
@@ -1748,33 +1747,36 @@ export default function Calendar() {
                 </div>
               </div>
             </div>
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 sm:p-5 flex justify-between">
-              {editingEventId && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteEvent(editingEventId)}
-                  className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-between">
+              {/* Make the DELETE button more low-key (not red) */}
+              <button
+                type="button"
+                onClick={() => {
+                  // If we're editing an event, delete that specific event
+                  if (editingEventId) {
+                    handleDeleteEvent(editingEventId)
+                  }
+                }}
+                className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 flex items-center"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4 mr-1"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 mr-1"
-                  >
-                    <path d="M3 6h18"></path>
-                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                  </svg>
-                  DELETE
-                </button>
-              )}
-              {!editingEventId && <div></div>}
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+                DELETE
+              </button>
               <button
                 type="button"
                 className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"

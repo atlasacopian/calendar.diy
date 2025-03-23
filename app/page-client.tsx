@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import StaticCalendar from "@/components/calendar-static"
 
 // Dynamically import the Calendar component with no SSR
-const DynamicCalendar = dynamic(() => import("@/components/calendar"), {
+const DynamicCalendar = dynamic(() => import("@/components/calendar-new"), {
   ssr: false,
   loading: () => <StaticCalendar />,
 })

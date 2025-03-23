@@ -1087,25 +1087,6 @@ export default function Calendar() {
       )
     }
 
-    // Fill in the remaining cells to complete the grid
-    const totalCells = startingDayOfWeek + daysInMonth
-    const cellsInFiveWeeks = 35
-    const cellsInSixWeeks = 42
-
-    // Determine if we need 5 or 6 weeks
-    const targetCells = totalCells <= cellsInFiveWeeks ? cellsInFiveWeeks : cellsInSixWeeks
-    const remainingCells = targetCells - totalCells
-
-    for (let i = 0; i < remainingCells; i++) {
-      days.push(
-        <div
-          key={`empty-end-${i}`}
-          className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
-          onDragOver={(e) => e.preventDefault()}
-        ></div>,
-      )
-    }
-
     return days
   }
 

@@ -27,8 +27,8 @@ const colorOptions = [
   { name: "Black", value: "text-black", bg: "bg-[#000000]", text: "text-white" },
   { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white" },
   { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white" },
-  { name: "Yellow", value: "text-yellow-500", bg: "bg-[#f6ff00]", text: "text-black" },
-  { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-black" },
+  { name: "Yellow", value: "text-yellow-500", bg: "bg-[#e3e600]", text: "text-white" },
+  { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-white" },
   { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white" },
   { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white" },
 ]
@@ -182,7 +182,7 @@ export default function ProjectGroups({
   // Get the text color for the background
   const getTextForBg = (textColor: string) => {
     const color = colorOptions.find((c) => c.value === textColor)
-    return color ? color.text : "text-black"
+    return "text-white"
   }
 
   return (
@@ -193,8 +193,8 @@ export default function ProjectGroups({
             key={group.id}
             className={cn(
               "flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs",
-              // Always use full color with appropriate text color
-              getBgFromTextColor(group.color) + " " + (group.color === "text-black" ? "text-white" : "text-black"),
+              // Always use full color with white text
+              getBgFromTextColor(group.color) + " text-white",
               // Just adjust opacity for inactive groups, no ring
               !group.active ? "opacity-60" : "",
             )}
@@ -265,7 +265,7 @@ export default function ProjectGroups({
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value.toUpperCase())}
                   onKeyDown={handleAddProjectKeyDown}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 uppercase"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 uppercase"
                   placeholder="ENTER GROUP NAME"
                 />
               </div>
@@ -346,7 +346,7 @@ export default function ProjectGroups({
                   value={editingGroup.name}
                   onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value.toUpperCase() })}
                   onKeyDown={handleEditProjectKeyDown}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 uppercase"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 uppercase"
                   placeholder="ENTER GROUP NAME"
                 />
               </div>
@@ -372,7 +372,7 @@ export default function ProjectGroups({
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(editingGroup.id)}
-                  className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -454,7 +454,7 @@ export default function ProjectGroups({
               </button>
               <button
                 type="button"
-                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="ml-3 inline-flex justify-center rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                 onClick={() => handleDeleteProject(showDeleteConfirm)}
               >
                 DELETE

@@ -1608,7 +1608,7 @@ export default function Calendar() {
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault()
-                                handleSaveEvent()
+                                handleSaveAndClose() // Changed from handleSaveEvent() to handleSaveAndClose()
                               }
                             }}
                             className={cn(
@@ -1666,7 +1666,7 @@ export default function Calendar() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault()
-                          handleSaveEvent()
+                          handleSaveAndClose() // Changed from handleSaveEvent() to handleSaveAndClose()
                         }
                       }}
                       className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case"
@@ -1686,7 +1686,7 @@ export default function Calendar() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault()
-                          handleSaveEvent()
+                          handleSaveAndClose() // Changed from handleSaveEvent() to handleSaveAndClose()
                         }
                       }}
                       className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case"
@@ -1702,24 +1702,24 @@ export default function Calendar() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">PROJECT</label>
                 <div className="mt-2 flex flex-wrap gap-3">
                   {projectGroups.map((group) => {
-                    // Get the background color for this project
-                    const bgColor = getBgFromTextColor(group.color)
-                    const textColor = getTextForBg(group.color)
+                    // Get the color information for this project
+                    const colorInfo = colorOptions.find((c) => c.value === group.color) || colorOptions[0]
 
                     return (
                       <button
                         key={group.id}
                         onClick={() => setSelectedColor(group.color)}
                         className={cn(
-                          "px-4 py-2 rounded-md border transition-colors",
-                          // Always show the project's color as a left border
-                          "border-l-4",
-                          `border-l-${bgColor.replace("bg-", "")}`,
+                          "px-4 py-2 rounded-md border transition-colors relative overflow-hidden",
                           // If selected, use full background color
                           selectedColor === group.color
-                            ? `${bgColor} ${textColor} ring-2 ring-black dark:ring-white`
+                            ? `${colorInfo.bg} ${colorInfo.text} ring-2 ring-black dark:ring-white`
                             : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700",
                         )}
+                        style={{
+                          borderLeftColor: colorInfo.hex,
+                          borderLeftWidth: "4px",
+                        }}
                       >
                         {group.name}
                       </button>

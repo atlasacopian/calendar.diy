@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import dynamic from "next/dynamic"
 
 // Dynamically import the Calendar component with no SSR
-const Calendar = dynamic(() => import("@/components/calendar"), {
+const Calendar = dynamic(() => import("@/components/calendar-fixed"), {
   ssr: false,
   loading: () => (
     <div className="h-screen w-full flex items-center justify-center">

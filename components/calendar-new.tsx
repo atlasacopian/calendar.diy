@@ -568,30 +568,25 @@ export default function Calendar() {
     try {
       setIsDownloading(true)
 
+      // Make sure we're capturing the full calendar container
+      if (!fullCalendarRef.current) {
+        console.error("Calendar container not found")
+        setIsDownloading(false)
+        return
+      }
+
       // Create a printable version of the calendar
-      const printableCalendar = document.createElement("div")
-      printableCalendar.className = "printable-calendar"
-      printableCalendar.style.position = "absolute"
-      printableCalendar.style.left = "-9999px"
-      printableCalendar.style.width = "1200px"
-      printableCalendar.style.backgroundColor = "white"
-      printableCalendar.style.padding = "40px"
-
-      // Add a simple header
-      const header = document.createElement("h2")
-      header.textContent = format(currentDate, "MMMM yyyy").toUpperCase()
-      header.style.textAlign = "center"
-      printableCalendar.appendChild(header)
-
-      document.body.appendChild(printableCalendar)
+      const printableCalendar = createPrintableCalendar()
 
       // Capture the printable calendar
       const canvas = await html2canvas(printableCalendar, {
         backgroundColor: "white",
-        scale: 2,
+        scale: 2, // Higher resolution
         logging: false,
         useCORS: true,
         allowTaint: true,
+        width: 1200, // Fixed width
+        height: printableCalendar.offsetHeight,
       })
 
       // Remove the temporary element
@@ -601,13 +596,250 @@ export default function Calendar() {
       const image = canvas.toDataURL("image/png")
       const link = document.createElement("a")
       link.href = image
-      link.download = `calendar_${format(currentDate, "MMMM_yyyy")}.png`
+      link.download = `calendar.diy_${format(currentDate, "MMMM_yyyy")}.png`
       link.click()
     } catch (error) {
       console.error("Error generating calendar image:", error)
     } finally {
       setIsDownloading(false)
     }
+  }
+
+  // Create a temporary printable version of the calendar
+  const createPrintableCalendar = () => {
+    // Create a temporary div for the printable calendar
+    const printableDiv = document.createElement("div")
+    printableDiv.className = "printable-calendar"
+    printableDiv.style.position = "absolute"
+    printableDiv.style.left = "-9999px"
+    printableDiv.style.width = "1200px" // Fixed width to ensure consistency
+    printableDiv.style.backgroundColor = "white"
+    printableDiv.style.color = "#333"
+    printableDiv.style.fontFamily = '"JetBrains Mono", monospace'
+    printableDiv.style.padding = "40px" // Add padding for more white space
+
+    // Add month/year header
+    const header = document.createElement("h2")
+    header.textContent = format(currentDate, "MMMM yyyy").toUpperCase()
+    header.style.padding = "20px"
+    header.style.margin = "0"
+    header.style.fontSize = "24px"
+    header.style.fontWeight = "300"
+    header.style.textAlign = "center"
+    header.style.textTransform = "uppercase"
+    header.style.color = "#333"
+    printableDiv.appendChild(header)
+
+    // Create calendar grid
+    const grid = document.createElement("div")
+    grid.style.display = "grid"
+    grid.style.gridTemplateColumns = "repeat(7, 1fr)"
+    grid.style.border = "1px solid #eee"
+    grid.style.borderBottom = "none"
+    grid.style.borderRight = "none"
+    grid.style.maxWidth = "1100px" // Increased width for more space
+    grid.style.margin = "0 auto" // Center the grid
+
+    // Add day headers
+    weekDays.forEach((day) => {
+      const dayHeader = document.createElement("div")
+      dayHeader.textContent = day.toUpperCase()
+      dayHeader.style.padding = "10px"
+      dayHeader.style.textAlign = "center"
+      dayHeader.style.borderBottom = "1px solid #eee"
+      dayHeader.style.borderRight = "1px solid #eee"
+      dayHeader.style.backgroundColor = "#f9f9f9"
+      dayHeader.style.fontSize = "14px"
+      dayHeader.style.color = "#666"
+      grid.appendChild(dayHeader)
+    })
+
+    const daysInMonth = getDaysInMonth(currentDate)
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+    const startingDayOfWeek = getDay(firstDayOfMonth)
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      const emptyCell = document.createElement("div")
+      emptyCell.style.borderBottom = "1px solid #eee"
+      emptyCell.style.borderRight = "1px solid #eee"
+      emptyCell.style.height = "120px" // Increased height for more space
+      emptyCell.style.backgroundColor = "white"
+      grid.appendChild(emptyCell)
+    }
+
+    // Add cells for each day of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+      const dayEvents = events.filter((event) => isSameDay(event.date, date))
+      const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
+      const isWeekend = getDay(date) === 0 || getDay(date) === 6
+      const isMarch21 =
+        currentDate.getMonth() === 2 && // March is month 2 (0-indexed)
+        day === 21 &&
+        currentDate.getFullYear() === 2025
+
+      const dayCell = document.createElement("div")
+      dayCell.style.position = "relative"
+      dayCell.style.padding = "10px"
+      dayCell.style.borderBottom = "1px solid #eee"
+      dayCell.style.borderRight = "1px solid #eee"
+      dayCell.style.height = "120px" // Increased height for more space
+      dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
+
+      // Add day number
+      const dayNumber = document.createElement("div")
+      dayNumber.textContent = day.toString()
+      dayNumber.style.position = "absolute"
+      dayNumber.style.top = "5px"
+      dayNumber.style.right = "10px"
+      dayNumber.style.fontSize = "14px"
+      dayNumber.style.color = "#999"
+
+      dayCell.appendChild(dayNumber)
+
+      // Add holidays
+      const holidaysContainer = document.createElement("div")
+      holidaysContainer.style.marginTop = "25px"
+
+      dayHolidays.forEach((holiday) => {
+        const holidayDiv = document.createElement("div")
+        holidayDiv.textContent = holiday.name.toUpperCase()
+        holidayDiv.style.fontSize = "9px"
+        holidayDiv.style.textTransform = "uppercase"
+        holidayDiv.style.letterSpacing = "0.05em"
+        holidayDiv.style.color = "#666"
+        holidayDiv.style.marginBottom = "3px"
+        holidaysContainer.appendChild(holidayDiv)
+      })
+
+      dayCell.appendChild(holidaysContainer)
+
+      // Add events
+      const eventsContainer = document.createElement("div")
+      eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "15px"
+      eventsContainer.style.display = "flex"
+      eventsContainer.style.flexDirection = "column"
+      eventsContainer.style.height = "calc(100% - 25px)"
+
+      // If there's only one event, center it vertically
+      if (dayEvents.length === 1) {
+        eventsContainer.style.justifyContent = "center"
+      } else {
+        eventsContainer.style.justifyContent = "space-between"
+      }
+
+      // Limit to 2 events
+      const limitedEvents = dayEvents.slice(0, 2)
+
+      if (limitedEvents.length === 1) {
+        // Single event - centered vertically
+        const event = limitedEvents[0]
+        const eventDiv = document.createElement("div")
+        eventDiv.textContent = event.content
+        eventDiv.style.fontSize = "11px"
+        eventDiv.style.fontWeight = "500"
+        eventDiv.style.wordBreak = "break-word"
+        eventDiv.style.overflow = "hidden"
+        eventDiv.style.maxWidth = "100%"
+        eventDiv.style.textOverflow = "ellipsis"
+        eventDiv.style.whiteSpace = "nowrap"
+
+        // Convert Tailwind color classes to CSS colors
+        let color = "#000"
+        if (event?.color?.includes("blue")) color = "#2563eb"
+        if (event?.color?.includes("red")) color = "#dc2626"
+        if (event?.color?.includes("yellow")) color = "#eab308"
+        if (event?.color?.includes("orange")) color = "#f97316"
+        if (event?.color?.includes("green")) color = "#16a34a"
+        if (event?.color?.includes("purple")) color = "#9333ea"
+
+        eventDiv.style.color = color
+        eventsContainer.appendChild(eventDiv)
+      } else if (limitedEvents.length === 2) {
+        // Two events with centered divider
+        const topEventContainer = document.createElement("div")
+        topEventContainer.style.flex = "1"
+        topEventContainer.style.display = "flex"
+        topEventContainer.style.alignItems = "flex-start"
+
+        const event1 = limitedEvents[0]
+        const eventDiv1 = document.createElement("div")
+        eventDiv1.textContent = event1.content
+        eventDiv1.style.fontSize = "11px"
+        eventDiv1.style.fontWeight = "500"
+        eventDiv1.style.wordBreak = "break-word"
+        eventDiv1.style.overflow = "hidden"
+        eventDiv1.style.maxWidth = "100%"
+        eventDiv1.style.textOverflow = "ellipsis"
+        eventDiv1.style.whiteSpace = "nowrap"
+
+        // Convert Tailwind color classes to CSS colors
+        let color1 = "#000"
+        if (event1?.color?.includes("blue")) color1 = "#2563eb"
+        if (event1?.color?.includes("red")) color1 = "#dc2626"
+        if (event1?.color?.includes("yellow")) color1 = "#eab308"
+        if (event1?.color?.includes("orange")) color1 = "#f97316"
+        if (event1?.color?.includes("green")) color1 = "#16a34a"
+        if (event1?.color?.includes("purple")) color1 = "#9333ea"
+
+        eventDiv1.style.color = color1
+        topEventContainer.appendChild(eventDiv1)
+        eventsContainer.appendChild(topEventContainer)
+
+        // Add centered divider only when there are 2 events
+        const divider = document.createElement("div")
+        divider.style.height = "1px"
+        divider.style.backgroundColor = "#eee"
+        divider.style.width = "100%"
+        divider.style.margin = "auto 0"
+        eventsContainer.appendChild(divider)
+
+        // Bottom event
+        const bottomEventContainer = document.createElement("div")
+        bottomEventContainer.style.flex = "1"
+        bottomEventContainer.style.display = "flex"
+        bottomEventContainer.style.alignItems = "flex-end"
+
+        const event2 = limitedEvents[1]
+        const eventDiv2 = document.createElement("div")
+        eventDiv2.textContent = event2.content
+        eventDiv2.style.fontSize = "11px"
+        eventDiv2.style.fontWeight = "500"
+        eventDiv2.style.wordBreak = "break-word"
+        eventDiv2.style.overflow = "hidden"
+        eventDiv2.style.maxWidth = "100%"
+        eventDiv2.style.textOverflow = "ellipsis"
+        eventDiv2.style.whiteSpace = "nowrap"
+
+        // Convert Tailwind color classes to CSS colors
+        let color2 = "#000"
+        if (event2?.color?.includes("blue")) color2 = "#2563eb"
+        if (event2?.color?.includes("red")) color2 = "#dc2626"
+        if (event2?.color?.includes("yellow")) color2 = "#eab308"
+        if (event2?.color?.includes("orange")) color2 = "#f97316"
+        if (event2?.color?.includes("green")) color2 = "#16a34a"
+        if (event2?.color?.includes("purple")) color2 = "#9333ea"
+
+        eventDiv2.style.color = color2
+        bottomEventContainer.appendChild(eventDiv2)
+        eventsContainer.appendChild(bottomEventContainer)
+      }
+
+      dayCell.appendChild(eventsContainer)
+      grid.appendChild(dayCell)
+    }
+
+    printableDiv.appendChild(grid)
+
+    // Add more bottom padding
+    const bottomSpace = document.createElement("div")
+    bottomSpace.style.height = "40px"
+    printableDiv.appendChild(bottomSpace)
+
+    document.body.appendChild(printableDiv)
+
+    return printableDiv
   }
 
   // Export calendar to iCal format

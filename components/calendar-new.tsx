@@ -1087,6 +1087,24 @@ export default function Calendar() {
       )
     }
 
+    // Fill in the remaining cells to complete the grid with proper borders
+    const totalCells = startingDayOfWeek + daysInMonth
+    const cellsInRow = 7
+    const remainingCells = cellsInRow - (totalCells % cellsInRow)
+
+    // Only add remaining cells if we need to complete the last row
+    if (remainingCells < 7) {
+      for (let i = 0; i < remainingCells; i++) {
+        days.push(
+          <div
+            key={`empty-end-${i}`}
+            className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
+            onDragOver={(e) => e.preventDefault()}
+          ></div>,
+        )
+      }
+    }
+
     return days
   }
 

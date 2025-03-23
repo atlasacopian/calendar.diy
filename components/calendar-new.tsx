@@ -1250,6 +1250,26 @@ export default function Calendar() {
     }
   }, [showShareModal])
 
+  // Add useEffect to focus the textarea and place cursor at the end when the event modal opens
+  // Add this after the existing useEffect hooks
+
+  // Focus textarea and place cursor at end when event modal opens
+  useEffect(() => {
+    if (showModal) {
+      // Focus the textarea after a short delay to ensure the DOM is ready
+      const timer = setTimeout(() => {
+        const textarea = document.getElementById("event-content") as HTMLTextAreaElement
+        if (textarea) {
+          textarea.focus()
+          // Place cursor at the end of the text
+          const length = textarea.value.length
+          textarea.setSelectionRange(length, length)
+        }
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [showModal])
+
   return (
     <div className="flex flex-col space-y-1">
       {/* Calendar Controls - Now at the top */}
@@ -1535,8 +1555,11 @@ export default function Calendar() {
               </div>
             </div>
             <div className="p-4 sm:p-6">
-              <div className="mb-4">
-                <label htmlFor="event-content" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="mb-6">
+                <label
+                  htmlFor="event-content"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
                   EVENT
                 </label>
                 <textarea
@@ -1549,14 +1572,15 @@ export default function Calendar() {
                       handleSaveAndClose()
                     }
                   }}
-                  className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-base p-3"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4"
                   rows={5}
                   placeholder="Enter event details"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">PROJECT</label>
-                <div className="mt-2 flex flex-wrap gap-2">
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">PROJECT</label>
+                <div className="mt-2 flex flex-wrap gap-3">
                   {projectGroups.map((group) => (
                     <button
                       key={group.id}
@@ -1573,8 +1597,93 @@ export default function Calendar() {
                   ))}
                 </div>
               </div>
+
+              {/* Show existing events for this day */}
+              {eventsForSelectedDate.length > 0 && editingEventId && (
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      EXISTING EVENTS
+                    </label>
+                    {editingEventId && (
+                      <button
+                        onClick={() => handleDeleteEvent(editingEventId)}
+                        className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-600 py-1 px-2 text-xs font-medium text-white shadow-sm hover:bg-red-700"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-3 w-3 mr-1"
+                        >
+                          <path d="M3 6h18"></path>
+                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        </svg>
+                        DELETE EVENT
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {eventsForSelectedDate.map((event) => (
+                      <div
+                        key={event.id}
+                        onClick={() => handleEditEvent(event)}
+                        className={cn(
+                          "p-2 rounded-md border border-gray-200 dark:border-gray-700",
+                          editingEventId === event.id
+                            ? "bg-gray-50 dark:bg-gray-700"
+                            : "hover:bg-gray-50 dark:hover:bg-gray-700",
+                          "cursor-pointer relative",
+                        )}
+                      >
+                        <p
+                          className={cn(
+                            "text-xs break-words preserve-case",
+                            event.color || "text-black dark:text-white",
+                          )}
+                        >
+                          {event.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 sm:p-5 flex justify-between">
+              {editingEventId && (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEvent(editingEventId)}
+                  className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 mr-1"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  </svg>
+                  DELETE
+                </button>
+              )}
+              {!editingEventId && <div></div>}
               <button
                 type="button"
                 className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"

@@ -195,8 +195,8 @@ export default function ProjectGroups({
               "flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs",
               // Always use full color
               getBgFromTextColor(group.color) + " " + getTextForBg(group.color),
-              // Add a black ring when active
-              group.active ? "ring-2 ring-black dark:ring-white" : "opacity-60",
+              // Just adjust opacity for inactive groups, no ring
+              !group.active ? "opacity-60" : "",
             )}
           >
             <button

@@ -630,7 +630,7 @@ export default function Calendar() {
             ;(el as HTMLElement).style.overflow = "visible"
             ;(el as HTMLElement).style.whiteSpace = "normal"
             ;(el as HTMLElement).style.textOverflow = "clip"
-            ;(el as HTMLElement).webkitLineClamp = "none"
+            ;(el as HTMLElement).style.webkitLineClamp = "none"
             ;(el as HTMLElement).style.maxWidth = "none"
             ;(el as HTMLElement).style.width = "auto"
           })

@@ -214,7 +214,6 @@ export default function ProjectGroups({
           onClick={() => setShowAddDialog(true)}
           className="flex items-center gap-1 rounded-md border border-dashed border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
         >
-          <Plus className="h-3 w-3" />
           <span>NEW TAG</span>
         </button>
       </div>

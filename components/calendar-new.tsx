@@ -1538,30 +1538,7 @@ export default function Calendar() {
         onRemoveGroup={handleRemoveProjectGroup}
         onEditGroup={handleEditProjectGroup}
         className="mt-12 flex justify-center" // Changed from mt-6 to mt-12 and added flex justify-center
-      >
-        <button
-          onClick={() => setShowAddDialog(true)}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Add New Project Group"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3"
-          >
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span>NEW TAG</span>
-        </button>
-      </ProjectGroups>
+      />
 
       {/* Event Modal - Updated to match the group dialog style */}
       {showModal && (

@@ -1555,134 +1555,176 @@ export default function Calendar() {
               </div>
             </div>
             <div className="p-4 sm:p-6">
-              {/* Show existing events for this day */}
-              {eventsForSelectedDate.length > 0 && (
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      EXISTING EVENTS
-                    </label>
-                    {eventsForSelectedDate.length < 2 && (
-                      <button
-                        onClick={() => {
-                          setEditingEventId(null)
-                          setEventContent("")
-                          setSelectedColor("text-black")
-                        }}
-                        className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white py-1 px-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              {/* Events for this day - directly editable */}
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">EVENTS</label>
+                  {eventsForSelectedDate.length < 2 && (
+                    <button
+                      onClick={() => {
+                        setEditingEventId(null)
+                        setEventContent("")
+                        setSelectedColor("text-black")
+                      }}
+                      className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white py-1 px-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-3 w-3 mr-1"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-3 w-3 mr-1"
-                        >
-                          <line x1="12" y1="5" x2="12" y2="19"></line>
-                          <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        ADD NEW
-                      </button>
-                    )}
-                  </div>
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      ADD NEW
+                    </button>
+                  )}
+                </div>
+
+                {/* If we have existing events, show them */}
+                {eventsForSelectedDate.length > 0 ? (
                   <div className="space-y-2">
                     {eventsForSelectedDate.map((event) => (
                       <div
                         key={event.id}
-                        onClick={() => handleEditEvent(event)}
                         className={cn(
-                          "p-2 rounded-md border border-gray-200 dark:border-gray-700",
+                          "p-3 rounded-md border border-gray-200 dark:border-gray-700",
                           editingEventId === event.id
-                            ? "bg-gray-50 dark:bg-gray-700"
+                            ? "ring-2 ring-black dark:ring-white"
                             : "hover:bg-gray-50 dark:hover:bg-gray-700",
-                          "cursor-pointer relative",
                         )}
                       >
-                        <div className="flex justify-between">
-                          <p
+                        {editingEventId === event.id ? (
+                          <textarea
+                            value={eventContent}
+                            onChange={(e) => setEventContent(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault()
+                                handleSaveEvent()
+                              }
+                            }}
                             className={cn(
-                              "text-xs break-words preserve-case",
+                              "w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case",
                               event.color || "text-black dark:text-white",
                             )}
-                          >
-                            {event.content}
-                          </p>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteEvent(event.id)
-                            }}
-                            className="ml-2 text-gray-400 hover:text-red-500"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-3 w-3"
+                            rows={3}
+                            autoFocus
+                          />
+                        ) : (
+                          <div className="flex justify-between items-start" onClick={() => handleEditEvent(event)}>
+                            <p
+                              className={cn(
+                                "text-sm break-words preserve-case",
+                                event.color || "text-black dark:text-white",
+                              )}
                             >
-                              <path d="M3 6h18"></path>
-                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                            </svg>
-                          </button>
-                        </div>
+                              {event.content}
+                            </p>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteEvent(event.id)
+                              }}
+                              className="ml-2 text-gray-400 hover:text-red-500"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="h-3 w-3"
+                              >
+                                <path d="M3 6h18"></path>
+                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  // If no events, show the new event form
+                  <div className="p-3 rounded-md border border-gray-200 dark:border-gray-700">
+                    <textarea
+                      value={eventContent}
+                      onChange={(e) => setEventContent(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault()
+                          handleSaveEvent()
+                        }
+                      }}
+                      className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case"
+                      rows={3}
+                      placeholder="Enter event details..."
+                      autoFocus
+                    />
+                  </div>
+                )}
 
-              <div className="mb-6">
-                <label
-                  htmlFor="event-content"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  {editingEventId ? "EDIT EVENT" : "NEW EVENT"}
-                </label>
-                <textarea
-                  id="event-content"
-                  value={eventContent}
-                  onChange={(e) => setEventContent(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault()
-                      handleSaveAndClose()
-                    }
-                  }}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4"
-                  rows={5}
-                  placeholder="Enter event details"
-                />
+                {/* If we're adding a new event (not editing), show the textarea */}
+                {editingEventId === null && eventsForSelectedDate.length > 0 && (
+                  <div className="mt-2 p-3 rounded-md border border-gray-200 dark:border-gray-700">
+                    <textarea
+                      value={eventContent}
+                      onChange={(e) => setEventContent(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault()
+                          handleSaveEvent()
+                        }
+                      }}
+                      className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case"
+                      rows={3}
+                      placeholder="Enter event details..."
+                      autoFocus
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">PROJECT</label>
                 <div className="mt-2 flex flex-wrap gap-3">
-                  {projectGroups.map((group) => (
-                    <button
-                      key={group.id}
-                      onClick={() => setSelectedColor(group.color)}
-                      className={cn(
-                        "px-4 py-2 rounded-md border transition-colors",
-                        selectedColor === group.color
-                          ? `${getBgFromTextColor(group.color)} ${getTextForBg(group.color)}`
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700",
-                      )}
-                    >
-                      {group.name}
-                    </button>
-                  ))}
+                  {projectGroups.map((group) => {
+                    // Get the background color for this project
+                    const bgColor = getBgFromTextColor(group.color)
+                    const textColor = getTextForBg(group.color)
+
+                    return (
+                      <button
+                        key={group.id}
+                        onClick={() => setSelectedColor(group.color)}
+                        className={cn(
+                          "px-4 py-2 rounded-md border transition-colors",
+                          // Always show the project's color as a left border
+                          "border-l-4",
+                          `border-l-${bgColor.replace("bg-", "")}`,
+                          // If selected, use full background color
+                          selectedColor === group.color
+                            ? `${bgColor} ${textColor} ring-2 ring-black dark:ring-white`
+                            : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700",
+                        )}
+                      >
+                        {group.name}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </div>

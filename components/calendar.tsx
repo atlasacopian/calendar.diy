@@ -396,8 +396,10 @@ export default function Calendar() {
     if (!selectedDate) return
 
     if (eventContent.trim()) {
-      // Find the selected project by color
-      const selectedProject = projectGroups.find((p) => p.color === selectedColor)
+      // Find the selected project by color - make sure we get the exact match
+      const selectedProject =
+        projectGroups.find((p) => p.color === selectedColor && p.id !== "default") ||
+        projectGroups.find((p) => p.id === "default")
       const projectId = selectedProject?.id || "default"
 
       // If we're editing an existing event
@@ -1751,36 +1753,45 @@ export default function Calendar() {
                   <label className="block font-mono text-xs font-medium text-gray-700 dark:text-gray-300">
                     PROJECT
                   </label>
+                  {/* Project selection */}
                   <div className="mt-2">
                     <div className="flex flex-wrap gap-2">
-                      {projectGroups.map((project) => (
-                        <button
-                          key={project.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedColor(project.color)
-                            // Also set the projectId when editing
-                            if (editingEventId) {
-                              setEvents(
-                                events.map((event) =>
-                                  event.id === editingEventId ? { ...event, projectId: project.id } : event,
-                                ),
-                              )
-                            }
-                          }}
-                          className={cn(
-                            "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
-                            getBgFromTextColor(project.color),
-                            getTextForBg(project.color),
-                            selectedColor === project.color
-                              ? "ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-800"
-                              : "",
-                          )}
-                          title={project.name}
-                        >
-                          {project.name}
-                        </button>
-                      ))}
+                      {/* Filter out duplicate projects by using a Set of project IDs */}
+                      {Array.from(new Set(projectGroups.map((p) => p.id))).map((projectId) => {
+                        const project = projectGroups.find((p) => p.id === projectId)
+                        if (!project) return null
+
+                        return (
+                          <button
+                            key={project.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedColor(project.color)
+                              // Also set the projectId when editing
+                              if (editingEventId) {
+                                setEvents(
+                                  events.map((event) =>
+                                    event.id === editingEventId
+                                      ? { ...event, projectId: project.id, color: project.color }
+                                      : event,
+                                  ),
+                                )
+                              }
+                            }}
+                            className={cn(
+                              "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
+                              getBgFromTextColor(project.color),
+                              getTextForBg(project.color),
+                              selectedColor === project.color
+                                ? "ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-800"
+                                : "",
+                            )}
+                            title={project.name}
+                          >
+                            {project.name}
+                          </button>
+                        )
+                      })}
 
                       <button
                         type="button"

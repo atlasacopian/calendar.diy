@@ -104,15 +104,15 @@ export default function ProjectGroups({
                 <span>{group.name}</span>
               </button>
 
-              {group.id !== "default" && (
-                <>
-                  <button
-                    onClick={() => startEditGroup(group)}
-                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-                    title={`Edit ${group.name}`}
-                  >
-                    <Edit2 className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                  </button>
+              <>
+                <button
+                  onClick={() => startEditGroup(group)}
+                  className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                  title={`Edit ${group.name}`}
+                >
+                  <Edit2 className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                </button>
+                {group.id !== "default" && (
                   <button
                     onClick={() => onRemoveGroup(group.id)}
                     className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -120,8 +120,8 @@ export default function ProjectGroups({
                   >
                     <X className="h-3 w-3 text-gray-500 dark:text-gray-400" />
                   </button>
-                </>
-              )}
+                )}
+              </>
             </div>
           ))}
 

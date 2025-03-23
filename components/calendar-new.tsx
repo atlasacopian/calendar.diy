@@ -85,6 +85,7 @@ export default function Calendar() {
   const dateSelectorRef = useRef<HTMLDivElement>(null)
   const eventModalRef = useRef<HTMLDivElement>(null)
   const shareModalRef = useRef<HTMLDivElement>(null)
+  const eventInputRef = useRef<HTMLInputElement>(null)
 
   const handleToggleProjectGroup = useCallback((groupId: string) => {
     setProjectGroups((prevGroups) =>
@@ -436,7 +437,7 @@ export default function Calendar() {
   }
 
   // Handle Enter key in textarea
-  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     // Save and close on Enter without shift key (shift+enter allows for line breaks)
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
@@ -1255,12 +1256,12 @@ export default function Calendar() {
     if (showModal) {
       // Focus the textarea after a short delay to ensure the DOM is ready
       const timer = setTimeout(() => {
-        const textarea = document.getElementById("event-content") as HTMLTextAreaElement
-        if (textarea) {
-          textarea.focus()
+        const input = document.getElementById("event-content") as HTMLInputElement
+        if (input) {
+          input.focus()
           // Place cursor at the end of the text
-          const length = textarea.value.length
-          textarea.setSelectionRange(length, length)
+          const length = input.value.length
+          input.setSelectionRange(length, length)
         }
       }, 50)
       return () => clearTimeout(timer)
@@ -1517,6 +1518,7 @@ export default function Calendar() {
         className="mt-12 flex justify-center" // Changed from mt-6 to mt-12 and added flex justify-center
       />
 
+      {/* Event Modal - Updated to match the group dialog style */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div
@@ -1551,149 +1553,27 @@ export default function Calendar() {
               </div>
             </div>
             <div className="p-4 sm:p-6">
-              {/* Events for this day - directly editable */}
+              {/* Event Content - Styled like the group name input */}
               <div className="mb-6">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">EVENTS</label>
-                  {eventsForSelectedDate.length < 2 && (
-                    <button
-                      onClick={() => {
-                        setEditingEventId(null)
-                        setEventContent("")
-                        setSelectedColor("text-black")
-                      }}
-                      className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white py-1 px-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3 mr-1"
-                      >
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                      </svg>
-                      ADD NEW
-                    </button>
-                  )}
-                </div>
-
-                {/* If we have existing events, show them */}
-                {eventsForSelectedDate.length > 0 ? (
-                  <div className="space-y-2">
-                    {eventsForSelectedDate.map((event) => (
-                      <div
-                        key={event.id}
-                        className={cn(
-                          "p-3 rounded-md border border-gray-200 dark:border-gray-700",
-                          editingEventId === event.id
-                            ? "ring-2 ring-black dark:ring-white"
-                            : "hover:bg-gray-50 dark:hover:bg-gray-700",
-                        )}
-                      >
-                        {editingEventId === event.id ? (
-                          <textarea
-                            value={eventContent}
-                            onChange={(e) => setEventContent(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) {
-                                e.preventDefault()
-                                handleSaveAndClose()
-                              }
-                            }}
-                            className={cn(
-                              "w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case resize-none",
-                              event.color || "text-black dark:text-white",
-                            )}
-                            rows={3}
-                            autoFocus
-                          />
-                        ) : (
-                          <div className="flex justify-between items-start" onClick={() => handleEditEvent(event)}>
-                            <p
-                              className={cn(
-                                "text-sm break-words preserve-case",
-                                event.color || "text-black dark:text-white",
-                              )}
-                            >
-                              {event.content}
-                            </p>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteEvent(event.id)
-                              }}
-                              className="ml-2 text-gray-400 hover:text-gray-600"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="12"
-                                height="12"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="h-3 w-3"
-                              >
-                                <path d="M3 6h18"></path>
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                              </svg>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  // If no events, show the new event form
-                  <div className="p-3 rounded-md border border-gray-200 dark:border-gray-700">
-                    <textarea
-                      value={eventContent}
-                      onChange={(e) => setEventContent(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSaveAndClose()
-                        }
-                      }}
-                      className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case resize-none"
-                      rows={3}
-                      placeholder="Enter event details..."
-                      autoFocus
-                    />
-                  </div>
-                )}
-
-                {/* If we're adding a new event (not editing), show the textarea */}
-                {editingEventId === null && eventsForSelectedDate.length > 0 && (
-                  <div className="mt-2 p-3 rounded-md border border-gray-200 dark:border-gray-700">
-                    <textarea
-                      value={eventContent}
-                      onChange={(e) => setEventContent(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSaveAndClose()
-                        }
-                      }}
-                      className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case resize-none"
-                      rows={3}
-                      placeholder="Enter event details..."
-                      autoFocus
-                    />
-                  </div>
-                )}
+                <label
+                  htmlFor="event-content"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  EVENT
+                </label>
+                <input
+                  type="text"
+                  id="event-content"
+                  value={eventContent}
+                  onChange={(e) => setEventContent(e.target.value)}
+                  onKeyDown={handleTextareaKeyDown}
+                  ref={eventInputRef}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
+                  placeholder="ENTER EVENT DETAILS"
+                />
               </div>
 
+              {/* Color/Group Selection - Styled like the color picker in group dialog */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">GROUP</label>
                 <div className="mt-2 flex flex-wrap gap-3">
@@ -1701,7 +1581,6 @@ export default function Calendar() {
                     // Get the color information for this project
                     const colorInfo = colorOptions.find((c) => c.value === group.color)
                     const bgColor = getBgFromTextColor(group.color)
-                    const textColor = getTextForBg(group.color)
 
                     return (
                       <button
@@ -1732,51 +1611,115 @@ export default function Calendar() {
                           }
                         }}
                         className={cn(
-                          "flex items-center rounded-md px-2 py-1 text-xs border border-transparent transition-colors",
-                          // Always use the background color
+                          "h-8 w-8 rounded-full",
                           bgColor,
-                          textColor,
-                          // Use a subtle border and shadow for selection instead of a ring
-                          selectedColor === group.color ? "border-gray-300 shadow-sm" : "",
+                          selectedColor === group.color ? "ring-2 ring-black ring-offset-2" : "",
                         )}
-                      >
-                        {group.name}
-                      </button>
+                      ></button>
                     )
                   })}
                 </div>
               </div>
+
+              {/* List of existing events for this day */}
+              {eventsForSelectedDate.length > 0 && editingEventId !== eventsForSelectedDate[0].id && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    OTHER EVENTS
+                  </label>
+                  <div className="space-y-2">
+                    {eventsForSelectedDate.map(
+                      (event) =>
+                        event.id !== editingEventId && (
+                          <div
+                            key={event.id}
+                            className="flex justify-between items-center p-2 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            <p
+                              className={cn(
+                                "text-sm break-words preserve-case",
+                                event.color || "text-black dark:text-white",
+                              )}
+                            >
+                              {event.content}
+                            </p>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleEditEvent(event)}
+                                className="text-gray-400 hover:text-gray-600"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="h-3 w-3"
+                                >
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEvent(event.id)}
+                                className="text-gray-400 hover:text-gray-600"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="h-3 w-3"
+                                >
+                                  <path d="M3 6h18"></path>
+                                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        ),
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-between">
-              {/* Make the DELETE button more low-key (not red) */}
-              <button
-                type="button"
-                onClick={() => {
-                  // If we're editing an event, delete that specific event
-                  if (editingEventId) {
-                    handleDeleteEvent(editingEventId)
-                  }
-                }}
-                className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 flex items-center"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4 mr-1"
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
+              {/* Only show delete button if we're editing an existing event */}
+              {editingEventId && (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEvent(editingEventId)}
+                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 flex items-center mr-auto"
                 >
-                  <path d="M3 6h18"></path>
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                </svg>
-                DELETE
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 mr-1"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  </svg>
+                  DELETE
+                </button>
+              )}
               <button
                 type="button"
                 className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"

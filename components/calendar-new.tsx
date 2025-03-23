@@ -596,20 +596,19 @@ export default function Calendar() {
       // Ensure text doesn't get cut off by increasing cell heights and adjusting text properties
       const dayCells = clonedCalendar.querySelectorAll(".calendar-day")
       dayCells.forEach((cell) => {
-        ;(cell as HTMLElement).style.minHeight =
-          "120px"(cell as HTMLElement).style.height =
-          "auto"(cell as HTMLElement).style.padding =
-            "10px"
+        ;(cell as HTMLElement).style.minHeight = "120px"
+        ;(cell as HTMLElement).style.height = "auto"
+        ;(cell as HTMLElement).style.padding = "10px"
 
         // Make sure text is fully visible
         const textElements = cell.querySelectorAll("span, div")
         textElements.forEach((el) => {
-          ;(el as HTMLElement).style.overflow =
-            "visible"(el as HTMLElement).style.whiteSpace =
-            "normal"(el as HTMLElement).style.textOverflow =
-            "clip"(el as HTMLElement).style.maxWidth =
-            "none"(el as HTMLElement).style.width =
-              "auto"(el as HTMLElement).classList.remove("line-clamp-2", "line-clamp-4")
+          ;(el as HTMLElement).style.overflow = "visible"
+          ;(cell as HTMLElement).style.whiteSpace = "normal"
+          ;(cell as HTMLElement).style.textOverflow = "clip"
+          ;(cell as HTMLElement).style.maxWidth = "none"
+          ;(cell as HTMLElement).style.width = "auto"
+          ;(cell as HTMLElement).classList.remove("line-clamp-2", "line-clamp-4")
         })
       })
 
@@ -629,13 +628,12 @@ export default function Calendar() {
           // Additional modifications to the cloned element
           const textElements = element.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4")
           textElements.forEach((el) => {
-            ;(el as HTMLElement).style.overflow =
-              "visible"(el as HTMLElement).style.whiteSpace =
-              "normal"(el as HTMLElement).style.textOverflow =
-              "clip"(el as HTMLElement).style.webkitLineClamp =
-              "none"(el as HTMLElement).style.maxWidth =
-              "none"(el as HTMLElement).style.width =
-                "auto"
+            ;(el as HTMLElement).style.overflow = "visible"
+            ;(el as HTMLElement).style.whiteSpace = "normal"
+            ;(el as HTMLElement).style.textOverflow = "clip"
+            ;(el as HTMLElement).style.webkitLineClamp = "none"
+            ;(el as HTMLElement).style.maxWidth = "none"
+            ;(el as HTMLElement).style.width = "auto"
           })
         },
       })

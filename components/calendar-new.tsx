@@ -1019,14 +1019,29 @@ export default function Calendar() {
                 onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
                 onDragEnd={handleDragEnd}
               >
-                <span
-                  className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-4 break-words"
-                  style={{
-                    color: getExactColorHex(limitedEvents[0].color),
-                  }}
-                >
-                  {limitedEvents[0] ? limitedEvents[0].content : ""}
-                </span>
+                <div className="flex flex-col gap-1 w-full">
+                  {/* Show group tag */}
+                  {limitedEvents[0] && (
+                    <div
+                      className="inline-flex self-start items-center rounded-sm px-1 text-[8px] text-white"
+                      style={{
+                        backgroundColor: getExactColorHex(limitedEvents[0].color).replace("text-", ""),
+                      }}
+                    >
+                      {projectGroups.find((g) => g.id === limitedEvents[0].projectId)?.name ||
+                        projectGroups.find((g) => g.color === limitedEvents[0].color)?.name ||
+                        "GROUP"}
+                    </div>
+                  )}
+                  <span
+                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-3 break-words"
+                    style={{
+                      color: getExactColorHex(limitedEvents[0].color),
+                    }}
+                  >
+                    {limitedEvents[0] ? limitedEvents[0].content : ""}
+                  </span>
+                </div>
               </div>
             ) : (
               // If there are two events, space them with the divider centered
@@ -1037,14 +1052,29 @@ export default function Calendar() {
                   onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
                   onDragEnd={handleDragEnd}
                 >
-                  <span
-                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
-                    style={{
-                      color: getExactColorHex(limitedEvents[0]?.color),
-                    }}
-                  >
-                    {limitedEvents[0] ? limitedEvents[0].content : ""}
-                  </span>
+                  <div className="flex flex-col gap-1 w-full">
+                    {/* Show group tag */}
+                    {limitedEvents[0] && (
+                      <div
+                        className="inline-flex self-start items-center rounded-sm px-1 text-[8px] text-white"
+                        style={{
+                          backgroundColor: getExactColorHex(limitedEvents[0].color).replace("text-", ""),
+                        }}
+                      >
+                        {projectGroups.find((g) => g.id === limitedEvents[0].projectId)?.name ||
+                          projectGroups.find((g) => g.color === limitedEvents[0].color)?.name ||
+                          "GROUP"}
+                      </div>
+                    )}
+                    <span
+                      className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-1 break-words"
+                      style={{
+                        color: getExactColorHex(limitedEvents[0]?.color),
+                      }}
+                    >
+                      {limitedEvents[0] ? limitedEvents[0].content : ""}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Only show divider when there are two entries */}
@@ -1058,14 +1088,29 @@ export default function Calendar() {
                   onDragStart={(e) => handleDragStart(limitedEvents[1], e)}
                   onDragEnd={handleDragEnd}
                 >
-                  <span
-                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
-                    style={{
-                      color: getExactColorHex(limitedEvents[1]?.color),
-                    }}
-                  >
-                    {limitedEvents[1] ? limitedEvents[1].content : ""}
-                  </span>
+                  <div className="flex flex-col gap-1 w-full">
+                    {/* Show group tag */}
+                    {limitedEvents[1] && (
+                      <div
+                        className="inline-flex self-start items-center rounded-sm px-1 text-[8px] text-white"
+                        style={{
+                          backgroundColor: getExactColorHex(limitedEvents[1].color).replace("text-", ""),
+                        }}
+                      >
+                        {projectGroups.find((g) => g.id === limitedEvents[1].projectId)?.name ||
+                          projectGroups.find((g) => g.color === limitedEvents[1].color)?.name ||
+                          "GROUP"}
+                      </div>
+                    )}
+                    <span
+                      className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-1 break-words"
+                      style={{
+                        color: getExactColorHex(limitedEvents[1]?.color),
+                      }}
+                    >
+                      {limitedEvents[1] ? limitedEvents[1].content : ""}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -1574,13 +1619,11 @@ export default function Calendar() {
                 />
               </div>
 
-              {/* Color/Group Selection - Styled like the color picker in group dialog */}
+              {/* Color/Group Selection - Now showing full tags with names */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">GROUP</label>
-                <div className="mt-2 flex flex-wrap gap-3">
+                <div className="mt-2 flex flex-wrap gap-2">
                   {projectGroups.map((group) => {
-                    // Get the color information for this project
-                    const colorInfo = colorOptions.find((c) => c.value === group.color)
                     const bgColor = getBgFromTextColor(group.color)
 
                     return (
@@ -1612,11 +1655,14 @@ export default function Calendar() {
                           }
                         }}
                         className={cn(
-                          "h-8 w-8 rounded-full",
+                          "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
                           bgColor,
+                          "text-white", // All tags use white text for consistency
                           selectedColor === group.color ? "ring-2 ring-black ring-offset-2" : "",
                         )}
-                      ></button>
+                      >
+                        {group.name}
+                      </button>
                     )
                   })}
                 </div>

@@ -10,11 +10,15 @@ import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import { Share2 } from "lucide-react"
 
+// Add these imports at the top
+import ProjectToggles from "@/components/project-toggles"
+
 type CalendarEvent = {
   id: string
   date: Date
   content: string
   color?: string
+  projectId?: string
 }
 
 // Color options for color picker
@@ -47,6 +51,13 @@ export default function Calendar() {
   const [shareUrl, setShareUrl] = useState("")
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
+
+  // Add this state inside your component
+  const [projects, setProjects] = useState([
+    { id: "1", name: "WORK", color: "#2563eb", active: true },
+    { id: "2", name: "PERSONAL", color: "#16a34a", active: true },
+    { id: "3", name: "TRAVEL", color: "#f97316", active: true },
+  ])
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -331,6 +342,27 @@ export default function Calendar() {
     }
 
     setShowModal(true)
+  }
+
+  // Add these functions inside your component
+  const handleToggleProject = (id: string) => {
+    setProjects(projects.map(project =>
+      project.id === id
+        ? { ...project, active: !project.active }
+        : project
+    ))
+  }
+
+  const handleAddProject = (name: string, color: string) => {
+    setProjects([
+      ...projects,
+      {
+        id: Math.random().toString(36).substring(2, 11),
+        name: name.toUpperCase(),
+        color,
+        active: true
+      }
+    ])
   }
 
   const handleSaveEvent = () => {
@@ -885,7 +917,9 @@ export default function Calendar() {
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      const dayEvents = events.filter((event) => isSameDay(event.date, date))
+      // Filter events based on active projects
+      // This assumes you've added a projectId field to your events
+      const dayEvents = filteredEvents.filter((event) => isSameDay(event.date, date))
       // Limit to 2 events per day
       const limitedEvents = dayEvents.slice(0, 2)
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
@@ -1181,6 +1215,17 @@ export default function Calendar() {
     }
   }, [events])
 
+  // Filter events based on active projects
+  // This assumes you've added a projectId field to your events
+  const filteredEvents = events.filter(event => {
+    // If no projectId is assigned, always show the event
+    if (!event.projectId) return true
+
+    // Find the project and check if it's active
+    const project = projects.find(p => p.id === event.projectId)
+    return project?.active ?? true
+  })
+
   return (
     <div className="flex flex-col space-y-4">
       <div
@@ -1259,6 +1304,14 @@ export default function Calendar() {
           </div>
         </div>
       </div>
+
+      {/* Then in your JSX, add this right after the calendar grid but before the buttons
+      (between the </div></div></div> of the calendar and the calendar controls div) */}
+      <ProjectToggles
+        projects={projects}
+        onToggleProject={handleToggleProject}
+        onAddProject={handleAddProject}
+      />
 
       {/* Calendar Controls - Now free-floating without the gray background */}
       <div className="calendar-controls flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">
@@ -1523,260 +1576,5 @@ export default function Calendar() {
                               className="h-3 w-3 text-gray-500 dark:text-gray-400"
                             >
                               <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                              <line x1="10" y1="11" x2="10" y2="17"></line>
-                              <line x1="14" y1="11" x2="14" y2="17"></line>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Form for adding/editing an event */}
-              <div className="mb-2 sm:mb-3">
-                <label
-                  htmlFor="event-content"
-                  className="mb-1 block font-mono text-xs text-gray-700 dark:text-gray-300"
-                >
-                  {editingEventId ? "EDIT EVENT" : "ADD NEW EVENT"}
-                </label>
-                <textarea
-                  ref={textareaRef}
-                  id="event-content"
-                  value={eventContent}
-                  onChange={(e) => setEventContent(e.target.value)}
-                  onKeyDown={handleTextareaKeyDown}
-                  placeholder={editingEventId ? "Edit event details..." : "Add event details..."}
-                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-base md:text-sm focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white preserve-case"
-                  style={{ textTransform: "none" }}
-                  rows={isMobile ? 2 : 3}
-                />
-              </div>
-
-              <div className="mb-2 sm:mb-3">
-                <div className="flex items-center justify-between">
-                  <label className="block font-mono text-xs text-gray-700 dark:text-gray-300">COLOR</label>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                    {colorOptions.map((color) => (
-                      <button
-                        key={color.value}
-                        className={cn(
-                          "flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full",
-                          color.bg,
-                          color.text,
-                          selectedColor === color.value
-                            ? "ring-1 ring-gray-400 dark:ring-gray-300 ring-offset-1 dark:ring-offset-gray-800"
-                            : "",
-                        )}
-                        title={color.name}
-                        onClick={() => setSelectedColor(color.value)}
-                        type="button"
-                      >
-                        {selectedColor === color.value && (
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-                          >
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    onClick={handleSaveEvent}
-                    disabled={!eventContent.trim()}
-                    className={cn(
-                      "rounded-md px-2 py-1 font-mono text-xs uppercase",
-                      eventContent.trim()
-                        ? "text-gray-500 border border-gray-200 dark:text-gray-400 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                        : "text-gray-300 border border-gray-200 dark:text-gray-600 dark:border-gray-700 cursor-not-allowed",
-                    )}
-                  >
-                    ADD ANOTHER EVENT
-                  </button>
-                </div>
-              </div>
-
-              {/* Action buttons for the form */}
-              <div className="flex justify-end gap-2 mt-4">{/* Removed Cancel Edit and Update Event buttons */}</div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={handleSaveAndClose}
-                  className={cn(
-                    "rounded-md px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs",
-                    eventContent.trim()
-                      ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed",
-                  )}
-                  disabled={!eventContent.trim()}
-                >
-                  SAVE
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Confirmation Modal */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={resetModalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl max-h-[90vh] flex flex-col"
-            style={{ margin: "auto" }}
-          >
-            {/* Modal Header */}
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-medium tracking-tight dark:text-white uppercase">
-                  RESET CALENDAR DATA
-                </h3>
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {/* Render SVG directly instead of using the Lucide component */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-4 dark:text-gray-200">
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 uppercase">
-                ARE YOU SURE YOU WANT TO RESET ALL CALENDAR DATA? THIS WILL REMOVE ALL EVENTS YOU'VE ADDED AND CANNOT BE
-                UNDONE.
-              </p>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 uppercase"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleResetData}
-                  className="rounded-md bg-red-600 dark:bg-red-700 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white hover:bg-red-700 dark:hover:bg-red-800 uppercase"
-                >
-                  RESET DATA
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Share Modal */}
-      {showShareModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl max-h-[90vh] flex flex-col"
-            style={{ margin: "auto" }}
-          >
-            {/* Modal Header */}
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-medium tracking-tight dark:text-white uppercase">
-                  SHARE CALENDAR
-                </h3>
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-4 dark:text-gray-200">
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 uppercase">
-                SHARE THIS LINK TO SHOW OTHERS THIS CALENDAR VIEW:
-              </p>
-              <div className="flex items-center gap-2">
-                <input
-                  ref={shareInputRef}
-                  type="text"
-                  value={shareUrl}
-                  readOnly
-                  className="w-full rounded-md border border-gray-200 dark:border-gray-700 p-2 font-mono text-xs focus:border-black dark:focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-gray-500 dark:bg-gray-700 dark:text-white uppercase"
-                />
-                <button
-                  id="copy-button"
-                  onClick={copyShareUrl}
-                  className="rounded-md bg-black dark:bg-white px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 whitespace-nowrap uppercase"
-                >
-                  COPY
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 sm:px-3 sm:py-1.5 font-mono text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 uppercase"
-                >
-                  CLOSE
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2\
 

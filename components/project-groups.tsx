@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
+import { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { Plus, Trash2 } from "lucide-react"
 
@@ -45,6 +47,43 @@ export default function ProjectGroups({
   const [editingGroup, setEditingGroup] = useState<ProjectGroup | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+
+  const addDialogRef = useRef<HTMLDivElement>(null)
+  const editDialogRef = useRef<HTMLDivElement>(null)
+  const deleteConfirmRef = useRef<HTMLDivElement>(null)
+
+  const handleAddProjectKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      handleAddProject()
+    }
+  }
+
+  const handleEditProjectKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      handleEditProject()
+    }
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showAddDialog && addDialogRef.current && !addDialogRef.current.contains(event.target as Node)) {
+        setShowAddDialog(false)
+      }
+      if (showEditDialog && editDialogRef.current && !editDialogRef.current.contains(event.target as Node)) {
+        setShowEditDialog(false)
+      }
+      if (showDeleteConfirm && deleteConfirmRef.current && !deleteConfirmRef.current.contains(event.target as Node)) {
+        setShowDeleteConfirm(null)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showAddDialog, showEditDialog, showDeleteConfirm])
 
   const handleAddProject = () => {
     if (newProjectName.trim()) {
@@ -114,7 +153,10 @@ export default function ProjectGroups({
       {/* Add Project Dialog */}
       {showAddDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+          <div
+            ref={addDialogRef}
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
+          >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">NEW PROJECT</h3>
@@ -149,9 +191,10 @@ export default function ProjectGroups({
                   type="text"
                   id="project-name"
                   value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                  placeholder="Enter project name"
+                  onChange={(e) => setNewProjectName(e.target.value.toUpperCase())}
+                  onKeyDown={handleAddProjectKeyDown}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm uppercase"
+                  placeholder="ENTER PROJECT NAME"
                 />
               </div>
               <div>
@@ -174,14 +217,7 @@ export default function ProjectGroups({
             <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
               <button
                 type="button"
-                className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-                onClick={() => setShowAddDialog(false)}
-              >
-                CANCEL
-              </button>
-              <button
-                type="button"
-                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
                 onClick={handleAddProject}
               >
                 ADD
@@ -194,7 +230,10 @@ export default function ProjectGroups({
       {/* Edit Project Dialog */}
       {showEditDialog && editingGroup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+          <div
+            ref={editDialogRef}
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
+          >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">EDIT PROJECT</h3>
@@ -232,9 +271,10 @@ export default function ProjectGroups({
                   type="text"
                   id="edit-project-name"
                   value={editingGroup.name}
-                  onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                  placeholder="Enter project name"
+                  onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value.toUpperCase() })}
+                  onKeyDown={handleEditProjectKeyDown}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm uppercase"
+                  placeholder="ENTER PROJECT NAME"
                   disabled={editingGroup.id === "default"}
                 />
               </div>
@@ -270,14 +310,7 @@ export default function ProjectGroups({
             <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
               <button
                 type="button"
-                className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-                onClick={() => setShowEditDialog(false)}
-              >
-                CANCEL
-              </button>
-              <button
-                type="button"
-                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
                 onClick={handleEditProject}
               >
                 SAVE
@@ -290,7 +323,10 @@ export default function ProjectGroups({
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+          <div
+            ref={deleteConfirmRef}
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
+          >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">CONFIRM DELETE</h3>

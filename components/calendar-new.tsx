@@ -21,12 +21,12 @@ type CalendarEvent = {
 // Color options for color picker
 const colorOptions = [
   { name: "Black", value: "text-black", bg: "bg-[#000000]", text: "text-white", hex: "#000000" },
-  { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-black", hex: "#0012ff" },
-  { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-black", hex: "#ff0000" },
-  { name: "Yellow", value: "text-yellow-500", bg: "bg-[#f6ff00]", text: "text-black", hex: "#f6ff00" },
-  { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-black", hex: "#1ae100" },
-  { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-black", hex: "#a800ff" },
-  { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-black", hex: "#ff7200" },
+  { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white", hex: "#0012ff" },
+  { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white", hex: "#ff0000" },
+  { name: "Yellow", value: "text-yellow-500", bg: "bg-[#e3e600]", text: "text-white", hex: "#e3e600" },
+  { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white", hex: "#1ae100" },
+  { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white", hex: "#a800ff" },
+  { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-white", hex: "#ff7200" },
 ]
 
 // Get the background color class from a text color class
@@ -37,14 +37,7 @@ const getBgFromTextColor = (textColor: string) => {
 
 const getTextForBg = (textColor: string) => {
   const color = colorOptions.find((c) => c.value === textColor)
-  // For dark colors use white text, for light colors use black text
-  if (color) {
-    if (color.name === "Yellow" || color.name === "Orange") {
-      return "text-black"
-    }
-    return "text-white"
-  }
-  return "text-black"
+  return "text-white"
 }
 
 export default function Calendar() {
@@ -455,6 +448,9 @@ export default function Calendar() {
     // Clear events
     setEvents([])
 
+    // Reset project groups to original state
+    setProjectGroups([{ id: "default", name: "PROJECT 01", color: "text-black", active: true }])
+
     // Clear localStorage
     localStorage.removeItem("calendarEvents")
 
@@ -782,11 +778,12 @@ export default function Calendar() {
         eventDiv.style.textOverflow = "ellipsis"
         eventDiv.style.whiteSpace = "nowrap"
 
+        // Update the first instance of color mapping in the createPrintableCalendar function for single events
         // Convert Tailwind color classes to CSS colors
         let color = "#000"
         if (event?.color?.includes("blue")) color = "#2563eb"
         if (event?.color?.includes("red")) color = "#dc2626"
-        if (event?.color?.includes("yellow")) color = "#eab308"
+        if (event?.color?.includes("yellow")) color = "#e3e600"
         if (event?.color?.includes("orange")) color = "#f97316"
         if (event?.color?.includes("green")) color = "#16a34a"
         if (event?.color?.includes("purple")) color = "#9333ea"
@@ -811,17 +808,17 @@ export default function Calendar() {
         eventDiv1.style.textOverflow = "ellipsis"
         eventDiv1.style.whiteSpace = "nowrap"
 
+        // Update the color mapping in the createPrintableCalendar function for yellow
         // Convert Tailwind color classes to CSS colors
         let color1 = "#000"
         if (event1?.color?.includes("blue")) color1 = "#2563eb"
         if (event1?.color?.includes("red")) color1 = "#dc2626"
-        if (event1?.color?.includes("yellow")) color1 = "#eab308"
+        if (event1?.color?.includes("yellow")) color1 = "#e3e600"
         if (event1?.color?.includes("orange")) color1 = "#f97316"
         if (event1?.color?.includes("green")) color1 = "#16a34a"
         if (event1?.color?.includes("purple")) color1 = "#9333ea"
 
         eventDiv1.style.color = color1
-        topEventContainer.appendChild(eventDiv1)
         eventsContainer.appendChild(topEventContainer)
 
         // Add centered divider only when there are 2 events
@@ -853,7 +850,7 @@ export default function Calendar() {
         let color2 = "#000"
         if (event2?.color?.includes("blue")) color2 = "#2563eb"
         if (event2?.color?.includes("red")) color2 = "#dc2626"
-        if (event2?.color?.includes("yellow")) color2 = "#eab308"
+        if (event2?.color?.includes("yellow")) color2 = "#e3e600"
         if (event2?.color?.includes("orange")) color2 = "#f97316"
         if (event2?.color?.includes("green")) color2 = "#16a34a"
         if (event2?.color?.includes("purple")) color2 = "#9333ea"
@@ -1089,7 +1086,7 @@ export default function Calendar() {
     // Fallback mapping for legacy color classes
     if (colorClass.includes("blue")) return "#0012ff"
     if (colorClass.includes("red")) return "#ff0000"
-    if (colorClass.includes("yellow")) return "#f6ff00"
+    if (colorClass.includes("yellow")) return "#e3e600"
     if (colorClass.includes("green")) return "#1ae100"
     if (colorClass.includes("purple")) return "#a800ff"
     if (colorClass.includes("orange")) return "#ff7200"
@@ -1419,20 +1416,20 @@ export default function Calendar() {
                 {showDateSelector && (
                   <div
                     ref={dateSelectorRef}
-                    className="absolute z-10 mt-1 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    className="absolute z-10 mt-1 w-56 origin-top-center left-1/2 transform -translate-x-1/2 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                     role="menu"
                     aria-orientation="vertical"
                     aria-labelledby="menu-button"
                   >
                     <div className="py-1" role="none">
-                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                         <div className="grid grid-cols-1 gap-1">
                           <select
                             value={currentDate.getFullYear()}
                             onChange={(e) => {
                               setCurrentDate(new Date(Number.parseInt(e.target.value), currentDate.getMonth(), 1))
                             }}
-                            className="p-1 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded"
+                            className="p-1 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded focus:ring-black focus:border-black"
                           >
                             {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
                               <option key={year} value={year}>
@@ -1441,6 +1438,26 @@ export default function Calendar() {
                             ))}
                           </select>
                         </div>
+                        <button
+                          onClick={() => setShowDateSelector(false)}
+                          className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
                       </div>
                       <div className="grid grid-cols-3 gap-1 p-2">
                         {Array.from({ length: 12 }, (_, i) => i).map((month) => (
@@ -1569,7 +1586,7 @@ export default function Calendar() {
                   onChange={(e) => setEventContent(e.target.value)}
                   onKeyDown={handleTextareaKeyDown}
                   ref={eventInputRef}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
                   placeholder="ENTER EVENT DETAILS"
                 />
               </div>
@@ -1829,7 +1846,7 @@ export default function Calendar() {
                 <input
                   type="text"
                   id="share-url"
-                  className="block w-full rounded-md border-gray-300 pr-12 focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm font-mono"
+                  className="block w-full rounded-md border-gray-300 pr-12 focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm font-mono"
                   value={shareUrl}
                   readOnly
                   ref={shareInputRef}

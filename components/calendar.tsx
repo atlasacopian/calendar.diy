@@ -63,12 +63,6 @@ export default function Calendar() {
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([
     { id: "default", name: "Default", color: "text-black", active: true },
-    { id: "blue", name: "Blue", color: "text-blue-600", active: true },
-    { id: "red", name: "Red", color: "text-red-600", active: true },
-    { id: "yellow", name: "Yellow", color: "text-yellow-500", active: true },
-    { id: "orange", name: "Orange", color: "text-orange-500", active: true },
-    { id: "green", name: "Green", color: "text-green-600", active: true },
-    { id: "purple", name: "Purple", color: "text-purple-600", active: true },
   ])
   const [showDateSelector, setShowDateSelector] = useState(false)
 

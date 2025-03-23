@@ -780,6 +780,8 @@ export default function Calendar() {
         if (event?.color?.includes("red")) color = "#dc2626"
         if (event?.color?.includes("yellow")) color = "#eab308"
         if (event?.color?.includes("orange")) color = "#f97316"
+          color = "#eab308"
+        if (event?.color?.includes("orange")) color = "#f97316"
         if (event?.color?.includes("green")) color = "#16a34a"
         if (event?.color?.includes("purple")) color = "#9333ea"
 
@@ -1275,7 +1277,7 @@ export default function Calendar() {
         if (calendarElement) calendarElement.style.opacity = "1"
       }, 10)
     }
-  }, [events]);
+  }, [events])
 
   return (
     <div className="flex flex-col space-y-1">

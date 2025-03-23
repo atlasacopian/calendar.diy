@@ -781,8 +781,6 @@ export default function Calendar() {
         if (event?.color?.includes("red")) color = "#dc2626"
         if (event?.color?.includes("yellow")) color = "#eab308"
         if (event?.color?.includes("orange")) color = "#f97316"
-        if (event?.color?.includes("green")) color = "#16a34a"\
-        if (event  color = "#f97316"
         if (event?.color?.includes("green")) color = "#16a34a"
         if (event?.color?.includes("purple")) color = "#9333ea"
 

@@ -1020,15 +1020,10 @@ export default function Calendar() {
                 onDragEnd={handleDragEnd}
               >
                 <span
-                  className={cn(
-                    "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
-                    limitedEvents[0] && limitedEvents[0].color ? limitedEvents[0].color : "text-black dark:text-white",
-                    "hover:underline",
-                    "max-w-full", // Ensure text doesn't overflow
-                    "block", // Make sure it's displayed as a block
-                    "line-clamp-4", // Allow up to 4 lines before truncation
-                    "break-words", // Break words to prevent overflow
-                  )}
+                  className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-4 break-words"
+                  style={{
+                    color: getExactColorHex(limitedEvents[0].color),
+                  }}
                 >
                   {limitedEvents[0] ? limitedEvents[0].content : ""}
                 </span>
@@ -1043,17 +1038,10 @@ export default function Calendar() {
                   onDragEnd={handleDragEnd}
                 >
                   <span
-                    className={cn(
-                      "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
-                      limitedEvents[0] && limitedEvents[0].color
-                        ? limitedEvents[0].color
-                        : "text-black dark:text-white",
-                      "hover:underline",
-                      "max-w-full",
-                      "block",
-                      "line-clamp-2", // Allow up to 2 lines before truncation
-                      "break-words",
-                    )}
+                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
+                    style={{
+                      color: getExactColorHex(limitedEvents[0]?.color),
+                    }}
                   >
                     {limitedEvents[0] ? limitedEvents[0].content : ""}
                   </span>
@@ -1071,17 +1059,10 @@ export default function Calendar() {
                   onDragEnd={handleDragEnd}
                 >
                   <span
-                    className={cn(
-                      "font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case",
-                      limitedEvents[1] && limitedEvents[1].color
-                        ? limitedEvents[1].color
-                        : "text-black dark:text-white",
-                      "hover:underline",
-                      "max-w-full",
-                      "block",
-                      "line-clamp-2", // Allow up to 2 lines before truncation
-                      "break-words",
-                    )}
+                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
+                    style={{
+                      color: getExactColorHex(limitedEvents[1]?.color),
+                    }}
                   >
                     {limitedEvents[1] ? limitedEvents[1].content : ""}
                   </span>
@@ -1094,6 +1075,26 @@ export default function Calendar() {
     }
 
     return days
+  }
+
+  // Add this helper function to get the exact hex color
+  const getExactColorHex = (colorClass: string | undefined) => {
+    if (!colorClass) return "#000000" // Default to black
+
+    const colorOption = colorOptions.find((c) => c.value === colorClass)
+    if (colorOption) {
+      return colorOption.hex
+    }
+
+    // Fallback mapping for legacy color classes
+    if (colorClass.includes("blue")) return "#0012ff"
+    if (colorClass.includes("red")) return "#ff0000"
+    if (colorClass.includes("yellow")) return "#f6ff00"
+    if (colorClass.includes("green")) return "#1ae100"
+    if (colorClass.includes("purple")) return "#a800ff"
+    if (colorClass.includes("orange")) return "#ff7200"
+
+    return "#000000" // Default to black
   }
 
   const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]

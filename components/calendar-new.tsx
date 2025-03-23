@@ -588,7 +588,8 @@ export default function Calendar() {
       todayCells.forEach((cell) => {
         ;(cell as HTMLElement).classList.remove("bg-gray-50", "bg-gray-200", "dark:bg-gray-700")
         if ((cell as HTMLElement).classList.contains("rounded-full")) {
-          ;(cell as HTMLElement).style.backgroundColor = "transparent"(cell as HTMLElement).style.color = "#999"
+          ;(cell as HTMLElement).style.backgroundColor = "transparent"
+          ;(cell as HTMLElement).style.color = "#999"
         }
       })
 

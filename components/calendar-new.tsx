@@ -1703,22 +1703,26 @@ export default function Calendar() {
                 <div className="mt-2 flex flex-wrap gap-3">
                   {projectGroups.map((group) => {
                     // Get the color information for this project
-                    const colorInfo = colorOptions.find((c) => c.value === group.color) || colorOptions[0]
+                    const colorInfo = colorOptions.find((c) => c.value === group.color)
+                    const colorHex = colorInfo?.hex || "#000000"
+                    const textColor = colorInfo?.value || "text-black"
 
                     return (
                       <button
                         key={group.id}
                         onClick={() => setSelectedColor(group.color)}
                         className={cn(
-                          "px-4 py-2 rounded-md border transition-colors relative overflow-hidden",
-                          // If selected, use full background color
+                          "px-4 py-2 rounded-md border transition-colors",
+                          // Always use the same text color regardless of selection state
+                          textColor,
+                          // If selected, add a ring and make background darker
                           selectedColor === group.color
-                            ? `${colorInfo.bg} ${colorInfo.text} ring-2 ring-black dark:ring-white`
-                            : "bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700",
+                            ? "ring-2 ring-black dark:ring-white bg-white dark:bg-gray-800"
+                            : "bg-white dark:bg-gray-800",
                         )}
                         style={{
-                          borderLeftColor: colorInfo.hex,
                           borderLeftWidth: "4px",
+                          borderLeftColor: colorHex,
                         }}
                       >
                         {group.name}

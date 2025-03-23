@@ -25,11 +25,11 @@ interface ProjectGroupsProps {
 // Color options for color picker
 const colorOptions = [
   { name: "Black", value: "text-black", bg: "bg-[#000000]", text: "text-white" },
-  { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white" },
   { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white" },
-  { name: "Yellow", value: "text-yellow-500", bg: "bg-[#e3e600]", text: "text-white" },
   { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-white" },
+  { name: "Yellow", value: "text-yellow-500", bg: "bg-[#e3e600]", text: "text-white" },
   { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white" },
+  { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white" },
   { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white" },
 ]
 
@@ -214,7 +214,7 @@ export default function ProjectGroups({
           onClick={() => setShowAddDialog(true)}
           className="flex items-center gap-1 rounded-md border border-dashed border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
         >
-          <span>NEW TAG</span>
+          <span>+</span>
         </button>
       </div>
 

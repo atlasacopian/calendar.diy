@@ -223,99 +223,99 @@ export default function Calendar() {
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
-      .calendar-day {
-        position: relative;
-      }
-      .calendar-day:hover {
-        background-color: rgba(249, 250, 251, 1) !important;
-      }
-      
-      .dark .calendar-day:hover {
-        background-color: rgba(30, 30, 30, 1) !important;
-      }
-
-      /* Explicitly remove any styling for day 22 */
-      .calendar-day:nth-child(29) .rounded-full {
-        background-color: transparent !important;
-        color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
-      }
-      
-      /* Print styles */
-      @media print {
-        body {
-          background: white !important;
-          color: black !important;
-        }
-        
-        .calendar-container {
-          border: 1px solid #eee !important;
-          box-shadow: none !important;
-        }
-        
-        .calendar-day {
-          border: 1px solid #eee !important;
-        }
-        
-        .calendar-controls, .dark-mode-toggle {
-          display: none !important;
-        }
-      }
-      
-    /* Ensure text doesn't overflow and is properly truncated */
-    .calendar-day .truncate {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-    }
-    
-    .calendar-day .line-clamp-2 {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-      white-space: normal;
-    }
-
-    .line-clamp-4 {
-      display: -webkit-box;
-      -webkit-line-clamp: 4;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: normal;
-    }
-
-    /* Ensure calendar day cells have proper height for multi-line content */
     .calendar-day {
-      min-height: 5rem;
+      position: relative;
+    }
+    .calendar-day:hover {
+      background-color: rgba(249, 250, 251, 1) !important;
     }
     
-      /* Make most text uppercase except user input */
-      .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span:not(.preserve-case), div:not(.preserve-case), a, label {
-        text-transform: uppercase !important;
-      }
+    .dark .calendar-day:hover {
+      background-color: rgba(30, 30, 30, 1) !important;
+    }
 
-      /* Add body class to prevent scrolling when modal is open */
-      body.modal-open {
-        overflow: hidden;
+    /* Explicitly remove any styling for day 22 */
+    .calendar-day:nth-child(29) .rounded-full {
+      background-color: transparent !important;
+      color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
+    }
+    
+    /* Print styles */
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
       }
+      
+      .calendar-container {
+        border: 1px solid #eee !important;
+        box-shadow: none !important;
+      }
+      
+      .calendar-day {
+        border: 1px solid #eee !important;
+      }
+      
+      .calendar-controls, .dark-mode-toggle {
+        display: none !important;
+      }
+    }
+    
+  /* Ensure text doesn't overflow and is properly truncated */
+  .calendar-day .truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  
+  .calendar-day .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    white-space: normal;
+  }
 
-      /* Make sure text is preserved as lowercase in inputs */
-      input, textarea {
-        text-transform: none !important;
-      }
+  .line-clamp-4 {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+  }
 
-      /* Ensure event text is not cut off */
-      .preserve-case {
-        text-transform: none !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        word-break: break-word !important;
-      }
-    `
+  /* Ensure calendar day cells have proper height for multi-line content */
+  .calendar-day {
+    min-height: 5rem;
+  }
+  
+    /* Make most text uppercase except user input */
+    .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span:not(.preserve-case), div:not(.preserve-case), a, label {
+      text-transform: uppercase !important;
+    }
+
+    /* Add body class to prevent scrolling when modal is open */
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    /* Make sure text is preserved as lowercase in inputs */
+    input, textarea {
+      text-transform: none !important;
+    }
+
+    /* Ensure event text is not cut off */
+    .preserve-case {
+      text-transform: none !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      word-break: break-word !important;
+    }
+  `
     document.head.appendChild(style)
 
     return () => {
@@ -819,10 +819,7 @@ export default function Calendar() {
         if (event1?.color?.includes("purple")) color1 = "#9333ea"
 
         eventDiv1.style.color = color1
-        color1 = "#9333ea"
-
-        eventDiv1.style.color = color1
-
+        topEventContainer.appendChild(eventDiv1)
         eventsContainer.appendChild(topEventContainer)
 
         // Add centered divider only when there are 2 events
@@ -1123,6 +1120,12 @@ export default function Calendar() {
       setEditingEventId(null)
       setEventContent("")
       setSelectedColor("text-black")
+
+      // If there are no more events for this day, close the modal
+      if (updatedDayEvents.length === 0) {
+        setShowModal(false)
+        setSelectedDate(null)
+      }
     }
   }
 
@@ -1271,113 +1274,120 @@ export default function Calendar() {
   }, [showModal])
 
   return (
-    <div className="flex flex-col space-y-1">
-      {/* Calendar Controls - Now at the top */}
-      <div className="calendar-controls flex items-center justify-end gap-2 p-0 mb-1">
-        <button
-          onClick={downloadCalendarAsImage}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Download as Image"
-          disabled={isDownloading}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3"
+    <div className="flex flex-col space-y-4">
+      {/* Calendar Controls - Now with reset button on left and others on right */}
+      <div className="calendar-controls flex items-center justify-between gap-2 p-0 mb-1">
+        {/* Reset button on the left */}
+        <div>
+          <button
+            onClick={handleShowResetConfirm}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Reset Calendar Data"
           >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          <span>SCREENSHOT</span>
-        </button>
-        <button
-          onClick={exportToIcal}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Export to iCal"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3 w-3"
+            >
+              <path d="M3 2v6h6"></path>
+              <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
+              <path d="M21 22v-6h-6"></path>
+              <path d="M3 12a9  9 0 0 0 15 6.7l3-2.7"></path>
+            </svg>
+            <span>RESET</span>
+          </button>
+        </div>
+
+        {/* Other buttons on the right */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={downloadCalendarAsImage}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Download as Image"
+            disabled={isDownloading}
           >
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          <span>ICAL</span>
-        </button>
-        <button
-          onClick={exportToGoogleCalendar}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Export to Google Calendar"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3 w-3"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>SCREENSHOT</span>
+          </button>
+          <button
+            onClick={exportToIcal}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Export to iCal"
           >
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          <span>GOOGLE</span>
-        </button>
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Share Calendar"
-        >
-          <Share2 className="h-3 w-3" />
-          <span>SHARE</span>
-        </button>
-        <button
-          onClick={handleShowResetConfirm}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-          title="Reset Calendar Data"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3 w-3"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>ICAL</span>
+          </button>
+          <button
+            onClick={exportToGoogleCalendar}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Export to Google Calendar"
           >
-            <path d="M3 2v6h6"></path>
-            <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
-            <path d="M21 22v-6h-6"></path>
-            <path d="M3 12a9  9 0 0 0 15 6.7l3-2.7"></path>
-          </svg>
-          <span>RESET</span>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3 w-3"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>GOOGLE</span>
+          </button>
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Share Calendar"
+          >
+            <Share2 className="h-3 w-3" />
+            <span>SHARE</span>
+          </button>
+        </div>
       </div>
 
       <div

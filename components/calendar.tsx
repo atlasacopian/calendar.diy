@@ -780,8 +780,6 @@ export default function Calendar() {
         if (event?.color?.includes("red")) color = "#dc2626"
         if (event?.color?.includes("yellow")) color = "#eab308"
         if (event?.color?.includes("orange")) color = "#f97316"
-          color = "#eab308"
-        if (event?.color?.includes("orange")) color = "#f97316"
         if (event?.color?.includes("green")) color = "#16a34a"
         if (event?.color?.includes("purple")) color = "#9333ea"
 
@@ -1817,7 +1815,7 @@ export default function Calendar() {
           </div>
         </div>
       )}
-{/* Properly centered on all screens */}
+
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div

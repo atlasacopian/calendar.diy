@@ -24,13 +24,13 @@ interface ProjectGroupsProps {
 
 // Color options for color picker
 const colorOptions = [
-  { name: "Black", value: "text-black", bg: "bg-black", text: "text-white" },
-  { name: "Blue", value: "text-blue-600", bg: "bg-blue-600", text: "text-white" },
-  { name: "Red", value: "text-red-600", bg: "bg-red-600", text: "text-white" },
-  { name: "Yellow", value: "text-yellow-500", bg: "bg-yellow-500", text: "text-black" },
-  { name: "Orange", value: "text-orange-500", bg: "bg-orange-500", text: "text-black" },
-  { name: "Green", value: "text-green-600", bg: "bg-green-600", text: "text-white" },
-  { name: "Purple", value: "text-purple-600", bg: "bg-purple-600", text: "text-white" },
+  { name: "Black", value: "text-black", bg: "bg-[#000000]", text: "text-white" },
+  { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white" },
+  { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white" },
+  { name: "Yellow", value: "text-yellow-500", bg: "bg-[#f6ff00]", text: "text-black" },
+  { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-black" },
+  { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white" },
+  { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white" },
 ]
 
 export default function ProjectGroups({
@@ -138,7 +138,7 @@ export default function ProjectGroups({
             key={group.id}
             className={cn(
               "flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs",
-              group.active ? getBgFromTextColor(group.color) : "bg-gray-50 dark:bg-gray-800/50", // Changed from bg-white to bg-gray-50
+              group.active ? getBgFromTextColor(group.color) : "bg-gray-50 dark:bg-gray-800/50",
               group.active ? getTextForBg(group.color) : group.color,
             )}
           >

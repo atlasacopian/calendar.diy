@@ -1278,9 +1278,9 @@ export default function Calendar() {
   }, [events])
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-1">
       {/* Calendar Controls - Now at the top */}
-      <div className="calendar-controls flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">
+      <div className="calendar-controls flex items-center justify-end gap-2 p-0 mb-1">
         <button
           onClick={downloadCalendarAsImage}
           className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -1551,6 +1551,7 @@ export default function Calendar() {
         onAddGroup={handleAddProjectGroup}
         onRemoveGroup={handleRemoveProjectGroup}
         onEditGroup={handleEditProjectGroup}
+        className="mt-1" // Add this line
       />
 
       {/* Event Modal - Properly centered on all screens */}
@@ -1726,69 +1727,69 @@ export default function Calendar() {
                   {/* Project selection */}
                   <div className="mt-2">
                     <div className="flex flex-wrap gap-2">
-                      {/* Filter out duplicate projects by using a Set of project IDs */}
-                      {Array.from(new Set(projectGroups.map((p) => p.id))).map((projectId) => {
-                        const project = projectGroups.find((p) => p.id === projectId)
-                        if (!project) return null
+                    {/* Filter out duplicate projects by using a Set of project IDs */}
+                    {Array.from(new Set(projectGroups.map((p) => p.id))).map((projectId) => {
+                      const project = projectGroups.find((p) => p.id === projectId)
+                      if (!project) return null
 
-                        return (
-                          <button
-                            key={project.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedColor(project.color)
-                              // Also set the projectId when editing
-                              if (editingEventId) {
-                                setEvents(
-                                  events.map((event) =>
-                                    event.id === editingEventId
-                                      ? { ...event, projectId: project.id, color: project.color }
-                                      : event,
-                                  ),
-                                )
-                              }
-                            }}
-                            className={cn(
-                              "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
-                              getBgFromTextColor(project.color),
-                              getTextForBg(project.color),
-                              selectedColor === project.color
-                                ? "ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-800"
-                                : "",
-                            )}
-                            title={project.name}
-                          >
-                            {project.name}
-                          </button>
-                        )
-                      })}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // Show the add project dialog
-                          setShowAddDialog(true)
-                        }}
-                        className="flex items-center gap-1 px-2 py-1 rounded-md text-xs border border-dashed border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-3 w-3"
+                      return (
+                        <button
+                          key={project.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedColor(project.color)
+                            // Also set the projectId when editing
+                            if (editingEventId) {
+                              setEvents(
+                                events.map((event) =>
+                                  event.id === editingEventId
+                                    ? { ...event, projectId: project.id, color: project.color }
+                                    : event,
+                                ),
+                              )
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
+                            selectedColor === project.color 
+                              ? getBgFromTextColor(project.color) + " " + getTextForBg(project.color)
+                              : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300",
+                            selectedColor === project.color
+                              ? "ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-800"
+                              : "",
+                          )}
+                          title={project.name}
                         >
-                          <line x1="12" y1="5" x2="12" y2="19"></line>
-                          <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        <span>NEW PROJECT</span>
-                      </button>
-                    </div>
+                          {project.name}
+                        </button>
+                      )
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Show the add project dialog
+                        setShowAddDialog(true)
+                      }}
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs border border-dashed border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-3 w-3"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      <span>NEW PROJECT</span>
+                    </button>
                   </div>
                 </div>
               </div>

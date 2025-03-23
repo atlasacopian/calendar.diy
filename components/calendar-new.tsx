@@ -1093,6 +1093,7 @@ export default function Calendar() {
     const remainingCells = cellsInRow - (totalCells % cellsInRow)
 
     // Only add remaining cells if we need to complete the last row
+    // Don't add a whole extra row
     if (remainingCells < 7) {
       for (let i = 0; i < remainingCells; i++) {
         days.push(

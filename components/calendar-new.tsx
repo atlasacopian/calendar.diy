@@ -557,6 +557,7 @@ export default function Calendar() {
   }
 
   // Replace the entire downloadCalendarAsImage function with this improved version
+  // Download calendar as image
   const downloadCalendarAsImage = async () => {
     try {
       setIsDownloading(true)
@@ -569,46 +570,55 @@ export default function Calendar() {
         return
       }
 
-      // Create a new canvas with the exact same dimensions as the original calendar
-      const canvas = document.createElement("canvas")
-      const ctx = canvas.getContext("2d")
+      // Create a new div to hold our screenshot content
+      const screenshotContainer = document.createElement("div")
+      screenshotContainer.style.position = "absolute"
+      screenshotContainer.style.left = "-9999px"
+      screenshotContainer.style.top = "0"
+      screenshotContainer.style.width = "1200px" // Fixed width for consistency
+      screenshotContainer.style.backgroundColor = "white"
+      screenshotContainer.style.padding = "20px"
+      document.body.appendChild(screenshotContainer)
 
-      // Set canvas size to match the calendar (with a slight padding)
-      const rect = calendarElement.getBoundingClientRect()
-      const ratio = 2 // Higher resolution
-      canvas.width = rect.width * ratio
-      canvas.height = rect.height * ratio
+      // Clone the calendar for the screenshot
+      const calendarClone = calendarElement.cloneNode(true) as HTMLElement
 
-      // Scale everything by the ratio
-      if (ctx) {
-        ctx.scale(ratio, ratio)
-      }
+      // Apply specific styles to ensure it looks exactly like the original
+      calendarClone.style.width = "100%"
+      calendarClone.style.height = "auto"
+      calendarClone.style.overflow = "visible"
+      calendarClone.style.boxShadow = "none"
 
-      // Convert the calendar to an image using html2canvas
-      // This preserves the exact styling as seen on screen
-      const calendarCanvas = await html2canvas(calendarElement, {
-        scale: 1, // We're handling scaling ourselves
+      // Add the cloned calendar to our container
+      screenshotContainer.appendChild(calendarClone)
+
+      // Make sure all text is visible
+      const textElements = calendarClone.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4, .truncate")
+      textElements.forEach((el) => {
+        if (el instanceof HTMLElement) {
+          el.style.overflow = "visible"
+          el.style.textOverflow = "clip"
+          el.style.whiteSpace = "normal"
+          el.style.maxWidth = "none"
+          el.style.maxHeight = "none"
+          el.style.webkitLineClamp = "none"
+          el.style.display = "block"
+        }
+      })
+
+      // Use html2canvas with specific settings for high quality
+      const canvas = await html2canvas(screenshotContainer, {
+        scale: 2, // Higher resolution
         useCORS: true,
         allowTaint: true,
         backgroundColor: "white",
         logging: false,
-        // Don't modify any styles - capture exactly what's on screen
-        onclone: (document, clonedElement) => {
-          // Just ensure any truncated text is visible in the screenshot
-          const textElements = clonedElement.querySelectorAll(".preserve-case")
-          textElements.forEach((el) => {
-            if (el instanceof HTMLElement) {
-              // Keep the same styling but ensure text is visible
-              el.style.overflow = "visible"
-            }
-          })
-        },
+        width: 1200,
+        height: screenshotContainer.offsetHeight,
       })
 
-      // Draw the calendar canvas onto our main canvas
-      if (ctx) {
-        ctx.drawImage(calendarCanvas, 0, 0, rect.width, rect.height)
-      }
+      // Clean up - remove the temporary elements
+      document.body.removeChild(screenshotContainer)
 
       // Convert to image and download
       const image = canvas.toDataURL("image/png")

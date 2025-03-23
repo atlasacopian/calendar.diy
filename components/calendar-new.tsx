@@ -20,12 +20,12 @@ type CalendarEvent = {
 // Color options for color picker
 const colorOptions = [
   { name: "Black", value: "text-black", bg: "bg-[#000000]", text: "text-white", hex: "#000000" },
-  { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white", hex: "#0012ff" },
   { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white", hex: "#ff0000" },
+  { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-white", hex: "#ff7200" },
   { name: "Yellow", value: "text-yellow-500", bg: "bg-[#e3e600]", text: "text-white", hex: "#e3e600" },
   { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white", hex: "#1ae100" },
+  { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white", hex: "#0012ff" },
   { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white", hex: "#a800ff" },
-  { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-white", hex: "#ff7200" },
 ]
 
 // Get the background color class from a text color class
@@ -630,7 +630,7 @@ export default function Calendar() {
             ;(el as HTMLElement).style.overflow = "visible"
             ;(el as HTMLElement).style.whiteSpace = "normal"
             ;(el as HTMLElement).style.textOverflow = "clip"
-            ;(el as HTMLElement).style.webkitLineClamp = "none"
+            ;(el as HTMLElement).webkitLineClamp = "none"
             ;(el as HTMLElement).style.maxWidth = "none"
             ;(el as HTMLElement).style.width = "auto"
           })
@@ -960,6 +960,13 @@ export default function Calendar() {
 
     const days = []
 
+    // Calculate how many rows we need for this month
+    const totalDays = startingDayOfWeek + daysInMonth
+    const rowsNeeded = Math.ceil(totalDays / 7)
+
+    // We want to always show 6 rows (42 cells) for consistency
+    const targetRows = 6
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(
@@ -1087,23 +1094,21 @@ export default function Calendar() {
       )
     }
 
-    // Fill in the remaining cells to complete the grid with proper borders
-    const totalCells = startingDayOfWeek + daysInMonth
-    const cellsInRow = 7
-    const remainingCells = cellsInRow - (totalCells % cellsInRow)
+    // Calculate how many cells we've added so far
+    const cellsAdded = startingDayOfWeek + daysInMonth
 
-    // Only add remaining cells if we need to complete the last row
-    // Don't add a whole extra row
-    if (remainingCells < 7) {
-      for (let i = 0; i < remainingCells; i++) {
-        days.push(
-          <div
-            key={`empty-end-${i}`}
-            className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
-            onDragOver={(e) => e.preventDefault()}
-          ></div>,
-        )
-      }
+    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
+    const cellsNeeded = 42 - cellsAdded
+
+    // Add empty cells to fill out the grid to exactly 6 rows
+    for (let i = 0; i < cellsNeeded; i++) {
+      days.push(
+        <div
+          key={`empty-end-${i}`}
+          className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
+          onDragOver={(e) => e.preventDefault()}
+        ></div>,
+      )
     }
 
     return days
@@ -1440,7 +1445,6 @@ export default function Calendar() {
       <div
         ref={fullCalendarRef}
         className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
-        style={{ minHeight: "auto" }}
       >
         <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4">
           <div className="grid grid-cols-3 items-center">
@@ -1461,7 +1465,7 @@ export default function Calendar() {
                   strokeLinejoin="round"
                   className="h-3 w-3 md:h-4 md:w-4"
                 >
-                  <polyline points="15 18 9 12 15 6"></polyline>
+                  <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
               </button>
             </div>
@@ -2000,8 +2004,6 @@ export default function Calendar() {
           </div>
         </div>
       )}
-      {/* Edit Project Group Dialog */}
-      {/* Edit Project Group Dialog */}
     </div>
   )
 }

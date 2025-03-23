@@ -77,6 +77,8 @@ export default function Calendar() {
   const printableCalendarRef = useRef<HTMLDivElement>(null)
   const shareInputRef = useRef<HTMLInputElement>(null)
   const dateSelectorRef = useRef<HTMLDivElement>(null)
+  const eventModalRef = useRef<HTMLDivElement>(null)
+  const shareModalRef = useRef<HTMLDivElement>(null)
 
   const handleToggleProjectGroup = useCallback((groupId: string) => {
     setProjectGroups((prevGroups) =>
@@ -902,6 +904,75 @@ export default function Calendar() {
     closeModal()
   }
 
+  // Add keyboard event handlers for left and right arrow keys
+  // Add this effect to handle keyboard navigation:
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle keyboard events when no modal is open
+      if (showModal || showResetConfirm || showShareModal || showDateSelector) {
+        return
+      }
+
+      // Left arrow key - previous month
+      if (e.key === "ArrowLeft") {
+        handlePreviousMonth()
+      }
+
+      // Right arrow key - next month
+      if (e.key === "ArrowRight") {
+        handleNextMonth()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [showModal, showResetConfirm, showShareModal, showDateSelector])
+
+  // Update the event modal to close when clicking outside
+  // Add this effect to handle clicks outside the event modal:
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showModal && eventModalRef.current && !eventModalRef.current.contains(event.target as Node)) {
+        setShowModal(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showModal])
+
+  // Update the reset confirmation modal to close when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showResetConfirm && resetModalRef.current && !resetModalRef.current.contains(event.target as Node)) {
+        setShowResetConfirm(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showResetConfirm])
+
+  // Update the share modal to close when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showShareModal && shareModalRef.current && !shareModalRef.current.contains(event.target as Node)) {
+        setShowShareModal(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showShareModal])
+
   return (
     <div className="flex flex-col space-y-1">
       {/* Calendar Controls - Now at the top */}
@@ -1155,7 +1226,7 @@ export default function Calendar() {
       {/* Event Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden">
+          <div ref={eventModalRef} className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold tracking-tight">{formatDate(selectedDate)}</h2>
@@ -1172,6 +1243,12 @@ export default function Calendar() {
                   id="event-name"
                   value={eventText}
                   onChange={(e) => setEventText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault()
+                      saveEvent()
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ring-black"
                   rows={3}
                 />
@@ -1211,14 +1288,8 @@ export default function Calendar() {
 
               <div className="flex justify-end gap-3 mt-8">
                 <button
-                  onClick={closeModal}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  CANCEL
-                </button>
-                <button
                   onClick={saveEvent}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                  className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
                 >
                   SAVE
                 </button>
@@ -1269,14 +1340,7 @@ export default function Calendar() {
             <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
               <button
                 type="button"
-                className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-                onClick={() => setShowResetConfirm(false)}
-              >
-                CANCEL
-              </button>
-              <button
-                type="button"
-                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="inline-flex justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                 onClick={handleResetData}
               >
                 RESET
@@ -1289,7 +1353,10 @@ export default function Calendar() {
       {/* Share Modal */}
       {showShareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+          <div
+            ref={shareModalRef}
+            className="relative w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
+          >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">SHARE CALENDAR</h3>

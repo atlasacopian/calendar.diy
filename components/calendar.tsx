@@ -30,6 +30,18 @@ const colorOptions = [
   { name: "Purple", value: "text-purple-600", bg: "bg-purple-600", text: "text-white" },
 ]
 
+// Get the background color class from a text color class
+const getBgFromTextColor = (textColor: string) => {
+  const color = colorOptions.find((c) => c.value === textColor)
+  return color ? color.bg : "bg-gray-200"
+}
+
+// Get the text color for the background
+const getTextForBg = (textColor: string) => {
+  const color = colorOptions.find((c) => c.value === textColor)
+  return color ? color.text : "text-black"
+}
+
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -95,6 +107,14 @@ export default function Calendar() {
         event.projectId === groupId ? { ...event, color: "text-black", projectId: "default" } : event,
       ),
     )
+  }, [])
+
+  const handleEditProjectGroup = useCallback((groupId: string, name: string, color: string) => {
+    // Update the project group
+    setProjectGroups((prev) => prev.map((group) => (group.id === groupId ? { ...group, name, color } : group)))
+
+    // Update any events using this project group to use the new color
+    setEvents((prev) => prev.map((event) => (event.projectId === groupId ? { ...event, color } : event)))
   }, [])
 
   // Add this near the top of the component, after the state declarations
@@ -379,18 +399,22 @@ export default function Calendar() {
     if (!selectedDate) return
 
     if (eventContent.trim()) {
+      // Find the selected project
+      const selectedProject = projectGroups.find((p) => p.color === selectedColor)
+      const projectId = selectedProject?.id || "default"
+
       // If we're editing an existing event
       if (editingEventId) {
         setEvents(
           events.map((event) =>
-            event.id === editingEventId ? { ...event, content: eventContent, color: selectedColor } : event,
+            event.id === editingEventId ? { ...event, content: eventContent, color: selectedColor, projectId } : event,
           ),
         )
 
         // Update the events for selected date
         setEventsForSelectedDate(
           eventsForSelectedDate.map((event) =>
-            event.id === editingEventId ? { ...event, content: eventContent, color: selectedColor } : event,
+            event.id === editingEventId ? { ...event, content: eventContent, color: selectedColor, projectId } : event,
           ),
         )
       } else {
@@ -407,6 +431,7 @@ export default function Calendar() {
             date: selectedDate,
             content: eventContent,
             color: selectedColor,
+            projectId,
           }
 
           // Add the new event to the events array
@@ -1421,6 +1446,7 @@ export default function Calendar() {
         onToggleGroup={handleToggleProjectGroup}
         onAddGroup={handleAddProjectGroup}
         onRemoveGroup={handleRemoveProjectGroup}
+        onEditGroup={handleEditProjectGroup}
       />
 
       {/* Calendar Controls - Now free-floating without the gray background */}
@@ -1720,26 +1746,40 @@ export default function Calendar() {
                 </div>
 
                 <div>
-                  <label className="block font-mono text-xs font-medium text-gray-700 dark:text-gray-300">COLOR</label>
-                  <div className="mt-2 flex gap-2">
-                    {colorOptions.map((color) => (
-                      <button
-                        key={color.name}
-                        type="button"
-                        className={cn(
-                          "flex items-center justify-center rounded-full w-7 h-7",
-                          color.bg,
-                          color.text,
-                          selectedColor === color.value
-                            ? "ring-2 ring-offset-1 ring-gray-500 dark:ring-offset-gray-900"
-                            : "",
-                        )}
-                        onClick={() => setSelectedColor(color.value)}
-                        title={color.name}
-                      >
-                        <span className="sr-only">{color.name}</span>
-                      </button>
-                    ))}
+                  <label className="block font-mono text-xs font-medium text-gray-700 dark:text-gray-300">
+                    PROJECT
+                  </label>
+                  <div className="mt-2">
+                    <div className="flex flex-wrap gap-2">
+                      {projectGroups.map((project) => (
+                        <button
+                          key={project.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedColor(project.color)
+                            // Also set the projectId when editing
+                            if (editingEventId) {
+                              setEvents(
+                                events.map((event) =>
+                                  event.id === editingEventId ? { ...event, projectId: project.id } : event,
+                                ),
+                              )
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
+                            getBgFromTextColor(project.color),
+                            getTextForBg(project.color),
+                            selectedColor === project.color
+                              ? "ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-800"
+                              : "",
+                          )}
+                          title={project.name}
+                        >
+                          {project.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

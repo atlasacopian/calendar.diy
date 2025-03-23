@@ -193,8 +193,11 @@ export default function ProjectGroups({
             key={group.id}
             className={cn(
               "flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs",
-              group.active ? getBgFromTextColor(group.color) : "bg-gray-50 dark:bg-gray-800/50",
-              group.active ? getTextForBg(group.color) : group.color,
+              group.active
+                ? getBgFromTextColor(group.color) + " " + getTextForBg(group.color)
+                : "bg-gray-50 dark:bg-gray-800/50",
+              // Always use the same color for text, regardless of active state
+              group.color,
             )}
           >
             <button

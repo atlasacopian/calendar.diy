@@ -216,8 +216,11 @@ export default function ProjectGroups({
               </div>
             </div>
             <div className="p-4 sm:p-6">
-              <div className="mb-4">
-                <label htmlFor="project-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="mb-6">
+                <label
+                  htmlFor="project-name"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
                   PROJECT NAME
                 </label>
                 <input
@@ -226,19 +229,20 @@ export default function ProjectGroups({
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value.toUpperCase())}
                   onKeyDown={handleAddProjectKeyDown}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 uppercase"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 uppercase"
                   placeholder="ENTER PROJECT NAME"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">COLOR</label>
-                <div className="mt-2 flex flex-wrap gap-2">
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">COLOR</label>
+                <div className="mt-2 flex flex-wrap gap-3">
                   {colorOptions.map((color) => (
                     <button
                       key={color.value}
                       onClick={() => setNewProjectColor(color.value)}
                       className={cn(
-                        "h-6 w-6 rounded-full",
+                        "h-8 w-8 rounded-full",
                         color.bg,
                         newProjectColor === color.value ? "ring-2 ring-black ring-offset-2" : "",
                       )}
@@ -293,10 +297,10 @@ export default function ProjectGroups({
               </div>
             </div>
             <div className="p-4 sm:p-6">
-              <div className="mb-4">
+              <div className="mb-6">
                 <label
                   htmlFor="edit-project-name"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
                   PROJECT NAME
                 </label>
@@ -306,19 +310,19 @@ export default function ProjectGroups({
                   value={editingGroup.name}
                   onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value.toUpperCase() })}
                   onKeyDown={handleEditProjectKeyDown}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 uppercase"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 uppercase"
                   placeholder="ENTER PROJECT NAME"
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">COLOR</label>
-                <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">COLOR</label>
+                <div className="mt-2 flex flex-wrap gap-3">
                   {colorOptions.map((color) => (
                     <button
                       key={color.value}
                       onClick={() => setEditingGroup({ ...editingGroup, color: color.value })}
                       className={cn(
-                        "h-6 w-6 rounded-full",
+                        "h-8 w-8 rounded-full",
                         color.bg,
                         editingGroup.color === color.value ? "ring-2 ring-black ring-offset-2" : "",
                       )}
@@ -326,37 +330,34 @@ export default function ProjectGroups({
                   ))}
                 </div>
               </div>
-              {editingGroup.id !== "default" && (
-                <div className="absolute top-3 right-12">
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteConfirm(editingGroup.id)}
-                    className="text-red-500 hover:text-red-700"
-                    title="Delete project"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-5 w-5"
-                    >
-                      <path d="M3 6h18"></path>
-                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                      <line x1="10" y1="11" x2="10" y2="17"></line>
-                      <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                  </button>
-                </div>
-              )}
             </div>
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 sm:p-5 flex justify-between">
+              {editingGroup.id !== "default" && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(editingGroup.id)}
+                  className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 mr-1"
+                  >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  </svg>
+                  DELETE
+                </button>
+              )}
+              {editingGroup.id === "default" && <div></div>}
               <button
                 type="button"
                 className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"

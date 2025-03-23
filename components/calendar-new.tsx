@@ -59,7 +59,7 @@ export default function Calendar() {
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([
-    { id: "default", name: "PROJECT 01", color: "text-black", active: true },
+    { id: "default", name: "TAG 01", color: "text-black", active: true },
   ])
   const [showDateSelector, setShowDateSelector] = useState(false)
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -448,7 +448,7 @@ export default function Calendar() {
     setEvents([])
 
     // Reset project groups to original state
-    setProjectGroups([{ id: "default", name: "PROJECT 01", color: "text-black", active: true }])
+    setProjectGroups([{ id: "default", name: "TAG 01", color: "text-black", active: true }])
 
     // Clear localStorage
     localStorage.removeItem("calendarEvents")
@@ -630,7 +630,7 @@ export default function Calendar() {
             ;(el as HTMLElement).style.overflow = "visible"
             ;(el as HTMLElement).style.whiteSpace = "normal"
             ;(el as HTMLElement).style.textOverflow = "clip"
-            ;(el as HTMLElement).style.webkitLineClamp = "none"
+            ;(el as HTMLElement).webkitLineClamp = "none"
             ;(el as HTMLElement).style.maxWidth = "none"
             ;(el as HTMLElement).style.width = "auto"
           })

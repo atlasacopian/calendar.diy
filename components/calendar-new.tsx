@@ -20,19 +20,19 @@ type CalendarEvent = {
 
 // Color options for color picker
 const colorOptions = [
-  { name: "Black", value: "text-black", bg: "bg-black", text: "text-white", hex: "#000000" },
-  { name: "Blue", value: "text-blue-600", bg: "bg-blue-600", text: "text-white", hex: "#0012ff" },
-  { name: "Red", value: "text-red-600", bg: "bg-red-600", text: "text-white", hex: "#ff0000" },
-  { name: "Yellow", value: "text-yellow-500", bg: "bg-yellow-500", text: "text-black", hex: "#f6ff00" },
-  { name: "Green", value: "text-green-600", bg: "bg-green-600", text: "text-white", hex: "#1ae100" },
-  { name: "Purple", value: "text-purple-600", bg: "bg-purple-600", text: "text-white", hex: "#a800ff" },
-  { name: "Orange", value: "text-orange-500", bg: "bg-orange-500", text: "text-black", hex: "#ff7200" },
+  { name: "Black", value: "text-black", bg: "bg-[#000000]", text: "text-white", hex: "#000000" },
+  { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white", hex: "#0012ff" },
+  { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white", hex: "#ff0000" },
+  { name: "Yellow", value: "text-yellow-500", bg: "bg-[#f6ff00]", text: "text-black", hex: "#f6ff00" },
+  { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white", hex: "#1ae100" },
+  { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white", hex: "#a800ff" },
+  { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-black", hex: "#ff7200" },
 ]
 
 // Get the background color class from a text color class
 const getBgFromTextColor = (textColor: string) => {
   const color = colorOptions.find((c) => c.value === textColor)
-  return color ? `bg-[${color.hex}]` : "bg-gray-200"
+  return color ? color.bg : "bg-gray-200"
 }
 
 const getTextForBg = (textColor: string) => {
@@ -1226,7 +1226,7 @@ export default function Calendar() {
         onAddGroup={handleAddProjectGroup}
         onRemoveGroup={handleRemoveProjectGroup}
         onEditGroup={handleEditProjectGroup}
-        className="mt-6 flex justify-center" // Changed from mt-1 to mt-6 and added flex justify-center
+        className="mt-12 flex justify-center" // Changed from mt-6 to mt-12 and added flex justify-center
       />
 
       {/* Event Modal */}

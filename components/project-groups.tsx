@@ -215,7 +215,7 @@ export default function ProjectGroups({
           className="flex items-center gap-1 rounded-md border border-dashed border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
         >
           <Plus className="h-3 w-3" />
-          <span>NEW GROUP</span>
+          <span>NEW TAG</span>
         </button>
       </div>
 
@@ -440,8 +440,7 @@ export default function ProjectGroups({
             </div>
             <div className="p-4 sm:p-6">
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                ARE YOU SURE YOU WANT TO DELETE THIS GROUP? ALL EVENTS ASSOCIATED WITH THIS GROUP WILL BE MOVED TO GROUP
-                01.
+                ARE YOU SURE YOU WANT TO DELETE THIS TAG? ALL EVENTS ASSOCIATED WITH THIS TAG WILL BE MOVED TO TAG 01.
               </p>
             </div>
             <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">

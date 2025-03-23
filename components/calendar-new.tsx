@@ -571,8 +571,14 @@ export default function Calendar() {
       }
 
       // Set canvas dimensions - use a fixed size for consistency
-      const width = 1200
-      const height = 900
+      // Make the canvas larger to improve resolution
+      const contentWidth = 1000
+      const contentHeight = 750
+      const padding = 100 // Add padding for white space around the edges
+
+      const width = contentWidth + padding * 2
+      const height = contentHeight + padding * 2
+
       canvas.width = width
       canvas.height = height
 
@@ -580,22 +586,27 @@ export default function Calendar() {
       ctx.fillStyle = "#ffffff"
       ctx.fillRect(0, 0, width, height)
 
+      // Draw a subtle border around the calendar
+      ctx.strokeStyle = "#e5e7eb"
+      ctx.lineWidth = 2
+      ctx.strokeRect(padding - 10, padding - 10, contentWidth + 20, contentHeight + 20)
+
       // Draw month/year header
-      ctx.font = 'bold 36px "JetBrains Mono", monospace'
+      ctx.font = 'bold 40px "JetBrains Mono", monospace'
       ctx.textAlign = "center"
       ctx.fillStyle = "#000000"
-      ctx.fillText(format(currentDate, "MMMM yyyy").toUpperCase(), width / 2, 60)
+      ctx.fillText(format(currentDate, "MMMM yyyy").toUpperCase(), width / 2, padding + 40)
 
       // Draw day headers
-      const dayWidth = width / 7
+      const dayWidth = contentWidth / 7
       const dayHeight = 100
-      const startY = 100
+      const startY = padding + 80
 
-      ctx.font = '16px "JetBrains Mono", monospace'
+      ctx.font = '18px "JetBrains Mono", monospace'
       ctx.fillStyle = "#666666"
 
       weekDays.forEach((day, index) => {
-        ctx.fillText(day, index * dayWidth + dayWidth / 2, startY - 20)
+        ctx.fillText(day, padding + index * dayWidth + dayWidth / 2, startY - 15)
       })
 
       // Draw calendar grid
@@ -605,16 +616,16 @@ export default function Calendar() {
       // Draw horizontal grid lines
       for (let i = 0; i <= 6; i++) {
         ctx.beginPath()
-        ctx.moveTo(0, startY + i * dayHeight)
-        ctx.lineTo(width, startY + i * dayHeight)
+        ctx.moveTo(padding, startY + i * dayHeight)
+        ctx.lineTo(padding + contentWidth, startY + i * dayHeight)
         ctx.stroke()
       }
 
       // Draw vertical grid lines
       for (let i = 0; i <= 7; i++) {
         ctx.beginPath()
-        ctx.moveTo(i * dayWidth, startY)
-        ctx.lineTo(i * dayWidth, startY + 6 * dayHeight)
+        ctx.moveTo(padding + i * dayWidth, startY)
+        ctx.lineTo(padding + i * dayWidth, startY + 6 * dayHeight)
         ctx.stroke()
       }
 
@@ -626,11 +637,6 @@ export default function Calendar() {
       // Draw day numbers and events
       ctx.font = '16px "JetBrains Mono", monospace'
 
-      // Draw empty cells before the first day of the month
-      for (let i = 0; i < startingDayOfWeek; i++) {
-        // These cells are empty
-      }
-
       // Draw days of the month
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
@@ -641,7 +647,7 @@ export default function Calendar() {
         // Calculate position
         const col = (startingDayOfWeek + day - 1) % 7
         const row = Math.floor((startingDayOfWeek + day - 1) / 7)
-        const x = col * dayWidth
+        const x = padding + col * dayWidth
         const y = startY + row * dayHeight
 
         // Draw cell background for weekends or current day
@@ -664,7 +670,7 @@ export default function Calendar() {
         // Draw holidays
         const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
         ctx.fillStyle = "#666666"
-        ctx.font = '10px "JetBrains Mono", monospace'
+        ctx.font = '11px "JetBrains Mono", monospace'
         ctx.textAlign = "left"
 
         dayHolidays.forEach((holiday, index) => {
@@ -691,7 +697,7 @@ export default function Calendar() {
           const colorHex = getExactColorHex(event.color)
 
           ctx.fillStyle = colorHex
-          ctx.font = '12px "JetBrains Mono", monospace'
+          ctx.font = '13px "JetBrains Mono", monospace'
           ctx.textAlign = "left"
 
           // Draw event text (centered vertically)
@@ -704,7 +710,7 @@ export default function Calendar() {
 
           // Draw first event
           ctx.fillStyle = getExactColorHex(event1.color)
-          ctx.font = '12px "JetBrains Mono", monospace'
+          ctx.font = '13px "JetBrains Mono", monospace'
           ctx.textAlign = "left"
           ctx.fillText(event1.content, x + 10, y + 50)
 
@@ -723,14 +729,18 @@ export default function Calendar() {
         // Draw "DAY OF THE SUN" for March 21, 2025
         if (currentDate.getMonth() === 2 && day === 21 && currentDate.getFullYear() === 2025) {
           ctx.fillStyle = "#666666"
-          ctx.font = '10px "JetBrains Mono", monospace'
+          ctx.font = '11px "JetBrains Mono", monospace'
           ctx.textAlign = "left"
           ctx.fillText("DAY OF THE SUN", x + 10, y + 70)
         }
       }
 
+      // Apply anti-aliasing to make text sharper
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = "high"
+
       // Convert canvas to image and download
-      const image = canvas.toDataURL("image/png")
+      const image = canvas.toDataURL("image/png", 1.0) // Use maximum quality
       const link = document.createElement("a")
       link.href = image
       link.download = `calendar_${format(currentDate, "MMMM_yyyy")}.png`

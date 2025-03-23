@@ -2,10 +2,8 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { PlusCircle, X } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Plus, Trash2 } from "lucide-react"
 
-// Define the project group type
 export type ProjectGroup = {
   id: string
   name: string
@@ -13,8 +11,17 @@ export type ProjectGroup = {
   active: boolean
 }
 
-// Color options matching the ones in the calendar component
-export const colorOptions = [
+interface ProjectGroupsProps {
+  groups: ProjectGroup[]
+  onToggleGroup: (groupId: string) => void
+  onAddGroup: (name: string, color: string) => void
+  onRemoveGroup: (groupId: string) => void
+  onEditGroup: (groupId: string, name: string, color: string) => void
+  className?: string
+}
+
+// Color options for color picker
+const colorOptions = [
   { name: "Black", value: "text-black", bg: "bg-black", text: "text-white" },
   { name: "Blue", value: "text-blue-600", bg: "bg-blue-600", text: "text-white" },
   { name: "Red", value: "text-red-600", bg: "bg-red-600", text: "text-white" },
@@ -22,22 +29,7 @@ export const colorOptions = [
   { name: "Orange", value: "text-orange-500", bg: "bg-orange-500", text: "text-black" },
   { name: "Green", value: "text-green-600", bg: "bg-green-600", text: "text-white" },
   { name: "Purple", value: "text-purple-600", bg: "bg-purple-600", text: "text-white" },
-  {
-    name: "Custom",
-    value: "text-custom",
-    bg: "bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500",
-    text: "text-white",
-  },
 ]
-
-interface ProjectGroupsProps {
-  groups: ProjectGroup[]
-  onToggleGroup: (groupId: string) => void
-  onAddGroup: (name: string, color: string) => void
-  onRemoveGroup: (groupId: string) => void
-  onEditGroup?: (groupId: string, name: string, color: string) => void
-  className?: string // Add this line
-}
 
 export default function ProjectGroups({
   groups,
@@ -45,40 +37,40 @@ export default function ProjectGroups({
   onAddGroup,
   onRemoveGroup,
   onEditGroup,
-  className, // Add this line
+  className,
 }: ProjectGroupsProps) {
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const [showEditDialog, setShowEditDialog] = useState(false)
-  const [newGroupName, setNewGroupName] = useState("")
-  const [selectedColor, setSelectedColor] = useState(colorOptions[0].value)
+  const [newProjectName, setNewProjectName] = useState("")
+  const [newProjectColor, setNewProjectColor] = useState("text-black")
   const [editingGroup, setEditingGroup] = useState<ProjectGroup | null>(null)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
 
-  const handleAddGroup = () => {
-    if (newGroupName.trim()) {
-      onAddGroup(newGroupName.trim(), selectedColor)
-      setNewGroupName("")
-      setSelectedColor(colorOptions[0].value)
+  const handleAddProject = () => {
+    if (newProjectName.trim()) {
+      onAddGroup(newProjectName, newProjectColor)
+      setNewProjectName("")
+      setNewProjectColor("text-black")
       setShowAddDialog(false)
     }
   }
 
-  const handleEditGroup = () => {
-    if (editingGroup && newGroupName.trim()) {
-      if (onEditGroup) {
-        onEditGroup(editingGroup.id, newGroupName.trim(), selectedColor)
-      }
+  const handleEditProject = () => {
+    if (editingGroup && editingGroup.name.trim()) {
+      onEditGroup(editingGroup.id, editingGroup.name, editingGroup.color)
       setEditingGroup(null)
-      setNewGroupName("")
-      setSelectedColor(colorOptions[0].value)
       setShowEditDialog(false)
     }
   }
 
-  const startEditGroup = (group: ProjectGroup) => {
-    setEditingGroup(group)
-    setNewGroupName(group.name)
-    setSelectedColor(group.color)
+  const handleProjectClick = (group: ProjectGroup) => {
+    setEditingGroup({ ...group })
     setShowEditDialog(true)
+  }
+
+  const handleDeleteProject = (groupId: string) => {
+    onRemoveGroup(groupId)
+    setShowDeleteConfirm(null)
   }
 
   // Get the background color class from a text color class
@@ -94,219 +86,262 @@ export default function ProjectGroups({
   }
 
   return (
-    <>
-      <div className={cn("flex flex-col items-center justify-center gap-2 mt-2 mb-2", className)}>
-        <div className="flex flex-wrap justify-center gap-2 max-w-md">
-          {groups.map((group) => (
-            <div key={group.id} className="flex items-center gap-1">
-              <button
-                onClick={() => onToggleGroup(group.id)}
-                className={cn(
-                  "flex items-center gap-1 px-2 py-1 rounded-md text-xs border transition-opacity",
-                  getBgFromTextColor(group.color),
-                  getTextForBg(group.color),
-                  group.active ? "opacity-100" : "opacity-40",
-                )}
-                title={group.active ? `Hide ${group.name}` : `Show ${group.name}`}
-              >
-                <span className="mr-1">{group.active ? "+" : "-"}</span>
-                <span
-                  className="cursor-pointer hover:underline"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    startEditGroup(group)
-                  }}
-                >
-                  {group.name}
-                </span>
-              </button>
-
-              {group.id !== "default" && (
-                <button
-                  onClick={() => onRemoveGroup(group.id)}
-                  className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-                  title={`Remove ${group.name}`}
-                >
-                  <X className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                </button>
-              )}
-            </div>
-          ))}
-
+    <div className={cn("project-groups", className)}>
+      <div className="flex flex-wrap gap-2">
+        {groups.map((group) => (
           <button
-            onClick={() => setShowAddDialog(true)}
-            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs border border-dashed border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+            key={group.id}
+            onClick={() => handleProjectClick(group)}
+            className={cn(
+              "flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs",
+              group.active ? getBgFromTextColor(group.color) : "bg-white dark:bg-gray-900",
+              group.active ? getTextForBg(group.color) : group.color,
+            )}
           >
-            <PlusCircle className="h-3 w-3" />
-            <span>NEW PROJECT</span>
+            {group.active ? <Plus className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+            <span>{group.id === "default" ? "PROJECT 01" : group.name}</span>
           </button>
-        </div>
+        ))}
+        <button
+          onClick={() => setShowAddDialog(true)}
+          className="flex items-center gap-1 rounded-md border border-dashed border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          <Plus className="h-3 w-3" />
+          <span>NEW PROJECT</span>
+        </button>
       </div>
 
       {/* Add Project Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-mono text-sm font-light">ADD PROJECT</DialogTitle>
-          </DialogHeader>
-
-          <div className="p-4 space-y-4">
-            <div>
-              <label className="block text-xs mb-2">PROJECT NAME</label>
-              <input
-                type="text"
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
-                placeholder="Enter project name"
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md text-xs"
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs mb-2">PROJECT COLOR</label>
-              <div className="flex flex-wrap gap-2">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color.value}
-                    type="button"
-                    onClick={() => setSelectedColor(color.value)}
-                    className={cn(
-                      "w-6 h-6 rounded-full",
-                      color.bg,
-                      selectedColor === color.value ? "ring-2 ring-offset-2 ring-gray-400" : "",
-                    )}
-                    title={color.name}
-                  />
-                ))}
+      {showAddDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">NEW PROJECT</h3>
+                <button
+                  onClick={() => setShowAddDialog(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
               </div>
-
-              {selectedColor === "text-custom" && (
-                <div className="mt-2">
-                  <label className="block text-xs mb-1">CUSTOM COLOR</label>
-                  <input
-                    type="color"
-                    value="#ff0000"
-                    onChange={(e) => {
-                      // Convert hex to tailwind-like class
-                      const hexColor = e.target.value
-                      // This would normally create a custom class, but for simplicity
-                      // we'll just use the existing color options
-                      setSelectedColor("text-red-600")
-                    }}
-                    className="w-full h-8 rounded cursor-pointer"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Custom colors are simplified to preset options</p>
-                </div>
-              )}
             </div>
-
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="p-4 sm:p-6">
+              <div className="mb-4">
+                <label htmlFor="project-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  PROJECT NAME
+                </label>
+                <input
+                  type="text"
+                  id="project-name"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                  placeholder="Enter project name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">COLOR</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => setNewProjectColor(color.value)}
+                      className={cn(
+                        "h-6 w-6 rounded-full",
+                        color.bg,
+                        newProjectColor === color.value ? "ring-2 ring-black ring-offset-2" : "",
+                      )}
+                    ></button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
               <button
+                type="button"
+                className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
                 onClick={() => setShowAddDialog(false)}
-                className="px-3 py-1 border border-gray-200 dark:border-gray-700 rounded-md text-xs"
               >
                 CANCEL
               </button>
               <button
-                onClick={handleAddGroup}
-                disabled={!newGroupName.trim()}
-                className={cn(
-                  "px-3 py-1 rounded-md text-xs",
-                  getBgFromTextColor(selectedColor),
-                  getTextForBg(selectedColor),
-                  !newGroupName.trim() && "opacity-50 cursor-not-allowed",
-                )}
+                type="button"
+                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                onClick={handleAddProject}
               >
-                ADD PROJECT
+                ADD
               </button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* Edit Project Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-mono text-sm font-light">EDIT PROJECT</DialogTitle>
-          </DialogHeader>
-
-          <div className="p-4 space-y-4">
-            <div>
-              <label className="block text-xs mb-2">PROJECT NAME</label>
-              <input
-                type="text"
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
-                placeholder="Enter project name"
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md text-xs"
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs mb-2">PROJECT COLOR</label>
-              <div className="flex flex-wrap gap-2">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color.value}
-                    type="button"
-                    onClick={() => setSelectedColor(color.value)}
-                    className={cn(
-                      "w-6 h-6 rounded-full",
-                      color.bg,
-                      selectedColor === color.value ? "ring-2 ring-offset-2 ring-gray-400" : "",
-                    )}
-                    title={color.name}
-                  />
-                ))}
+      {showEditDialog && editingGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">EDIT PROJECT</h3>
+                <button
+                  onClick={() => setShowEditDialog(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
               </div>
-
-              {selectedColor === "text-custom" && (
-                <div className="mt-2">
-                  <label className="block text-xs mb-1">CUSTOM COLOR</label>
-                  <input
-                    type="color"
-                    value="#ff0000"
-                    onChange={(e) => {
-                      // Convert hex to tailwind-like class
-                      const hexColor = e.target.value
-                      // This would normally create a custom class, but for simplicity
-                      // we'll just use the existing color options
-                      setSelectedColor("text-red-600")
-                    }}
-                    className="w-full h-8 rounded cursor-pointer"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Custom colors are simplified to preset options</p>
+            </div>
+            <div className="p-4 sm:p-6">
+              <div className="mb-4">
+                <label
+                  htmlFor="edit-project-name"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  PROJECT NAME
+                </label>
+                <input
+                  type="text"
+                  id="edit-project-name"
+                  value={editingGroup.name}
+                  onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                  placeholder="Enter project name"
+                  disabled={editingGroup.id === "default"}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">COLOR</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => setEditingGroup({ ...editingGroup, color: color.value })}
+                      className={cn(
+                        "h-6 w-6 rounded-full",
+                        color.bg,
+                        editingGroup.color === color.value ? "ring-2 ring-black ring-offset-2" : "",
+                      )}
+                    ></button>
+                  ))}
+                </div>
+              </div>
+              {editingGroup.id !== "default" && (
+                <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(editingGroup.id)}
+                    className="flex items-center text-red-600 hover:text-red-800 text-sm"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    DELETE PROJECT
+                  </button>
                 </div>
               )}
             </div>
-
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
               <button
+                type="button"
+                className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
                 onClick={() => setShowEditDialog(false)}
-                className="px-3 py-1 border border-gray-200 dark:border-gray-700 rounded-md text-xs"
               >
                 CANCEL
               </button>
               <button
-                onClick={handleEditGroup}
-                disabled={!newGroupName.trim()}
-                className={cn(
-                  "px-3 py-1 rounded-md text-xs",
-                  getBgFromTextColor(selectedColor),
-                  getTextForBg(selectedColor),
-                  !newGroupName.trim() && "opacity-50 cursor-not-allowed",
-                )}
+                type="button"
+                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                onClick={handleEditProject}
               >
-                SAVE CHANGES
+                SAVE
               </button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">CONFIRM DELETE</h3>
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                ARE YOU SURE YOU WANT TO DELETE THIS PROJECT? ALL EVENTS ASSOCIATED WITH THIS PROJECT WILL BE MOVED TO
+                PROJECT 01.
+              </p>
+            </div>
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
+              <button
+                type="button"
+                className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                onClick={() => setShowDeleteConfirm(null)}
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                onClick={() => handleDeleteProject(showDeleteConfirm)}
+              >
+                DELETE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

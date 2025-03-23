@@ -574,44 +574,43 @@ export default function Calendar() {
         return
       }
 
-      // Create a clone of the calendar to modify for screenshot
+      // Create a simple wrapper with padding
+      const wrapper = document.createElement("div")
+      wrapper.style.padding = "40px"
+      wrapper.style.backgroundColor = "white"
+      wrapper.style.position = "fixed"
+      wrapper.style.top = "0"
+      wrapper.style.left = "0"
+      wrapper.style.zIndex = "-1000"
+      wrapper.style.width = calendarElement.offsetWidth + 80 + "px"
+      wrapper.style.height = calendarElement.offsetHeight + 80 + "px"
+
+      // Clone the calendar
       const clone = calendarElement.cloneNode(true) as HTMLElement
 
-      // Style the clone for screenshot
-      clone.style.position = "absolute"
-      clone.style.left = "-9999px"
-      clone.style.top = "-9999px"
-      clone.style.width = calendarElement.offsetWidth + "px"
-      clone.style.height = calendarElement.offsetHeight + "px"
-      clone.style.backgroundColor = "white"
-      clone.style.border = "1px solid #e5e7eb"
-      clone.style.borderRadius = "8px"
-      clone.style.overflow = "hidden"
-      clone.style.boxShadow = "none"
-
-      // Add padding around the calendar
-      const wrapper = document.createElement("div")
-      wrapper.style.position = "absolute"
-      wrapper.style.left = "-9999px"
-      wrapper.style.top = "-9999px"
-      wrapper.style.padding = "60px"
-      wrapper.style.backgroundColor = "white"
-      wrapper.style.width = calendarElement.offsetWidth + 120 + "px"
-      wrapper.style.height = calendarElement.offsetHeight + 120 + "px"
-
-      // Append to body temporarily
+      // Append to body
       document.body.appendChild(wrapper)
       wrapper.appendChild(clone)
 
-      // Render with html2canvas at 2x scale for higher resolution
+      // Wait a moment for the DOM to update
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // Render with html2canvas
       const canvas = await html2canvas.default(wrapper, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "white",
-        logging: false,
-        imageTimeout: 0,
-        removeContainer: true,
+        logging: true,
+        onclone: (doc) => {
+          // Make sure all elements are visible in the clone
+          const clonedCalendar = doc.querySelector(".calendar-full-container") as HTMLElement
+          if (clonedCalendar) {
+            clonedCalendar.style.width = calendarElement.offsetWidth + "px"
+            clonedCalendar.style.height = "auto"
+            clonedCalendar.style.overflow = "visible"
+          }
+        },
       })
 
       // Convert to image and download

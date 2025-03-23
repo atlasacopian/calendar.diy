@@ -217,7 +217,7 @@ export default function ProjectGroups({
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value.toUpperCase())}
                   onKeyDown={handleAddProjectKeyDown}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-lg py-3 uppercase"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 uppercase"
                   placeholder="ENTER PROJECT NAME"
                 />
               </div>
@@ -297,7 +297,7 @@ export default function ProjectGroups({
                   value={editingGroup.name}
                   onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value.toUpperCase() })}
                   onKeyDown={handleEditProjectKeyDown}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-lg py-3 uppercase"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 uppercase"
                   placeholder="ENTER PROJECT NAME"
                 />
               </div>
@@ -318,11 +318,12 @@ export default function ProjectGroups({
                 </div>
               </div>
               {editingGroup.id !== "default" && (
-                <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="absolute top-3 right-12">
                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(editingGroup.id)}
-                    className="flex items-center text-red-600 hover:text-red-800 text-sm"
+                    className="text-red-500 hover:text-red-700"
+                    title="Delete project"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -334,7 +335,7 @@ export default function ProjectGroups({
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="h-4 w-4 mr-1"
+                      className="h-5 w-5"
                     >
                       <path d="M3 6h18"></path>
                       <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
@@ -342,7 +343,6 @@ export default function ProjectGroups({
                       <line x1="10" y1="11" x2="10" y2="17"></line>
                       <line x1="14" y1="11" x2="14" y2="17"></line>
                     </svg>
-                    DELETE PROJECT
                   </button>
                 </div>
               )}

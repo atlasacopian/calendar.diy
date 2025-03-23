@@ -68,6 +68,7 @@ export default function Calendar() {
   const fullCalendarRef = useRef<HTMLDivElement>(null)
   const printableCalendarRef = useRef<HTMLDivElement>(null)
   const shareInputRef = useRef<HTMLInputElement>(null)
+  const dateSelectorRef = useRef<HTMLDivElement>(null)
 
   const handleToggleProjectGroup = useCallback((groupId: string) => {
     setProjectGroups((prevGroups) =>
@@ -246,7 +247,8 @@ export default function Calendar() {
         setShowResetConfirm(false)
       }
 
-      if (showDateSelector && !event.target.closest(".relative")) {
+      // Fix for the TypeScript error - check if event.target is not null before accessing properties
+      if (showDateSelector && event.target && !(event.target as Element).closest(".date-selector-container")) {
         setShowDateSelector(false)
       }
     }
@@ -1280,7 +1282,7 @@ export default function Calendar() {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="relative">
+              <div className="relative date-selector-container">
                 <button
                   onClick={() => setShowDateSelector(!showDateSelector)}
                   className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none flex items-center"
@@ -1304,6 +1306,7 @@ export default function Calendar() {
 
                 {showDateSelector && (
                   <div
+                    ref={dateSelectorRef}
                     className="absolute z-10 mt-1 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                     role="menu"
                     aria-orientation="vertical"

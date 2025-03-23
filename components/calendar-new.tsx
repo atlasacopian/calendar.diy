@@ -1609,7 +1609,7 @@ export default function Calendar() {
                               }
                             }}
                             className={cn(
-                              "w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case",
+                              "w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case resize-none",
                               event.color || "text-black dark:text-white",
                             )}
                             rows={3}
@@ -1666,7 +1666,7 @@ export default function Calendar() {
                           handleSaveAndClose() // Changed from handleSaveEvent() to handleSaveAndClose()
                         }
                       }}
-                      className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case"
+                      className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case resize-none"
                       rows={3}
                       placeholder="Enter event details..."
                       autoFocus
@@ -1686,7 +1686,7 @@ export default function Calendar() {
                           handleSaveAndClose() // Changed from handleSaveEvent() to handleSaveAndClose()
                         }
                       }}
-                      className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case"
+                      className="w-full border-0 bg-transparent p-0 text-sm focus:ring-0 focus:outline-none preserve-case resize-none"
                       rows={3}
                       placeholder="Enter event details..."
                       autoFocus
@@ -1696,12 +1696,13 @@ export default function Calendar() {
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">PROJECT</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">GROUP</label>
                 <div className="mt-2 flex flex-wrap gap-3">
                   {projectGroups.map((group) => {
                     // Get the color information for this project
                     const colorInfo = colorOptions.find((c) => c.value === group.color)
-                    const colorHex = colorInfo?.hex || "#000000"
+                    const bgColor = getBgFromTextColor(group.color)
+                    const textColor = getTextForBg(group.color)
 
                     return (
                       <button
@@ -1709,15 +1710,11 @@ export default function Calendar() {
                         onClick={() => setSelectedColor(group.color)}
                         className={cn(
                           "flex items-center rounded-md px-2 py-1 text-xs border transition-colors",
-                          // Use the background color when selected
-                          selectedColor === group.color
-                            ? getBgFromTextColor(group.color) +
-                                " " +
-                                getTextForBg(group.color) +
-                                " ring-2 ring-black dark:ring-white"
-                            : "bg-white dark:bg-gray-800",
-                          // Always use the same text color
-                          group.color,
+                          // Always use the background color
+                          bgColor,
+                          textColor,
+                          // Add a black ring when selected
+                          selectedColor === group.color ? "ring-2 ring-black dark:ring-white" : "",
                         )}
                       >
                         {group.name}

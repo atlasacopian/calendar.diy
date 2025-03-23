@@ -139,7 +139,7 @@ export default function ProjectGroups({
     if (editingGroup && editingGroup.name.trim()) {
       // Special handling for the default project
       if (editingGroup.id === "default") {
-        // Update all instances of "PROJECT 01" in the UI
+        // Update all instances of "TAG 01" in the UI
         const updatedGroups = projectGroups.map((group) =>
           group.id === "default" ? { ...group, name: editingGroup.name, color: editingGroup.color } : group,
         )
@@ -227,7 +227,7 @@ export default function ProjectGroups({
           >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">NEW GROUP</h3>
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">NEW TAG</h3>
                 <button
                   onClick={() => setShowAddDialog(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
@@ -256,7 +256,7 @@ export default function ProjectGroups({
                   htmlFor="project-name"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  GROUP NAME
+                  TAG NAME
                 </label>
                 <input
                   type="text"
@@ -265,7 +265,7 @@ export default function ProjectGroups({
                   onChange={(e) => setNewProjectName(e.target.value.toUpperCase())}
                   onKeyDown={handleAddProjectKeyDown}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 uppercase"
-                  placeholder="ENTER GROUP NAME"
+                  placeholder="ENTER TAG NAME"
                 />
               </div>
 
@@ -308,7 +308,7 @@ export default function ProjectGroups({
           >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">EDIT GROUP</h3>
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">EDIT TAG</h3>
                 <button
                   onClick={() => setShowEditDialog(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
@@ -337,7 +337,7 @@ export default function ProjectGroups({
                   htmlFor="edit-project-name"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  GROUP NAME
+                  TAG NAME
                 </label>
                 <input
                   type="text"
@@ -346,7 +346,7 @@ export default function ProjectGroups({
                   onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value.toUpperCase() })}
                   onKeyDown={handleEditProjectKeyDown}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 uppercase"
-                  placeholder="ENTER GROUP NAME"
+                  placeholder="ENTER TAG NAME"
                 />
               </div>
               <div className="mb-6">

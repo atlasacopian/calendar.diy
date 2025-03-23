@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
-import { Plus, Minus } from "lucide-react"
+import { Tag, Minus } from "lucide-react"
 
 export type ProjectGroup = {
   id: string
@@ -203,7 +203,7 @@ export default function ProjectGroups({
               onClick={(e) => handleToggleClick(group.id, e)}
               className="mr-1 flex items-center justify-center h-3 w-3"
             >
-              {group.active ? <Plus className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+              {group.active ? <Tag className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
             </button>
             <button onClick={(e) => handleProjectNameClick(group, e)} className="hover:underline focus:underline">
               <span>{group.name}</span>

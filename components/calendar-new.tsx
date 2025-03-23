@@ -7,7 +7,7 @@ import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToda
 import html2canvas from "html2canvas"
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
-import { Share2, X } from "lucide-react"
+import { Share2 } from "lucide-react"
 import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
 
 type CalendarEvent = {
@@ -1225,76 +1225,86 @@ export default function Calendar() {
 
       {/* Event Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div ref={eventModalRef} className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold tracking-tight">{formatDate(selectedDate)}</h2>
-                <button onClick={closeModal} className="text-gray-500 hover:text-gray-700 transition-colors">
-                  <X className="h-5 w-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div
+            ref={eventModalRef}
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
+          >
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">
+                  {formatDate(selectedDate)}
+                </h3>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
                 </button>
               </div>
-
-              <div className="mb-6">
-                <label htmlFor="event-name" className="block text-sm font-medium mb-2">
+            </div>
+            <div className="p-4 sm:p-6">
+              <div className="mb-4">
+                <label htmlFor="event-content" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   EVENT
                 </label>
                 <textarea
-                  id="event-name"
-                  value={eventText}
-                  onChange={(e) => setEventText(e.target.value)}
+                  id="event-content"
+                  value={eventContent}
+                  onChange={(e) => setEventContent(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault()
-                      saveEvent()
-                      closeModal() // Close the modal after saving
+                      handleSaveAndClose()
                     }
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ring-black"
-                  rows={3}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
+                  rows={4}
+                  placeholder="Enter event details"
                 />
               </div>
-
-              <div className="mb-6">
-                <label className="block text-sm font-medium mb-2">PROJECT</label>
-                <div className="flex flex-wrap gap-2">
-                  {projects.map((project) => (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">PROJECT</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {projectGroups.map((group) => (
                     <button
-                      key={project}
-                      onClick={() => setSelectedProject(project)}
-                      className={`px-4 py-2 rounded-md border transition-colors ${
-                        selectedProject === project
-                          ? "bg-black text-white border-black"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
+                      key={group.id}
+                      onClick={() => setSelectedColor(group.color)}
+                      className={cn(
+                        "px-4 py-2 rounded-md border transition-colors",
+                        selectedColor === group.color
+                          ? `${getBgFromTextColor(group.color)} ${getTextForBg(group.color)}`
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700",
+                      )}
                     >
-                      {project}
+                      {group.id === "default" ? "PROJECT 01" : group.name}
                     </button>
                   ))}
                 </div>
               </div>
-
-              <div className="flex flex-wrap gap-2 mt-4">
-                {colors.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setSelectedColor(color)}
-                    className={`w-6 h-6 rounded-full ${
-                      selectedColor === color ? "ring-2 ring-black ring-offset-2" : ""
-                    }`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-
-              <div className="flex justify-end gap-3 mt-8">
-                <button
-                  onClick={saveEvent}
-                  className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
-                >
-                  SAVE
-                </button>
-              </div>
+            </div>
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
+              <button
+                type="button"
+                className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                onClick={handleSaveAndClose}
+              >
+                SAVE
+              </button>
             </div>
           </div>
         </div>

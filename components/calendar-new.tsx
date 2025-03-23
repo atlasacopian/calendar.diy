@@ -20,25 +20,31 @@ type CalendarEvent = {
 
 // Color options for color picker
 const colorOptions = [
-  { name: "Black", value: "text-black", bg: "bg-black", text: "text-white" },
-  { name: "Blue", value: "text-blue-600", bg: "bg-blue-600", text: "text-white" },
-  { name: "Red", value: "text-red-600", bg: "bg-red-600", text: "text-white" },
-  { name: "Yellow", value: "text-yellow-500", bg: "bg-yellow-500", text: "text-black" },
-  { name: "Orange", value: "text-orange-500", bg: "bg-orange-500", text: "text-black" },
-  { name: "Green", value: "text-green-600", bg: "bg-green-600", text: "text-white" },
-  { name: "Purple", value: "text-purple-600", bg: "bg-purple-600", text: "text-white" },
+  { name: "Black", value: "text-black", bg: "bg-black", text: "text-white", hex: "#000000" },
+  { name: "Blue", value: "text-blue-600", bg: "bg-blue-600", text: "text-white", hex: "#0012ff" },
+  { name: "Red", value: "text-red-600", bg: "bg-red-600", text: "text-white", hex: "#ff0000" },
+  { name: "Yellow", value: "text-yellow-500", bg: "bg-yellow-500", text: "text-black", hex: "#f6ff00" },
+  { name: "Green", value: "text-green-600", bg: "bg-green-600", text: "text-white", hex: "#1ae100" },
+  { name: "Purple", value: "text-purple-600", bg: "bg-purple-600", text: "text-white", hex: "#a800ff" },
+  { name: "Orange", value: "text-orange-500", bg: "bg-orange-500", text: "text-black", hex: "#ff7200" },
 ]
 
 // Get the background color class from a text color class
 const getBgFromTextColor = (textColor: string) => {
   const color = colorOptions.find((c) => c.value === textColor)
-  return color ? color.bg : "bg-gray-200"
+  return color ? `bg-[${color.hex}]` : "bg-gray-200"
 }
 
-// Get the text color for the background
 const getTextForBg = (textColor: string) => {
   const color = colorOptions.find((c) => c.value === textColor)
-  return color ? color.text : "text-black"
+  // For dark colors use white text, for light colors use black text
+  if (color) {
+    if (color.name === "Yellow" || color.name === "Orange") {
+      return "text-black"
+    }
+    return "text-white"
+  }
+  return "text-black"
 }
 
 export default function Calendar() {
@@ -1220,7 +1226,7 @@ export default function Calendar() {
         onAddGroup={handleAddProjectGroup}
         onRemoveGroup={handleRemoveProjectGroup}
         onEditGroup={handleEditProjectGroup}
-        className="mt-1"
+        className="mt-6 flex justify-center" // Changed from mt-1 to mt-6 and added flex justify-center
       />
 
       {/* Event Modal */}

@@ -1,8 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Explicitly disable AMP
-  amp: false,
+  // Explicitly disable AMP - fixed to be an object instead of boolean
+  amp: {
+    enabled: false,
+  },
   // Ensure proper static generation
   output: "standalone",
   // Disable redirects that might interfere with indexing

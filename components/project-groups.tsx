@@ -193,11 +193,10 @@ export default function ProjectGroups({
             key={group.id}
             className={cn(
               "flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs",
-              group.active
-                ? getBgFromTextColor(group.color) + " " + getTextForBg(group.color)
-                : "bg-gray-50 dark:bg-gray-800/50",
-              // Always use the same color for text, regardless of active state
-              group.color,
+              // Always use full color
+              getBgFromTextColor(group.color) + " " + getTextForBg(group.color),
+              // Add a black ring when active
+              group.active ? "ring-2 ring-black dark:ring-white" : "opacity-60",
             )}
           >
             <button
@@ -216,7 +215,7 @@ export default function ProjectGroups({
           className="flex items-center gap-1 rounded-md border border-dashed border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
         >
           <Plus className="h-3 w-3" />
-          <span>NEW PROJECT</span>
+          <span>NEW GROUP</span>
         </button>
       </div>
 
@@ -229,7 +228,7 @@ export default function ProjectGroups({
           >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">NEW PROJECT</h3>
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">NEW GROUP</h3>
                 <button
                   onClick={() => setShowAddDialog(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
@@ -258,7 +257,7 @@ export default function ProjectGroups({
                   htmlFor="project-name"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  PROJECT NAME
+                  GROUP NAME
                 </label>
                 <input
                   type="text"
@@ -267,7 +266,7 @@ export default function ProjectGroups({
                   onChange={(e) => setNewProjectName(e.target.value.toUpperCase())}
                   onKeyDown={handleAddProjectKeyDown}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 uppercase"
-                  placeholder="ENTER PROJECT NAME"
+                  placeholder="ENTER GROUP NAME"
                 />
               </div>
 
@@ -310,7 +309,7 @@ export default function ProjectGroups({
           >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">EDIT PROJECT</h3>
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">EDIT GROUP</h3>
                 <button
                   onClick={() => setShowEditDialog(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
@@ -339,7 +338,7 @@ export default function ProjectGroups({
                   htmlFor="edit-project-name"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  PROJECT NAME
+                  GROUP NAME
                 </label>
                 <input
                   type="text"
@@ -348,7 +347,7 @@ export default function ProjectGroups({
                   onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value.toUpperCase() })}
                   onKeyDown={handleEditProjectKeyDown}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 uppercase"
-                  placeholder="ENTER PROJECT NAME"
+                  placeholder="ENTER GROUP NAME"
                 />
               </div>
               <div className="mb-6">
@@ -441,8 +440,8 @@ export default function ProjectGroups({
             </div>
             <div className="p-4 sm:p-6">
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                ARE YOU SURE YOU WANT TO DELETE THIS PROJECT? ALL EVENTS ASSOCIATED WITH THIS PROJECT WILL BE MOVED TO
-                PROJECT 01.
+                ARE YOU SURE YOU WANT TO DELETE THIS GROUP? ALL EVENTS ASSOCIATED WITH THIS GROUP WILL BE MOVED TO GROUP
+                01.
               </p>
             </div>
             <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">

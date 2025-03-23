@@ -1709,12 +1709,12 @@ export default function Calendar() {
                         key={group.id}
                         onClick={() => setSelectedColor(group.color)}
                         className={cn(
-                          "flex items-center rounded-md px-2 py-1 text-xs border transition-colors",
+                          "flex items-center rounded-md px-2 py-1 text-xs border border-transparent transition-colors",
                           // Always use the background color
                           bgColor,
                           textColor,
-                          // Add a black ring when selected
-                          selectedColor === group.color ? "ring-2 ring-black dark:ring-white" : "",
+                          // Use a subtle border and shadow for selection instead of a ring
+                          selectedColor === group.color ? "border-gray-300 shadow-sm" : "",
                         )}
                       >
                         {group.name}

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { PlusCircle, X, Edit2 } from "lucide-react"
+import { PlusCircle, X } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // Define the project group type
@@ -101,27 +101,26 @@ export default function ProjectGroups({
                 )}
                 title={group.active ? `Hide ${group.name}` : `Show ${group.name}`}
               >
-                <span>{group.name}</span>
+                <span
+                  className="cursor-pointer hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    startEditGroup(group)
+                  }}
+                >
+                  {group.name}
+                </span>
               </button>
 
-              <>
+              {group.id !== "default" && (
                 <button
-                  onClick={() => startEditGroup(group)}
+                  onClick={() => onRemoveGroup(group.id)}
                   className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-                  title={`Edit ${group.name}`}
+                  title={`Remove ${group.name}`}
                 >
-                  <Edit2 className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                  <X className="h-3 w-3 text-gray-500 dark:text-gray-400" />
                 </button>
-                {group.id !== "default" && (
-                  <button
-                    onClick={() => onRemoveGroup(group.id)}
-                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-                    title={`Remove ${group.name}`}
-                  >
-                    <X className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                  </button>
-                )}
-              </>
+              )}
             </div>
           ))}
 

@@ -583,18 +583,32 @@ export default function Calendar() {
       clonedCalendar.style.borderRadius = "0"
       clonedCalendar.style.boxShadow = "none"
 
-      // Ensure text doesn't get cut off by increasing cell heights
+      // Remove highlighting of current day
+      const todayCells = clonedCalendar.querySelectorAll(".bg-gray-50, .bg-gray-200, .dark\\:bg-gray-700")
+      todayCells.forEach((cell) => {
+        ;(cell as HTMLElement).classList.remove("bg-gray-50", "bg-gray-200", "dark:bg-gray-700")
+        if ((cell as HTMLElement).classList.contains("rounded-full")) {
+          ;(cell as HTMLElement).style.backgroundColor = "transparent"(cell as HTMLElement).style.color = "#999"
+        }
+      })
+
+      // Ensure text doesn't get cut off by increasing cell heights and adjusting text properties
       const dayCells = clonedCalendar.querySelectorAll(".calendar-day")
       dayCells.forEach((cell) => {
-        ;(cell as HTMLElement).style.minHeight = "120px"
-        ;(cell as HTMLElement).style.height = "auto"
+        ;(cell as HTMLElement).style.minHeight =
+          "120px"(cell as HTMLElement).style.height =
+          "auto"(cell as HTMLElement).style.padding =
+            "10px"
 
         // Make sure text is fully visible
         const textElements = cell.querySelectorAll("span, div")
         textElements.forEach((el) => {
-          ;(el as HTMLElement).style.overflow = "visible"
-          ;(el as HTMLElement).style.whiteSpace = "normal"
-          ;(el as HTMLElement).style.textOverflow = "clip"
+          ;(el as HTMLElement).style.overflow =
+            "visible"(el as HTMLElement).style.whiteSpace =
+            "normal"(el as HTMLElement).style.textOverflow =
+            "clip"(el as HTMLElement).style.maxWidth =
+            "none"(el as HTMLElement).style.width =
+              "auto"(el as HTMLElement).classList.remove("line-clamp-2", "line-clamp-4")
         })
       })
 
@@ -611,13 +625,16 @@ export default function Calendar() {
         width: clonedCalendar.offsetWidth,
         height: clonedCalendar.offsetHeight,
         onclone: (document, element) => {
-          // Additional modifications to the cloned element if needed
+          // Additional modifications to the cloned element
           const textElements = element.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4")
           textElements.forEach((el) => {
-            ;(el as HTMLElement).style.overflow = "visible"
-            ;(el as HTMLElement).style.whiteSpace = "normal"
-            ;(el as HTMLElement).style.textOverflow = "clip"
-            ;(el as HTMLElement).style.webkitLineClamp = "none"
+            ;(el as HTMLElement).style.overflow =
+              "visible"(el as HTMLElement).style.whiteSpace =
+              "normal"(el as HTMLElement).style.textOverflow =
+              "clip"(el as HTMLElement).style.webkitLineClamp =
+              "none"(el as HTMLElement).style.maxWidth =
+              "none"(el as HTMLElement).style.width =
+                "auto"
           })
         },
       })
@@ -1394,9 +1411,9 @@ export default function Calendar() {
         ref={fullCalendarRef}
         className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
       >
-        <div ref={calendarRef} className="calendar-container">
-          <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+        <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4">
+          <div className="grid grid-cols-3 items-center">
+            <div className="flex justify-start">
               <button
                 onClick={handlePreviousMonth}
                 className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -1418,11 +1435,11 @@ export default function Calendar() {
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex justify-center">
               <div className="relative date-selector-container">
                 <button
                   onClick={() => setShowDateSelector(!showDateSelector)}
-                  className="font-mono text-lg md:text-xl font-bold tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none"
+                  className="font-mono text-lg md:text-xl tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none px-2 py-1 border-b-2 border-transparent hover:border-gray-200"
                 >
                   {format(currentDate, "MMMM yyyy").toUpperCase()}
                 </button>
@@ -1497,7 +1514,7 @@ export default function Calendar() {
               </div>
             </div>
 
-            <div className="flex items-center">
+            <div className="flex justify-end">
               <button
                 onClick={handleNextMonth}
                 className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -1519,21 +1536,21 @@ export default function Calendar() {
               </button>
             </div>
           </div>
+        </div>
 
-          <div className="flex">
-            <div className="flex-1">
-              <div className="w-full">
-                <div ref={calendarContentRef} className="grid grid-cols-7">
-                  {(isMobile ? weekDaysMobile : weekDays).map((day) => (
-                    <div
-                      key={day}
-                      className="border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500 dark:text-gray-400"
-                    >
-                      {day}
-                    </div>
-                  ))}
-                  {renderCalendar()}
-                </div>
+        <div className="flex">
+          <div className="flex-1">
+            <div className="w-full">
+              <div ref={calendarContentRef} className="grid grid-cols-7">
+                {(isMobile ? weekDaysMobile : weekDays).map((day) => (
+                  <div
+                    key={day}
+                    className="border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500 dark:text-gray-400"
+                  >
+                    {day}
+                  </div>
+                ))}
+                {renderCalendar()}
               </div>
             </div>
           </div>

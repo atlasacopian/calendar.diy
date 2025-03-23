@@ -67,6 +67,7 @@ export default function RootLayout({
         {/* Use calendar emoji as favicon - with Apple-style emoji */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
+        <title>Free Calendar Template</title>
 
         {/* Add direct meta tags for social sharing with calendar emoji */}
         <meta property="og:title" content="calendar.diy — Your Free Calendar" />

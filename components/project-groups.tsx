@@ -36,6 +36,7 @@ interface ProjectGroupsProps {
   onAddGroup: (name: string, color: string) => void
   onRemoveGroup: (groupId: string) => void
   onEditGroup?: (groupId: string, name: string, color: string) => void
+  className?: string // Add this line
 }
 
 export default function ProjectGroups({
@@ -44,6 +45,7 @@ export default function ProjectGroups({
   onAddGroup,
   onRemoveGroup,
   onEditGroup,
+  className, // Add this line
 }: ProjectGroupsProps) {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -93,7 +95,7 @@ export default function ProjectGroups({
 
   return (
     <>
-      <div className="flex flex-col items-center justify-center gap-2 mt-4 mb-2">
+      <div className={cn("flex flex-col items-center justify-center gap-2 mt-2 mb-2", className)}>
         <div className="flex flex-wrap justify-center gap-2 max-w-md">
           {groups.map((group) => (
             <div key={group.id} className="flex items-center gap-1">

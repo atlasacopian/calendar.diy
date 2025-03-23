@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { PlusCircle, X, Check } from "lucide-react"
+import { PlusCircle, X, Check, Edit2 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // Define the project group type
@@ -29,12 +29,21 @@ interface ProjectGroupsProps {
   onToggleGroup: (groupId: string) => void
   onAddGroup: (name: string, color: string) => void
   onRemoveGroup: (groupId: string) => void
+  onEditGroup?: (groupId: string, name: string, color: string) => void
 }
 
-export default function ProjectGroups({ groups, onToggleGroup, onAddGroup, onRemoveGroup }: ProjectGroupsProps) {
+export default function ProjectGroups({
+  groups,
+  onToggleGroup,
+  onAddGroup,
+  onRemoveGroup,
+  onEditGroup,
+}: ProjectGroupsProps) {
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
   const [newGroupName, setNewGroupName] = useState("")
   const [selectedColor, setSelectedColor] = useState(colorOptions[0].value)
+  const [editingGroup, setEditingGroup] = useState<ProjectGroup | null>(null)
 
   const handleAddGroup = () => {
     if (newGroupName.trim()) {
@@ -43,6 +52,25 @@ export default function ProjectGroups({ groups, onToggleGroup, onAddGroup, onRem
       setSelectedColor(colorOptions[0].value)
       setShowAddDialog(false)
     }
+  }
+
+  const handleEditGroup = () => {
+    if (editingGroup && newGroupName.trim()) {
+      if (onEditGroup) {
+        onEditGroup(editingGroup.id, newGroupName.trim(), selectedColor)
+      }
+      setEditingGroup(null)
+      setNewGroupName("")
+      setSelectedColor(colorOptions[0].value)
+      setShowEditDialog(false)
+    }
+  }
+
+  const startEditGroup = (group: ProjectGroup) => {
+    setEditingGroup(group)
+    setNewGroupName(group.name)
+    setSelectedColor(group.color)
+    setShowEditDialog(true)
   }
 
   // Get the background color class from a text color class
@@ -59,28 +87,46 @@ export default function ProjectGroups({ groups, onToggleGroup, onAddGroup, onRem
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-center gap-2 mt-4 mb-2">
-        {groups.length > 0 && (
-          <div className="w-full text-center text-xs text-gray-500 dark:text-gray-400 mb-1">PROJECT LEGEND</div>
-        )}
+      <div className="flex flex-col items-center justify-center gap-2 mt-4 mb-2">
+        <div className="w-full text-center text-xs text-gray-500 dark:text-gray-400 mb-1">PROJECTS</div>
 
         <div className="flex flex-wrap justify-center gap-2 max-w-md">
           {groups.map((group) => (
-            <button
-              key={group.id}
-              onClick={() => onToggleGroup(group.id)}
-              className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-md text-xs border transition-opacity",
-                getBgFromTextColor(group.color),
-                getTextForBg(group.color),
-                group.active ? "opacity-100" : "opacity-40",
+            <div key={group.id} className="flex items-center gap-1">
+              <button
+                onClick={() => onToggleGroup(group.id)}
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 rounded-md text-xs border transition-opacity",
+                  getBgFromTextColor(group.color),
+                  getTextForBg(group.color),
+                  group.active ? "opacity-100" : "opacity-40",
+                )}
+                title={group.active ? `Hide ${group.name}` : `Show ${group.name}`}
+              >
+                <span>{group.name}</span>
+                {!group.active && <X className="h-3 w-3" />}
+                {group.active && <Check className="h-3 w-3" />}
+              </button>
+
+              {group.id !== "default" && (
+                <>
+                  <button
+                    onClick={() => startEditGroup(group)}
+                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    title={`Edit ${group.name}`}
+                  >
+                    <Edit2 className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                  </button>
+                  <button
+                    onClick={() => onRemoveGroup(group.id)}
+                    className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    title={`Remove ${group.name}`}
+                  >
+                    <X className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                  </button>
+                </>
               )}
-              title={group.active ? `Hide ${group.name}` : `Show ${group.name}`}
-            >
-              <span>{group.name}</span>
-              {!group.active && <X className="h-3 w-3" />}
-              {group.active && <Check className="h-3 w-3" />}
-            </button>
+            </div>
           ))}
 
           <button
@@ -93,6 +139,7 @@ export default function ProjectGroups({ groups, onToggleGroup, onAddGroup, onRem
         </div>
       </div>
 
+      {/* Add Project Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -149,6 +196,69 @@ export default function ProjectGroups({ groups, onToggleGroup, onAddGroup, onRem
                 )}
               >
                 ADD PROJECT
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono text-sm font-light">EDIT PROJECT</DialogTitle>
+          </DialogHeader>
+
+          <div className="p-4 space-y-4">
+            <div>
+              <label className="block text-xs mb-2">PROJECT NAME</label>
+              <input
+                type="text"
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                placeholder="Enter project name"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md text-xs"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs mb-2">PROJECT COLOR</label>
+              <div className="flex flex-wrap gap-2">
+                {colorOptions.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    onClick={() => setSelectedColor(color.value)}
+                    className={cn(
+                      "w-6 h-6 rounded-full",
+                      color.bg,
+                      selectedColor === color.value ? "ring-2 ring-offset-2 ring-gray-400" : "",
+                    )}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowEditDialog(false)}
+                className="px-3 py-1 border border-gray-200 dark:border-gray-700 rounded-md text-xs"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleEditGroup}
+                disabled={!newGroupName.trim()}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs",
+                  getBgFromTextColor(selectedColor),
+                  getTextForBg(selectedColor),
+                  !newGroupName.trim() && "opacity-50 cursor-not-allowed",
+                )}
+              >
+                SAVE CHANGES
               </button>
             </div>
           </div>

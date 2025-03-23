@@ -87,10 +87,22 @@ export default function ProjectGroups({
 
   const handleAddProject = () => {
     if (newProjectName.trim()) {
+      const newProject = {
+        id: Math.random().toString(36).substring(2, 11),
+        name: newProjectName,
+        color: newProjectColor,
+        active: true,
+      }
       onAddGroup(newProjectName, newProjectColor)
       setNewProjectName("")
       setNewProjectColor("text-black")
       setShowAddDialog(false)
+
+      // After a short delay, open the edit dialog for the new project
+      setTimeout(() => {
+        setEditingGroup(newProject)
+        setShowEditDialog(true)
+      }, 100)
     }
   }
 
@@ -205,7 +217,7 @@ export default function ProjectGroups({
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value.toUpperCase())}
                   onKeyDown={handleAddProjectKeyDown}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm uppercase"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-lg py-3 uppercase"
                   placeholder="ENTER PROJECT NAME"
                 />
               </div>

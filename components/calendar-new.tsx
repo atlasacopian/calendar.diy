@@ -556,7 +556,7 @@ export default function Calendar() {
     }
   }
 
-  // Download calendar as image
+  // Replace the entire downloadCalendarAsImage function with this improved version
   const downloadCalendarAsImage = async () => {
     try {
       setIsDownloading(true)
@@ -569,125 +569,46 @@ export default function Calendar() {
         return
       }
 
-      // Create a clone of the calendar to modify for screenshot
-      const clonedCalendar = calendarElement.cloneNode(true) as HTMLElement
+      // Create a new canvas with the exact same dimensions as the original calendar
+      const canvas = document.createElement("canvas")
+      const ctx = canvas.getContext("2d")
 
-      // Style the cloned calendar for screenshot
-      clonedCalendar.style.position = "absolute"
-      clonedCalendar.style.left = "-9999px"
-      clonedCalendar.style.width = "2000px" // Significantly increase width
-      clonedCalendar.style.backgroundColor = "white"
-      clonedCalendar.style.padding = "30px" // Increase padding
-      clonedCalendar.style.border = "none"
-      clonedCalendar.style.borderRadius = "0"
-      clonedCalendar.style.boxShadow = "none"
+      // Set canvas size to match the calendar (with a slight padding)
+      const rect = calendarElement.getBoundingClientRect()
+      const ratio = 2 // Higher resolution
+      canvas.width = rect.width * ratio
+      canvas.height = rect.height * ratio
 
-      // Remove highlighting of current day
-      const todayCells = clonedCalendar.querySelectorAll(".bg-gray-50, .bg-gray-200, .dark\\:bg-gray-700")
-      todayCells.forEach((cell) => {
-        ;(cell as HTMLElement).classList.remove("bg-gray-50", "bg-gray-200", "dark:bg-gray-700")
-        if ((cell as HTMLElement).classList.contains("rounded-full")) {
-          ;(cell as HTMLElement).style.backgroundColor = "transparent"
-          ;(cell as HTMLElement).style.color = "#999"
-        }
-      })
+      // Scale everything by the ratio
+      if (ctx) {
+        ctx.scale(ratio, ratio)
+      }
 
-      // Ensure text doesn't get cut off by increasing cell heights and adjusting text properties
-      const dayCells = clonedCalendar.querySelectorAll(".calendar-day")
-      dayCells.forEach((cell) => {
-        ;(cell as HTMLElement).style.minHeight = "200px" // Significantly increase height
-        ;(cell as HTMLElement).style.height = "auto"
-        ;(cell as HTMLElement).style.padding = "20px" // Increase padding
-        ;(cell as HTMLElement).style.position = "relative"
-        ;(cell as HTMLElement).style.overflow = "visible"
-
-        // Make sure text is fully visible
-        const textElements = cell.querySelectorAll("span, div")
-        textElements.forEach((el) => {
-          ;(el as HTMLElement).style.overflow = "visible"
-          ;(el as HTMLElement).style.whiteSpace = "normal"
-          ;(el as HTMLElement).style.textOverflow = "clip"
-          ;(el as HTMLElement).style.maxWidth = "none"
-          ;(el as HTMLElement).style.width = "auto"
-          ;(el as HTMLElement).style.maxHeight = "none"
-          ;(el as HTMLElement).style.height = "auto"
-          ;(el as HTMLElement).style.lineHeight = "1.5"
-          ;(el as HTMLElement).style.display = "block"
-
-          // Remove any truncation classes
-          ;(el as HTMLElement).classList.remove("line-clamp-2", "line-clamp-4", "truncate")
-
-          // Explicitly remove webkit line clamp
-          if ((el as HTMLElement).style) {
-            ;(el as HTMLElement).style.webkitLineClamp = "none"
-            ;(el as HTMLElement).style.webkitBoxOrient = "inline"
-          }
-        })
-      })
-
-      // Add the cloned calendar to the document body
-      document.body.appendChild(clonedCalendar)
-
-      // Use html2canvas to capture the entire calendar
-      const canvas = await html2canvas(clonedCalendar, {
-        backgroundColor: "white",
-        scale: 2, // Higher resolution
-        logging: true, // Enable logging for debugging
+      // Convert the calendar to an image using html2canvas
+      // This preserves the exact styling as seen on screen
+      const calendarCanvas = await html2canvas(calendarElement, {
+        scale: 1, // We're handling scaling ourselves
         useCORS: true,
         allowTaint: true,
-        width: clonedCalendar.offsetWidth,
-        height: clonedCalendar.offsetHeight,
-        onclone: (document, element) => {
-          // Additional modifications to the cloned element
-          const allTextElements = element.querySelectorAll("*")
-          allTextElements.forEach((el) => {
+        backgroundColor: "white",
+        logging: false,
+        // Don't modify any styles - capture exactly what's on screen
+        onclone: (document, clonedElement) => {
+          // Just ensure any truncated text is visible in the screenshot
+          const textElements = clonedElement.querySelectorAll(".preserve-case")
+          textElements.forEach((el) => {
             if (el instanceof HTMLElement) {
-              // Force all text to be visible
+              // Keep the same styling but ensure text is visible
               el.style.overflow = "visible"
-              el.style.whiteSpace = "normal"
-              el.style.textOverflow = "clip"
-              el.style.maxWidth = "none"
-              el.style.width = "auto"
-              el.style.maxHeight = "none"
-              el.style.height = "auto"
-
-              // Remove any truncation classes
-              el.classList.remove("line-clamp-2", "line-clamp-4", "truncate")
-
-              // Explicitly remove webkit line clamp
-              if (el.style) {
-                el.style.webkitLineClamp = "none"
-                el.style.webkitBoxOrient = "inline"
-              }
-            }
-          })
-
-          // Specifically target the preserve-case elements which contain event text
-          const preserveCaseElements = element.querySelectorAll(".preserve-case")
-          preserveCaseElements.forEach((el) => {
-            if (el instanceof HTMLElement) {
-              el.style.overflow = "visible"
-              el.style.whiteSpace = "normal"
-              el.style.textOverflow = "clip"
-              el.style.maxWidth = "none"
-              el.style.width = "auto"
-              el.style.maxHeight = "none"
-              el.style.height = "auto"
-              el.style.display = "block"
-              el.style.lineHeight = "1.5"
-              el.classList.remove("line-clamp-2", "line-clamp-4", "truncate")
-
-              if (el.style) {
-                el.style.webkitLineClamp = "none"
-                el.style.webkitBoxOrient = "inline"
-              }
             }
           })
         },
       })
 
-      // Remove the cloned calendar from the document
-      document.body.removeChild(clonedCalendar)
+      // Draw the calendar canvas onto our main canvas
+      if (ctx) {
+        ctx.drawImage(calendarCanvas, 0, 0, rect.width, rect.height)
+      }
 
       // Convert to image and download
       const image = canvas.toDataURL("image/png")

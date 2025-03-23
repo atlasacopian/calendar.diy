@@ -4,7 +4,7 @@ import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
-  title: "Editable Calendar Template",
+  title: "Free Calendar Template",
   description:
     "A clean, free, editable calendar you can use instantly. No account. No clutter. Just a simple calendar for your projects, schedules, or planning.",
   metadataBase: new URL("https://calendar-diy.vercel.app"),
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   },
   // Add Open Graph metadata for social sharing
   openGraph: {
-    title: "Editable Calendar Template",
+    title: "Free Calendar Template",
     description:
       "Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account needed.",
     url: "https://calendar.diy",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   // Add Twitter card metadata
   twitter: {
     card: "summary",
-    title: "Editable Calendar Template",
+    title: "Free Calendar Template",
     description:
       "Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account needed.",
     images: ["https://calendar.diy/calendar_og.jpg"],
@@ -69,7 +69,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-icon.png" />
 
         {/* Add direct meta tags for social sharing with calendar emoji */}
-        <meta property="og:title" content="calendar.diy — Your Editable Calendar" />
+        <meta property="og:title" content="calendar.diy — Your Free Calendar" />
         <meta
           property="og:description"
           content="Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account needed."

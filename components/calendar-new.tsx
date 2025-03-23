@@ -575,9 +575,9 @@ export default function Calendar() {
       // Style the cloned calendar for screenshot
       clonedCalendar.style.position = "absolute"
       clonedCalendar.style.left = "-9999px"
-      clonedCalendar.style.width = "1500px" // Increase from 1200px to 1500px
+      clonedCalendar.style.width = "2000px" // Significantly increase width
       clonedCalendar.style.backgroundColor = "white"
-      clonedCalendar.style.padding = "20px"
+      clonedCalendar.style.padding = "30px" // Increase padding
       clonedCalendar.style.border = "none"
       clonedCalendar.style.borderRadius = "0"
       clonedCalendar.style.boxShadow = "none"
@@ -595,9 +595,11 @@ export default function Calendar() {
       // Ensure text doesn't get cut off by increasing cell heights and adjusting text properties
       const dayCells = clonedCalendar.querySelectorAll(".calendar-day")
       dayCells.forEach((cell) => {
-        ;(cell as HTMLElement).style.minHeight = "150px" // Increase from 120px to 150px
+        ;(cell as HTMLElement).style.minHeight = "200px" // Significantly increase height
         ;(cell as HTMLElement).style.height = "auto"
-        ;(cell as HTMLElement).style.padding = "15px" // Increase from 10px to 15px
+        ;(cell as HTMLElement).style.padding = "20px" // Increase padding
+        ;(cell as HTMLElement).style.position = "relative"
+        ;(cell as HTMLElement).style.overflow = "visible"
 
         // Make sure text is fully visible
         const textElements = cell.querySelectorAll("span, div")
@@ -608,8 +610,18 @@ export default function Calendar() {
           ;(el as HTMLElement).style.maxWidth = "none"
           ;(el as HTMLElement).style.width = "auto"
           ;(el as HTMLElement).style.maxHeight = "none"
-          ;(el as HTMLElement).style.webkitLineClamp = "none"
+          ;(el as HTMLElement).style.height = "auto"
+          ;(el as HTMLElement).style.lineHeight = "1.5"
+          ;(el as HTMLElement).style.display = "block"
+
+          // Remove any truncation classes
           ;(el as HTMLElement).classList.remove("line-clamp-2", "line-clamp-4", "truncate")
+
+          // Explicitly remove webkit line clamp
+          if ((el as HTMLElement).style) {
+            ;(el as HTMLElement).style.webkitLineClamp = "none"
+            ;(el as HTMLElement).style.webkitBoxOrient = "inline"
+          }
         })
       })
 
@@ -620,25 +632,56 @@ export default function Calendar() {
       const canvas = await html2canvas(clonedCalendar, {
         backgroundColor: "white",
         scale: 2, // Higher resolution
-        logging: false,
+        logging: true, // Enable logging for debugging
         useCORS: true,
         allowTaint: true,
         width: clonedCalendar.offsetWidth,
         height: clonedCalendar.offsetHeight,
         onclone: (document, element) => {
           // Additional modifications to the cloned element
-          const textElements = element.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4, .truncate")
-          textElements.forEach((el) => {
-            ;(el as HTMLElement).style.overflow = "visible"
-            ;(el as HTMLElement).style.whiteSpace = "normal"
-            ;(el as HTMLElement).style.textOverflow = "clip"
-            if ((el as HTMLElement).style) {
-              ;(el as HTMLElement).style.webkitLineClamp = "none"
+          const allTextElements = element.querySelectorAll("*")
+          allTextElements.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              // Force all text to be visible
+              el.style.overflow = "visible"
+              el.style.whiteSpace = "normal"
+              el.style.textOverflow = "clip"
+              el.style.maxWidth = "none"
+              el.style.width = "auto"
+              el.style.maxHeight = "none"
+              el.style.height = "auto"
+
+              // Remove any truncation classes
+              el.classList.remove("line-clamp-2", "line-clamp-4", "truncate")
+
+              // Explicitly remove webkit line clamp
+              if (el.style) {
+                el.style.webkitLineClamp = "none"
+                el.style.webkitBoxOrient = "inline"
+              }
             }
-            ;(el as HTMLElement).style.maxWidth = "none"
-            ;(el as HTMLElement).style.width = "auto"
-            ;(el as HTMLElement).style.maxHeight = "none"
-            ;(el as HTMLElement).classList.remove("line-clamp-2", "line-clamp-4", "truncate")
+          })
+
+          // Specifically target the preserve-case elements which contain event text
+          const preserveCaseElements = element.querySelectorAll(".preserve-case")
+          preserveCaseElements.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              el.style.overflow = "visible"
+              el.style.whiteSpace = "normal"
+              el.style.textOverflow = "clip"
+              el.style.maxWidth = "none"
+              el.style.width = "auto"
+              el.style.maxHeight = "none"
+              el.style.height = "auto"
+              el.style.display = "block"
+              el.style.lineHeight = "1.5"
+              el.classList.remove("line-clamp-2", "line-clamp-4", "truncate")
+
+              if (el.style) {
+                el.style.webkitLineClamp = "none"
+                el.style.webkitBoxOrient = "inline"
+              }
+            }
           })
         },
       })

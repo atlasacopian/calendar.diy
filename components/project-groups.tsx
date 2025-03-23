@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { PlusCircle, X, Check, Edit2 } from "lucide-react"
+import { PlusCircle, X, Edit2 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // Define the project group type
@@ -88,8 +88,6 @@ export default function ProjectGroups({
   return (
     <>
       <div className="flex flex-col items-center justify-center gap-2 mt-4 mb-2">
-        <div className="w-full text-center text-xs text-gray-500 dark:text-gray-400 mb-1">PROJECTS</div>
-
         <div className="flex flex-wrap justify-center gap-2 max-w-md">
           {groups.map((group) => (
             <div key={group.id} className="flex items-center gap-1">
@@ -104,8 +102,6 @@ export default function ProjectGroups({
                 title={group.active ? `Hide ${group.name}` : `Show ${group.name}`}
               >
                 <span>{group.name}</span>
-                {!group.active && <X className="h-3 w-3" />}
-                {group.active && <Check className="h-3 w-3" />}
               </button>
 
               {group.id !== "default" && (

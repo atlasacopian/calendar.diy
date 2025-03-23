@@ -568,35 +568,47 @@ export default function Calendar() {
     try {
       setIsDownloading(true)
 
-      // Make sure we're capturing the full calendar container
-      if (!fullCalendarRef.current) {
-        console.error("Calendar container not found")
+      // Get the calendar container element
+      const calendarElement = fullCalendarRef.current
+      if (!calendarElement) {
+        console.error("Calendar element not found")
         setIsDownloading(false)
         return
       }
 
-      // Create a printable version of the calendar
-      const printableCalendar = createPrintableCalendar()
+      // Create a clone of the calendar to modify for screenshot
+      const clonedCalendar = calendarElement.cloneNode(true) as HTMLElement
 
-      // Capture the printable calendar
-      const canvas = await html2canvas(printableCalendar, {
+      // Style the cloned calendar for screenshot
+      clonedCalendar.style.position = "absolute"
+      clonedCalendar.style.left = "-9999px"
+      clonedCalendar.style.width = "1000px" // Fixed width for consistency
+      clonedCalendar.style.backgroundColor = "white"
+      clonedCalendar.style.padding = "20px"
+      clonedCalendar.style.border = "none"
+      clonedCalendar.style.borderRadius = "0"
+      clonedCalendar.style.boxShadow = "none"
+
+      // Add the cloned calendar to the document body
+      document.body.appendChild(clonedCalendar)
+
+      // Use html2canvas to capture the entire calendar
+      const canvas = await html2canvas(clonedCalendar, {
         backgroundColor: "white",
         scale: 2, // Higher resolution
         logging: false,
         useCORS: true,
         allowTaint: true,
-        width: 1200, // Fixed width
-        height: printableCalendar.offsetHeight,
       })
 
-      // Remove the temporary element
-      document.body.removeChild(printableCalendar)
+      // Remove the cloned calendar from the document
+      document.body.removeChild(clonedCalendar)
 
       // Convert to image and download
       const image = canvas.toDataURL("image/png")
       const link = document.createElement("a")
       link.href = image
-      link.download = `calendar.diy_${format(currentDate, "MMMM_yyyy")}.png`
+      link.download = `calendar_${format(currentDate, "MMMM_yyyy")}.png`
       link.click()
     } catch (error) {
       console.error("Error generating calendar image:", error)

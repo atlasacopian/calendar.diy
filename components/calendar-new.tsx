@@ -1440,7 +1440,7 @@ export default function Calendar() {
       <div
         ref={fullCalendarRef}
         className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
-        style={{ minHeight: "650px" }}
+        style={{ minHeight: "auto" }}
       >
         <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4">
           <div className="grid grid-cols-3 items-center">

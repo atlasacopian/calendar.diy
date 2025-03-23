@@ -61,7 +61,7 @@ export default function Calendar() {
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([
-    { id: "default", name: "General", color: "text-black", active: true },
+    { id: "default", name: "PROJECT 01", color: "text-black", active: true },
   ])
   const [showDateSelector, setShowDateSelector] = useState(false)
   const [showAddDialog, setShowAddDialog] = useState(false)

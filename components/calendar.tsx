@@ -9,7 +9,7 @@ import html2canvas from "html2canvas"
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import { Share2 } from "lucide-react"
-import ColorFilter from "@/components/color-filter"
+import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
 
 type CalendarEvent = {
   id: string
@@ -49,7 +49,15 @@ export default function Calendar() {
   const [shareUrl, setShareUrl] = useState("")
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
-  const [activeColorFilters, setActiveColorFilters] = useState<string[]>(colorOptions.map((color) => color.value))
+  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([
+    { id: "default", name: "Default", color: "text-black", active: true },
+    { id: "blue", name: "Blue", color: "text-blue-600", active: true },
+    { id: "red", name: "Red", color: "text-red-600", active: true },
+    { id: "yellow", name: "Yellow", color: "text-yellow-500", active: true },
+    { id: "orange", name: "Orange", color: "text-orange-500", active: true },
+    { id: "green", name: "Green", color: "text-green-600", active: true },
+    { id: "purple", name: "Purple", color: "text-purple-600", active: true },
+  ])
   const [showDateSelector, setShowDateSelector] = useState(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -61,9 +69,31 @@ export default function Calendar() {
   const printableCalendarRef = useRef<HTMLDivElement>(null)
   const shareInputRef = useRef<HTMLInputElement>(null)
 
-  // Handle color filter changes
-  const handleColorFilterChange = useCallback((activeColors: string[]) => {
-    setActiveColorFilters(activeColors)
+  const handleToggleProjectGroup = useCallback((groupId: string) => {
+    setProjectGroups((prevGroups) =>
+      prevGroups.map((group) => (group.id === groupId ? { ...group, active: !group.active } : group)),
+    )
+  }, [])
+
+  const handleAddProjectGroup = useCallback((name: string, color: string) => {
+    const newGroup = {
+      id: Math.random().toString(36).substring(2, 11),
+      name,
+      color,
+      active: true,
+    }
+    setProjectGroups((prev) => [...prev, newGroup])
+  }, [])
+
+  const handleRemoveProjectGroup = useCallback((groupId: string) => {
+    setProjectGroups((prev) => prev.filter((group) => group.id !== groupId))
+
+    // Update any events using this project group to use the default color
+    setEvents((prev) =>
+      prev.map((event) =>
+        event.projectId === groupId ? { ...event, color: "text-black", projectId: "default" } : event,
+      ),
+    )
   }, [])
 
   // Add this near the top of the component, after the state declarations
@@ -895,9 +925,14 @@ export default function Calendar() {
     // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      // Filter events based on active color filters
       const dayEvents = events.filter(
-        (event) => isSameDay(event.date, date) && activeColorFilters.includes(event.color || "text-black"),
+        (event) =>
+          isSameDay(event.date, date) &&
+          projectGroups.find(
+            (g) =>
+              g.active &&
+              ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
+          ),
       )
       // Limit to 2 events per day
       const limitedEvents = dayEvents.slice(0, 2)
@@ -1377,8 +1412,13 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Color filter bar */}
-      <ColorFilter onFilterChange={handleColorFilterChange} />
+      {/* Project groups */}
+      <ProjectGroups
+        groups={projectGroups}
+        onToggleGroup={handleToggleProjectGroup}
+        onAddGroup={handleAddProjectGroup}
+        onRemoveGroup={handleRemoveProjectGroup}
+      />
 
       {/* Calendar Controls - Now free-floating without the gray background */}
       <div className="calendar-controls flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">

@@ -1290,7 +1290,7 @@ export default function Calendar() {
   }, [showModal])
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-4 min-h-screen">
       {/* Calendar Controls - Now with reset button on left and others on right */}
       <div className="calendar-controls flex items-center justify-between gap-2 p-0 mb-1">
         {/* Reset button on the left */}
@@ -1409,6 +1409,7 @@ export default function Calendar() {
       <div
         ref={fullCalendarRef}
         className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
+        style={{ minHeight: "600px" }}
       >
         <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4">
           <div className="grid grid-cols-3 items-center">
@@ -1563,7 +1564,7 @@ export default function Calendar() {
         onAddGroup={handleAddProjectGroup}
         onRemoveGroup={handleRemoveProjectGroup}
         onEditGroup={handleEditProjectGroup}
-        className="mt-12 flex justify-center" // Changed from mt-6 to mt-12 and added flex justify-center
+        className="mt-auto pt-8 flex justify-center" // Changed from mt-12 to mt-auto and added pt-8
       />
 
       {/* Event Modal - Updated to match the group dialog style */}

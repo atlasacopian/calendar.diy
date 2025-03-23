@@ -47,6 +47,7 @@ export default function ProjectGroups({
   const [editingGroup, setEditingGroup] = useState<ProjectGroup | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
+  const [projectGroups, setProjectGroups] = useState(groups)
 
   const addDialogRef = useRef<HTMLDivElement>(null)
   const editDialogRef = useRef<HTMLDivElement>(null)
@@ -102,7 +103,21 @@ export default function ProjectGroups({
 
   const handleEditProject = () => {
     if (editingGroup && editingGroup.name.trim()) {
-      onEditGroup(editingGroup.id, editingGroup.name, editingGroup.color)
+      // Special handling for the default project
+      if (editingGroup.id === "default") {
+        // Update all instances of "PROJECT 01" in the UI
+        const updatedGroups = projectGroups.map((group) =>
+          group.id === "default" ? { ...group, name: editingGroup.name, color: editingGroup.color } : group,
+        )
+        setProjectGroups(updatedGroups)
+
+        // Call the parent component's onEditGroup to ensure the change propagates
+        onEditGroup(editingGroup.id, editingGroup.name, editingGroup.color)
+      } else {
+        // For non-default projects, just call the parent's onEditGroup
+        onEditGroup(editingGroup.id, editingGroup.name, editingGroup.color)
+      }
+
       setEditingGroup(null)
       setShowEditDialog(false)
     }
@@ -155,7 +170,7 @@ export default function ProjectGroups({
               {group.active ? <Plus className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
             </button>
             <button onClick={(e) => handleProjectNameClick(group, e)} className="hover:underline focus:underline">
-              <span>{group.id === "default" ? "PROJECT 01" : group.name}</span>
+              <span>{group.name}</span>
             </button>
           </div>
         ))}

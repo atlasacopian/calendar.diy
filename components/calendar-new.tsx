@@ -915,12 +915,12 @@ export default function Calendar() {
 
       // Left arrow key - previous month
       if (e.key === "ArrowLeft") {
-        handlePreviousMonth()
+        setCurrentDate(subMonths(currentDate, 1))
       }
 
       // Right arrow key - next month
       if (e.key === "ArrowRight") {
-        handleNextMonth()
+        setCurrentDate(addMonths(currentDate, 1))
       }
     }
 
@@ -928,7 +928,7 @@ export default function Calendar() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [showModal, showResetConfirm, showShareModal, showDateSelector])
+  }, [showModal, showResetConfirm, showShareModal, showDateSelector, currentDate])
 
   // Update the event modal to close when clicking outside
   // Add this effect to handle clicks outside the event modal:
@@ -1247,6 +1247,7 @@ export default function Calendar() {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault()
                       saveEvent()
+                      closeModal() // Close the modal after saving
                     }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ring-black"

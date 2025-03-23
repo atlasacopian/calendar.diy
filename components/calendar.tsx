@@ -1817,7 +1817,7 @@ export default function Calendar() {
           </div>
         </div>
       )}
-
+{/* Properly centered on all screens */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div

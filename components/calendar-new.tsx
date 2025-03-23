@@ -575,7 +575,7 @@ export default function Calendar() {
       // Style the cloned calendar for screenshot
       clonedCalendar.style.position = "absolute"
       clonedCalendar.style.left = "-9999px"
-      clonedCalendar.style.width = "1200px" // Wider width for better text rendering
+      clonedCalendar.style.width = "1500px" // Increase from 1200px to 1500px
       clonedCalendar.style.backgroundColor = "white"
       clonedCalendar.style.padding = "20px"
       clonedCalendar.style.border = "none"
@@ -595,19 +595,21 @@ export default function Calendar() {
       // Ensure text doesn't get cut off by increasing cell heights and adjusting text properties
       const dayCells = clonedCalendar.querySelectorAll(".calendar-day")
       dayCells.forEach((cell) => {
-        ;(cell as HTMLElement).style.minHeight = "120px"
+        ;(cell as HTMLElement).style.minHeight = "150px" // Increase from 120px to 150px
         ;(cell as HTMLElement).style.height = "auto"
-        ;(cell as HTMLElement).style.padding = "10px"
+        ;(cell as HTMLElement).style.padding = "15px" // Increase from 10px to 15px
 
         // Make sure text is fully visible
         const textElements = cell.querySelectorAll("span, div")
         textElements.forEach((el) => {
           ;(el as HTMLElement).style.overflow = "visible"
-          ;(cell as HTMLElement).style.whiteSpace = "normal"
-          ;(cell as HTMLElement).style.textOverflow = "clip"
-          ;(cell as HTMLElement).style.maxWidth = "none"
-          ;(cell as HTMLElement).style.width = "auto"
-          ;(cell as HTMLElement).classList.remove("line-clamp-2", "line-clamp-4")
+          ;(el as HTMLElement).style.whiteSpace = "normal"
+          ;(el as HTMLElement).style.textOverflow = "clip"
+          ;(el as HTMLElement).style.maxWidth = "none"
+          ;(el as HTMLElement).style.width = "auto"
+          ;(el as HTMLElement).style.maxHeight = "none"
+          ;(el as HTMLElement).style.webkitLineClamp = "none"
+          ;(el as HTMLElement).classList.remove("line-clamp-2", "line-clamp-4", "truncate")
         })
       })
 
@@ -625,14 +627,18 @@ export default function Calendar() {
         height: clonedCalendar.offsetHeight,
         onclone: (document, element) => {
           // Additional modifications to the cloned element
-          const textElements = element.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4")
+          const textElements = element.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4, .truncate")
           textElements.forEach((el) => {
             ;(el as HTMLElement).style.overflow = "visible"
             ;(el as HTMLElement).style.whiteSpace = "normal"
             ;(el as HTMLElement).style.textOverflow = "clip"
-            ;(el as HTMLElement).style.webkitLineClamp = "none"
+            if ((el as HTMLElement).style) {
+              ;(el as HTMLElement).style.webkitLineClamp = "none"
+            }
             ;(el as HTMLElement).style.maxWidth = "none"
             ;(el as HTMLElement).style.width = "auto"
+            ;(el as HTMLElement).style.maxHeight = "none"
+            ;(el as HTMLElement).classList.remove("line-clamp-2", "line-clamp-4", "truncate")
           })
         },
       })
@@ -1653,7 +1659,7 @@ export default function Calendar() {
                   onKeyDown={handleTextareaKeyDown}
                   ref={eventInputRef}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
-                  placeholder="ENTER EVENT DETAILS"
+                  placeholder="ENTER EVENT NAME"
                 />
               </div>
 
@@ -1960,7 +1966,7 @@ export default function Calendar() {
             </div>
             <div className="p-4 sm:p-6">
               <div className="mb-6">
-                <label className="block text-xs mb-2">TAG NAME</label>
+                <label className="block text-xs mb-2">TAG</label>
                 <input
                   type="text"
                   value={newProjectName}

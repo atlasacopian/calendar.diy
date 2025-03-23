@@ -610,7 +610,6 @@ export default function Calendar() {
         allowTaint: true,
         backgroundColor: "white",
         logging: false,
-        letterRendering: true,
         imageTimeout: 0,
         removeContainer: true,
       })

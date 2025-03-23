@@ -393,7 +393,7 @@ export default function Calendar() {
     if (!selectedDate) return
 
     if (eventContent.trim()) {
-      // Find the selected project
+      // Find the selected project by color
       const selectedProject = projectGroups.find((p) => p.color === selectedColor)
       const projectId = selectedProject?.id || "default"
 

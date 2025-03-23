@@ -65,6 +65,9 @@ export default function Calendar() {
     { id: "default", name: "General", color: "text-black", active: true },
   ])
   const [showDateSelector, setShowDateSelector] = useState(false)
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [newProjectName, setNewProjectName] = useState("")
+  const [newProjectColor, setNewProjectColor] = useState("text-black")
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -1587,7 +1590,12 @@ export default function Calendar() {
             style={{ margin: "auto" }}
           >
             {/* Modal Header */}
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0 relative">
+              {selectedDate && (
+                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-md text-xs border bg-white dark:bg-gray-800 shadow-sm">
+                  {projectGroups.find((p) => p.color === selectedColor)?.name || "General"}
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">
                   {selectedDate ? format(selectedDate, "MMMM d, yyyy").toUpperCase() : "ADD EVENT"}
@@ -1773,6 +1781,32 @@ export default function Calendar() {
                           {project.name}
                         </button>
                       ))}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Show the add project dialog
+                          setShowAddDialog(true)
+                        }}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-xs border border-dashed border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-3 w-3"
+                        >
+                          <line x1="12" y1="5" x2="12" y2="19"></line>
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>NEW PROJECT</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1918,6 +1952,122 @@ export default function Calendar() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Project Dialog */}
+      {showAddDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">ADD PROJECT</h3>
+                <button
+                  onClick={() => setShowAddDialog(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs mb-2">PROJECT NAME</label>
+                  <input
+                    type="text"
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    placeholder="Enter project name"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md text-xs"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs mb-2">PROJECT COLOR</label>
+                  <div className="flex flex-wrap gap-2">
+                    {colorOptions.map((color) => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        onClick={() => setNewProjectColor(color.value)}
+                        className={cn(
+                          "w-6 h-6 rounded-full",
+                          color.bg,
+                          newProjectColor === color.value ? "ring-2 ring-offset-2 ring-gray-400" : "",
+                        )}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
+              <button
+                type="button"
+                className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                onClick={() => setShowAddDialog(false)}
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                onClick={() => {
+                  if (newProjectName.trim()) {
+                    // Add the new project
+                    const newProject = {
+                      id: Math.random().toString(36).substring(2, 11),
+                      name: newProjectName.trim(),
+                      color: newProjectColor,
+                      active: true,
+                    }
+
+                    // Add to project groups
+                    setProjectGroups((prev) => [...prev, newProject])
+
+                    // Select the new project for the current event
+                    setSelectedColor(newProjectColor)
+
+                    // If editing an event, update its project
+                    if (editingEventId) {
+                      setEvents(
+                        events.map((event) =>
+                          event.id === editingEventId
+                            ? { ...event, projectId: newProject.id, color: newProjectColor }
+                            : event,
+                        ),
+                      )
+                    }
+
+                    // Reset and close
+                    setNewProjectName("")
+                    setNewProjectColor("text-black")
+                    setShowAddDialog(false)
+                  }
+                }}
+                disabled={!newProjectName.trim()}
+              >
+                ADD PROJECT
+              </button>
             </div>
           </div>
         </div>

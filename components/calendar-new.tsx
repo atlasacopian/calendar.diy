@@ -437,13 +437,10 @@ export default function Calendar() {
 
   // Handle Enter key in textarea
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Save on Enter without shift key (shift+enter allows for line breaks)
+    // Save and close on Enter without shift key (shift+enter allows for line breaks)
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      handleSaveEvent()
-      // Close the modal after saving
-      setShowModal(false)
-      setSelectedDate(null)
+      handleSaveAndClose() // This will save and close the modal
     }
   }
 
@@ -1705,25 +1702,23 @@ export default function Calendar() {
                     // Get the color information for this project
                     const colorInfo = colorOptions.find((c) => c.value === group.color)
                     const colorHex = colorInfo?.hex || "#000000"
-                    const textColor = colorInfo?.value || "text-black"
 
                     return (
                       <button
                         key={group.id}
                         onClick={() => setSelectedColor(group.color)}
                         className={cn(
-                          "px-4 py-2 rounded-md border transition-colors",
-                          // Always use the same text color regardless of selection state
-                          textColor,
-                          // If selected, add a ring and make background darker
+                          "flex items-center rounded-md px-2 py-1 text-xs border transition-colors",
+                          // Use the background color when selected
                           selectedColor === group.color
-                            ? "ring-2 ring-black dark:ring-white bg-white dark:bg-gray-800"
+                            ? getBgFromTextColor(group.color) +
+                                " " +
+                                getTextForBg(group.color) +
+                                " ring-2 ring-black dark:ring-white"
                             : "bg-white dark:bg-gray-800",
+                          // Always use the same text color
+                          group.color,
                         )}
-                        style={{
-                          borderLeftWidth: "4px",
-                          borderLeftColor: colorHex,
-                        }}
                       >
                         {group.name}
                       </button>

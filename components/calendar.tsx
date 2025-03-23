@@ -11,7 +11,8 @@ import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import { Share2 } from "lucide-react"
 
 // Add these imports at the top
-import ProjectToggles from "@/components/project-toggles"
+// Remove this line
+// import ProjectToggles from "@/components/project-toggles"
 
 type CalendarEvent = {
   id: string
@@ -53,11 +54,12 @@ export default function Calendar() {
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
 
   // Add this state inside your component
-  const [projects, setProjects] = useState([
-    { id: "1", name: "WORK", color: "#2563eb", active: true },
-    { id: "2", name: "PERSONAL", color: "#16a34a", active: true },
-    { id: "3", name: "TRAVEL", color: "#f97316", active: true },
-  ])
+  // Remove this state
+  // const [projects, setProjects] = useState([
+  //   { id: "1", name: "WORK", color: "#2563eb", active: true },
+  //   { id: "2", name: "PERSONAL", color: "#16a34a", active: true },
+  //   { id: "3", name: "TRAVEL", color: "#f97316", active: true },
+  // ])
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -345,21 +347,26 @@ export default function Calendar() {
   }
 
   // Add these functions inside your component
-  const handleToggleProject = (id: string) => {
-    setProjects(projects.map((project) => (project.id === id ? { ...project, active: !project.active } : project)))
-  }
+  // Remove these functions
+  // const handleToggleProject = (id: string) => {
+  //   setProjects(projects.map(project =>
+  //     project.id === id
+  //       ? { ...project, active: !project.active }
+  //       : project
+  //   ))
+  // }
 
-  const handleAddProject = (name: string, color: string) => {
-    setProjects([
-      ...projects,
-      {
-        id: Math.random().toString(36).substring(2, 11),
-        name: name.toUpperCase(),
-        color,
-        active: true,
-      },
-    ])
-  }
+  // const handleAddProject = (name: string, color: string) => {
+  //   setProjects([
+  //     ...projects,
+  //     {
+  //       id: Math.random().toString(36).substring(2, 11),
+  //       name: name.toUpperCase(),
+  //       color,
+  //       active: true
+  //     }
+  //   ])
+  // }
 
   const handleSaveEvent = () => {
     if (!selectedDate) return
@@ -915,7 +922,7 @@ export default function Calendar() {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
       // Filter events based on active projects
       // This assumes you've added a projectId field to your events
-      const dayEvents = filteredEvents.filter((event) => isSameDay(event.date, date))
+      const dayEvents = events.filter((event) => isSameDay(event.date, date))
       // Limit to 2 events per day
       const limitedEvents = dayEvents.slice(0, 2)
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
@@ -1213,14 +1220,15 @@ export default function Calendar() {
 
   // Filter events based on active projects
   // This assumes you've added a projectId field to your events
-  const filteredEvents = events.filter((event) => {
-    // If no projectId is assigned, always show the event
-    if (!event.projectId) return true
+  // Remove this
+  // const filteredEvents = events.filter((event) => {
+  //   // If no projectId is assigned, always show the event
+  //   if (!event.projectId) return true
 
-    // Find the project and check if it's active
-    const project = projects.find((p) => p.id === event.projectId)
-    return project?.active ?? true
-  })
+  //   // Find the project and check if it's active
+  //   const project = projects.find((p) => p.id === event.projectId)
+  //   return project?.active ?? true
+  // })
 
   return (
     <div className="flex flex-col space-y-4">
@@ -1303,7 +1311,12 @@ export default function Calendar() {
 
       {/* Then in your JSX, add this right after the calendar grid but before the buttons
       (between the </div></div></div> of the calendar and the calendar controls div) */}
-      <ProjectToggles projects={projects} onToggleProject={handleToggleProject} onAddProject={handleAddProject} />
+      {/* Remove this component */}
+      {/* <ProjectToggles
+        projects={projects}
+        onToggleProject={handleToggleProject}
+        onAddProject={handleAddProject}
+      /> */}
 
       {/* Calendar Controls - Now free-floating without the gray background */}
       <div className="calendar-controls flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">

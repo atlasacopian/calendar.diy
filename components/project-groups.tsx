@@ -131,14 +131,14 @@ export default function ProjectGroups({
   }
 
   return (
-    <div className={cn("project-groups", className)}>
-      <div className="flex flex-wrap gap-2">
+    <div className={cn("project-groups flex justify-center", className)}>
+      <div className="flex flex-wrap gap-2 justify-center">
         {groups.map((group) => (
           <div
             key={group.id}
             className={cn(
               "flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs",
-              group.active ? getBgFromTextColor(group.color) : "bg-white dark:bg-gray-900",
+              group.active ? getBgFromTextColor(group.color) : "bg-gray-50 dark:bg-gray-800/50", // Changed from bg-white to bg-gray-50
               group.active ? getTextForBg(group.color) : group.color,
             )}
           >

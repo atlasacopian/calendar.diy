@@ -582,12 +582,27 @@ export default function Calendar() {
       // Style the cloned calendar for screenshot
       clonedCalendar.style.position = "absolute"
       clonedCalendar.style.left = "-9999px"
-      clonedCalendar.style.width = "1000px" // Fixed width for consistency
+      clonedCalendar.style.width = "1200px" // Wider width for better text rendering
       clonedCalendar.style.backgroundColor = "white"
       clonedCalendar.style.padding = "20px"
       clonedCalendar.style.border = "none"
       clonedCalendar.style.borderRadius = "0"
       clonedCalendar.style.boxShadow = "none"
+
+      // Ensure text doesn't get cut off by increasing cell heights
+      const dayCells = clonedCalendar.querySelectorAll(".calendar-day")
+      dayCells.forEach((cell) => {
+        ;(cell as HTMLElement).style.minHeight = "120px"
+        ;(cell as HTMLElement).style.height = "auto"
+
+        // Make sure text is fully visible
+        const textElements = cell.querySelectorAll("span, div")
+        textElements.forEach((el) => {
+          ;(el as HTMLElement).style.overflow = "visible"
+          ;(el as HTMLElement).style.whiteSpace = "normal"
+          ;(el as HTMLElement).style.textOverflow = "clip"
+        })
+      })
 
       // Add the cloned calendar to the document body
       document.body.appendChild(clonedCalendar)
@@ -599,6 +614,18 @@ export default function Calendar() {
         logging: false,
         useCORS: true,
         allowTaint: true,
+        width: clonedCalendar.offsetWidth,
+        height: clonedCalendar.offsetHeight,
+        onclone: (document, element) => {
+          // Additional modifications to the cloned element if needed
+          const textElements = element.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4")
+          textElements.forEach((el) => {
+            ;(el as HTMLElement).style.overflow = "visible"
+            ;(el as HTMLElement).style.whiteSpace = "normal"
+            ;(el as HTMLElement).style.textOverflow = "clip"
+            ;(el as HTMLElement).style.webkitLineClamp = "none"
+          })
+        },
       })
 
       // Remove the cloned calendar from the document
@@ -1541,7 +1568,7 @@ export default function Calendar() {
                           : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700",
                       )}
                     >
-                      {group.id === "default" ? "PROJECT 01" : group.name}
+                      {group.name}
                     </button>
                   ))}
                 </div>

@@ -7,7 +7,7 @@ import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToda
 import html2canvas from "html2canvas"
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
-import { Share2 } from "lucide-react"
+import { Share2, X } from "lucide-react"
 import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
 
 type CalendarEvent = {
@@ -872,6 +872,36 @@ export default function Calendar() {
     localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
   }
 
+  const formatDate = (date: Date | null) => {
+    if (!date) return ""
+    return format(date, "MMMM d, yyyy").toUpperCase()
+  }
+
+  const [eventText, setEventText] = useState("")
+  const [selectedProject, setSelectedProject] = useState("General")
+  const projects = ["General", "Work", "Personal", "Errands"]
+  const colors = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00"]
+
+  const closeModal = () => {
+    setShowModal(false)
+  }
+
+  const saveEvent = () => {
+    if (!selectedDate) return
+
+    const newEvent = {
+      id: Math.random().toString(36).substring(2, 11),
+      date: selectedDate,
+      content: eventText,
+      color: selectedColor,
+      projectId: "default",
+    }
+
+    setEvents([...events, newEvent])
+    localStorage.setItem("calendarEvents", JSON.stringify([...events, newEvent]))
+    closeModal()
+  }
+
   return (
     <div className="flex flex-col space-y-1">
       {/* Calendar Controls - Now at the top */}
@@ -1124,235 +1154,75 @@ export default function Calendar() {
 
       {/* Event Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={modalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl max-h-[80vh] flex flex-col"
-            style={{ margin: "auto" }}
-          >
-            {/* Modal Header */}
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex-shrink-0 relative">
-              {selectedDate && (
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-md text-xs border bg-white dark:bg-gray-800 shadow-sm">
-                  {projectGroups.find((p) => p.color === selectedColor)?.name || "General"}
-                </div>
-              )}
-              <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">
-                  {selectedDate ? format(selectedDate, "MMMM d, yyyy").toUpperCase() : "ADD EVENT"}
-                </h3>
-                <button
-                  onClick={handleCancelEdit}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold tracking-tight">{formatDate(selectedDate)}</h2>
+                <button onClick={closeModal} className="text-gray-500 hover:text-gray-700 transition-colors">
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-            </div>
 
-            {/* Modal Content */}
-            <div className="p-2 sm:p-3 overflow-y-auto flex-grow dark:text-gray-200 modal-content">
-              {/* Existing events for this day */}
-              {eventsForSelectedDate.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="font-mono text-xs font-medium mb-2 text-gray-700 dark:text-gray-300">
-                    EVENTS ON {selectedDate ? format(selectedDate, "MMMM d, yyyy").toUpperCase() : ""}
-                  </h4>
-                  <div className="space-y-2">
-                    {eventsForSelectedDate.map((event, index) => (
-                      <div
-                        key={event.id}
-                        className={cn(
-                          "p-2 rounded-md border border-gray-200 dark:border-gray-700 flex justify-between items-start",
-                          editingEventId === event.id
-                            ? "bg-gray-50 dark:bg-gray-700"
-                            : "hover:bg-gray-50 dark:hover:bg-gray-700",
-                          "cursor-move relative",
-                        )}
-                        onClick={() => handleEditEvent(event)}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData("text/plain", index.toString())
-                          e.currentTarget.style.opacity = "0.5"
-                        }}
-                        onDragEnd={(e) => {
-                          e.currentTarget.style.opacity = "1"
-                        }}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          e.preventDefault()
-                          const dragIndex = Number.parseInt(e.dataTransfer.getData("text/plain"))
-                          if (dragIndex !== index) {
-                            handleReorderEvents(dragIndex, index)
-                          }
-                        }}
-                      >
-                        <div className="flex-1">
-                          <p
-                            className={cn(
-                              "text-xs break-words preserve-case",
-                              event.color || "text-black dark:text-white",
-                            )}
-                          >
-                            {event.content}
-                          </p>
-                        </div>
-                        <div className="flex items-center">
-                          <div className="mr-2 cursor-move text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-3 w-3"
-                            >
-                              <circle cx="9" cy="5" r="1"></circle>
-                              <circle cx="9" cy="12" r="1"></circle>
-                              <circle cx="9" cy="19" r="1"></circle>
-                              <circle cx="15" cy="5" r="1"></circle>
-                              <circle cx="15" cy="12" r="1"></circle>
-                              <circle cx="15" cy="19" r="1"></circle>
-                            </svg>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation() // Prevent triggering the parent onClick
-                              handleDeleteEvent(event.id)
-                            }}
-                            className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600"
-                            title="Delete event"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-3 w-3 text-gray-500 dark:text-gray-400"
-                            >
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="mb-6">
+                <label htmlFor="event-name" className="block text-sm font-medium mb-2">
+                  EVENT
+                </label>
+                <textarea
+                  id="event-name"
+                  value={eventText}
+                  onChange={(e) => setEventText(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 ring-black"
+                  rows={3}
+                />
+              </div>
 
-              {/* Event Form */}
-              <div className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="event-content"
-                    className="block font-mono text-xs font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    EVENT
-                  </label>
-                  <div className="mt-1">
-                    <textarea
-                      id="event-content"
-                      ref={textareaRef}
-                      rows={3}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm font-mono preserve-case"
-                      placeholder="Add event details..."
-                      value={eventContent}
-                      onChange={(e) => setEventContent(e.target.value)}
-                      onKeyDown={handleTextareaKeyDown}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-mono text-xs font-medium text-gray-700 dark:text-gray-300">
-                    PROJECT
-                  </label>
-                  {/* Project selection */}
-                  <div className="mt-2">
-                    <div className="flex flex-wrap gap-2">
-                      {/* Filter out duplicate projects by using a Set of project IDs */}
-                      {Array.from(new Set(projectGroups.map((p) => p.id))).map((projectId) => {
-                        const project = projectGroups.find((p) => p.id === projectId)
-                        if (!project) return null
-
-                        return (
-                          <button
-                            key={project.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedColor(project.color)
-                              // Also set the projectId when editing
-                              if (editingEventId) {
-                                setEvents(
-                                  events.map((event) =>
-                                    event.id === editingEventId
-                                      ? { ...event, projectId: project.id, color: project.color }
-                                      : event,
-                                  ),
-                                )
-                              }
-                            }}
-                            className={cn(
-                              "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
-                              selectedColor === project.color
-                                ? getBgFromTextColor(project.color) + " " + getTextForBg(project.color)
-                                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300",
-                              selectedColor === project.color
-                                ? "ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-800"
-                                : "",
-                            )}
-                            title={project.name}
-                          >
-                            {project.name}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">PROJECT</label>
+                <div className="flex flex-wrap gap-2">
+                  {projects.map((project) => (
+                    <button
+                      key={project}
+                      onClick={() => setSelectedProject(project)}
+                      className={`px-4 py-2 rounded-md border transition-colors ${
+                        selectedProject === project
+                          ? "bg-black text-white border-black"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      {project}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
 
-            {/* Modal Footer */}
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end flex-shrink-0">
-              <button
-                type="button"
-                className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-                onClick={handleCancelEdit}
-              >
-                CANCEL
-              </button>
-              <button
-                type="button"
-                className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                onClick={handleSaveAndClose}
-              >
-                SAVE
-              </button>
+              <div className="flex flex-wrap gap-2 mt-4">
+                {colors.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setSelectedColor(color)}
+                    className={`w-6 h-6 rounded-full ${
+                      selectedColor === color ? "ring-2 ring-black ring-offset-2" : ""
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-3 mt-8">
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={saveEvent}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                >
+                  SAVE
+                </button>
+              </div>
             </div>
           </div>
         </div>

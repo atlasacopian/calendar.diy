@@ -574,7 +574,9 @@ export default function Calendar() {
   const handleShare = () => {
     const url = new URL(window.location.href)
     // Format the date to include year and month for proper sharing
-    url.searchParams.set("date", format(currentDate, "yyyy-MM"))
+    const dateString = format(currentDate, "yyyy-MM")
+    console.log("Sharing calendar for date:", dateString, "Current month:", currentDate.getMonth() + 1)
+    url.searchParams.set("date", dateString)
     setShareUrl(url.toString())
     setShowShareModal(true)
   }
@@ -1277,178 +1279,7 @@ export default function Calendar() {
 
   return (
     <div className="flex flex-col space-y-4">
-      <div
-        ref={fullCalendarRef}
-        className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
-      >
-        <div ref={calendarRef} className="calendar-container">
-          <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handlePreviousMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3 w-3 md:h-4 md:w-4"
-                >
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="relative date-selector-container">
-                <button
-                  onClick={() => setShowDateSelector(!showDateSelector)}
-                  className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none flex items-center"
-                >
-                  {format(currentDate, "MMMM yyyy").toUpperCase()}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 ml-1"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
-
-                {showDateSelector && (
-                  <div
-                    ref={dateSelectorRef}
-                    className="absolute z-10 mt-1 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="menu-button"
-                  >
-                    <div className="py-1" role="none">
-                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-                        <div className="grid grid-cols-3 gap-1">
-                          <button
-                            onClick={() => {
-                              setCurrentDate(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1))
-                              setShowDateSelector(false)
-                            }}
-                            className="p-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                          >
-                            &lt;&lt;
-                          </button>
-                          <select
-                            value={currentDate.getFullYear()}
-                            onChange={(e) => {
-                              setCurrentDate(new Date(Number.parseInt(e.target.value), currentDate.getMonth(), 1))
-                            }}
-                            className="p-1 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded"
-                          >
-                            {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
-                              <option key={year} value={year}>
-                                {year}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => {
-                              setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1))
-                              setShowDateSelector(false)
-                            }}
-                            className="p-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                          >
-                            &gt;&gt;
-                          </button>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1 p-2">
-                        {Array.from({ length: 12 }, (_, i) => i).map((month) => (
-                          <button
-                            key={month}
-                            onClick={() => {
-                              setCurrentDate(new Date(currentDate.getFullYear(), month, 1))
-                              setShowDateSelector(false)
-                            }}
-                            className={`p-1 text-xs rounded ${
-                              currentDate.getMonth() === month
-                                ? "bg-gray-200 dark:bg-gray-700 font-bold"
-                                : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                            }`}
-                          >
-                            {format(new Date(2000, month, 1), "MMM")}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <button
-                onClick={handleNextMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3 w-3 md:h-4 md:w-4"
-                >
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div className="flex">
-            <div className="flex-1">
-              <div className="w-full">
-                <div ref={calendarContentRef} className="grid grid-cols-7">
-                  {(isMobile ? weekDaysMobile : weekDays).map((day) => (
-                    <div
-                      key={day}
-                      className="border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500 dark:text-gray-400"
-                    >
-                      {day}
-                    </div>
-                  ))}
-                  {renderCalendar()}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Project groups */}
-      <ProjectGroups
-        groups={projectGroups}
-        onToggleGroup={handleToggleProjectGroup}
-        onAddGroup={handleAddProjectGroup}
-        onRemoveGroup={handleRemoveProjectGroup}
-        onEditGroup={handleEditProjectGroup}
-      />
-
-      {/* Calendar Controls - Now free-floating without the gray background */}
+      {/* Calendar Controls - Now at the top */}
       <div className="calendar-controls flex flex-wrap items-center justify-center gap-2 p-2 md:p-4">
         <button
           onClick={downloadCalendarAsImage}
@@ -1582,6 +1413,145 @@ export default function Calendar() {
           <span>BUY ME A COFFEE</span>
         </a>
       </div>
+
+      <div
+        ref={fullCalendarRef}
+        className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
+      >
+        <div ref={calendarRef} className="calendar-container">
+          <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePreviousMonth}
+                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3 md:h-4 md:w-4"
+                >
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative date-selector-container">
+                <button
+                  onClick={() => setShowDateSelector(!showDateSelector)}
+                  className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none"
+                >
+                  {format(currentDate, "MMMM yyyy").toUpperCase()}
+                </button>
+
+                {showDateSelector && (
+                  <div
+                    ref={dateSelectorRef}
+                    className="absolute z-10 mt-1 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="menu-button"
+                  >
+                    <div className="py-1" role="none">
+                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                        <div className="grid grid-cols-1 gap-1">
+                          <select
+                            value={currentDate.getFullYear()}
+                            onChange={(e) => {
+                              setCurrentDate(new Date(Number.parseInt(e.target.value), currentDate.getMonth(), 1))
+                            }}
+                            className="p-1 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded"
+                          >
+                            {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 p-2">
+                        {Array.from({ length: 12 }, (_, i) => i).map((month) => (
+                          <button
+                            key={month}
+                            onClick={() => {
+                              setCurrentDate(new Date(currentDate.getFullYear(), month, 1))
+                              setShowDateSelector(false)
+                            }}
+                            className={`p-1 text-xs rounded ${
+                              currentDate.getMonth() === month
+                                ? "bg-gray-200 dark:bg-gray-700 font-bold"
+                                : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            {format(new Date(2000, month, 1), "MMM")}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center">
+              <button
+                onClick={handleNextMonth}
+                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3 w-3 md:h-4 md:w-4"
+                >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex">
+            <div className="flex-1">
+              <div className="w-full">
+                <div ref={calendarContentRef} className="grid grid-cols-7">
+                  {(isMobile ? weekDaysMobile : weekDays).map((day) => (
+                    <div
+                      key={day}
+                      className="border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500 dark:text-gray-400"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                  {renderCalendar()}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Project groups */}
+      <ProjectGroups
+        groups={projectGroups}
+        onToggleGroup={handleToggleProjectGroup}
+        onAddGroup={handleAddProjectGroup}
+        onRemoveGroup={handleRemoveProjectGroup}
+        onEditGroup={handleEditProjectGroup}
+      />
 
       {/* Event Modal - Properly centered on all screens */}
       {showModal && (

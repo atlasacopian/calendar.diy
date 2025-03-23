@@ -50,6 +50,7 @@ export default function Calendar() {
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [activeColorFilters, setActiveColorFilters] = useState<string[]>(colorOptions.map((color) => color.value))
+  const [showDateSelector, setShowDateSelector] = useState(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -214,16 +215,20 @@ export default function Calendar() {
       if (showResetConfirm && resetModalRef.current && !resetModalRef.current.contains(event.target as Node)) {
         setShowResetConfirm(false)
       }
+
+      if (showDateSelector && !event.target.closest(".relative")) {
+        setShowDateSelector(false)
+      }
     }
 
-    if (showModal || showResetConfirm) {
+    if (showModal || showResetConfirm || showDateSelector) {
       document.addEventListener("mousedown", handleClickOutside)
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
-  }, [showModal, showResetConfirm])
+  }, [showModal, showResetConfirm, showDateSelector])
 
   // Add keyboard navigation for all interactions
   useEffect(() => {
@@ -323,13 +328,13 @@ export default function Calendar() {
     const existingEvents = events.filter((event) => isSameDay(event.date, day))
     setEventsForSelectedDate(existingEvents)
 
-    // If there are no events, prepare to create a new one
-    if (existingEvents.length === 0) {
-      setEditingEventId(null)
-      setEventContent("")
-      setSelectedColor("text-black")
+    // If there are events, select the first one for editing
+    if (existingEvents.length > 0) {
+      setEditingEventId(existingEvents[0].id)
+      setEventContent(existingEvents[0].content)
+      setSelectedColor(existingEvents[0].color || "text-black")
     } else {
-      // Don't pre-select any event for editing
+      // If there are no events, prepare to create a new one
       setEditingEventId(null)
       setEventContent("")
       setSelectedColor("text-black")
@@ -1171,21 +1176,29 @@ export default function Calendar() {
     }
   }
 
-  // Add a function to handle event reordering
   const handleReorderEvents = (dragIndex: number, hoverIndex: number) => {
-    const draggedEvent = eventsForSelectedDate[dragIndex]
-
-    // Create new array with reordered events
+    // Create a new array with reordered events
     const updatedDayEvents = [...eventsForSelectedDate]
+
+    // Get the dragged event
+    const draggedEvent = updatedDayEvents[dragIndex]
+
+    // Remove the dragged event from the array
     updatedDayEvents.splice(dragIndex, 1)
+
+    // Insert it at the new position
     updatedDayEvents.splice(hoverIndex, 0, draggedEvent)
 
     // Update the state
     setEventsForSelectedDate(updatedDayEvents)
 
-    // Update the global events array
-    const updatedEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
-    setEvents([...updatedEvents, ...updatedDayEvents])
+    // Update the global events array by removing all events for this day and adding the reordered ones
+    const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
+    const newEvents = [...otherEvents, ...updatedDayEvents]
+    setEvents(newEvents)
+
+    // Save to localStorage immediately
+    localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
   }
 
   // Add a useEffect to ensure events are properly loaded from localStorage on mobile
@@ -1232,9 +1245,93 @@ export default function Calendar() {
             </div>
 
             <div className="flex items-center gap-2">
-              <h2 className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center dark:text-white">
-                {format(currentDate, "MMMM yyyy").toUpperCase()}
-              </h2>
+              <div className="relative">
+                <button
+                  onClick={() => setShowDateSelector(!showDateSelector)}
+                  className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none flex items-center"
+                >
+                  {format(currentDate, "MMMM yyyy").toUpperCase()}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 ml-1"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+
+                {showDateSelector && (
+                  <div
+                    className="absolute z-10 mt-1 w-56 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="menu-button"
+                  >
+                    <div className="py-1" role="none">
+                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                        <div className="grid grid-cols-3 gap-1">
+                          <button
+                            onClick={() => {
+                              setCurrentDate(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1))
+                              setShowDateSelector(false)
+                            }}
+                            className="p-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                          >
+                            &lt;&lt;
+                          </button>
+                          <select
+                            value={currentDate.getFullYear()}
+                            onChange={(e) => {
+                              setCurrentDate(new Date(Number.parseInt(e.target.value), currentDate.getMonth(), 1))
+                            }}
+                            className="p-1 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded"
+                          >
+                            {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => {
+                              setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1))
+                              setShowDateSelector(false)
+                            }}
+                            className="p-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                          >
+                            &gt;&gt;
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 p-2">
+                        {Array.from({ length: 12 }, (_, i) => i).map((month) => (
+                          <button
+                            key={month}
+                            onClick={() => {
+                              setCurrentDate(new Date(currentDate.getFullYear(), month, 1))
+                              setShowDateSelector(false)
+                            }}
+                            className={`p-1 text-xs rounded ${
+                              currentDate.getMonth() === month
+                                ? "bg-gray-200 dark:bg-gray-700 font-bold"
+                                : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            {format(new Date(2000, month, 1), "MMM")}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center">

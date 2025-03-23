@@ -285,9 +285,8 @@ export default function ProjectGroups({
                   value={editingGroup.name}
                   onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value.toUpperCase() })}
                   onKeyDown={handleEditProjectKeyDown}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm uppercase"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-lg py-3 uppercase"
                   placeholder="ENTER PROJECT NAME"
-                  disabled={editingGroup.id === "default"}
                 />
               </div>
               <div className="mb-4">

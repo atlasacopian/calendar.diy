@@ -86,6 +86,40 @@ export default function ProjectGroups({
     }
   }, [showAddDialog, showEditDialog, showDeleteConfirm])
 
+  // Focus input and place cursor at end when dialog opens
+  useEffect(() => {
+    if (showAddDialog) {
+      // Focus the input after a short delay to ensure the DOM is ready
+      const timer = setTimeout(() => {
+        const input = document.getElementById("project-name") as HTMLInputElement
+        if (input) {
+          input.focus()
+          // Place cursor at the end of the text
+          const length = input.value.length
+          input.setSelectionRange(length, length)
+        }
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [showAddDialog])
+
+  // Focus input and place cursor at end when edit dialog opens
+  useEffect(() => {
+    if (showEditDialog && editingGroup) {
+      // Focus the input after a short delay to ensure the DOM is ready
+      const timer = setTimeout(() => {
+        const input = document.getElementById("edit-project-name") as HTMLInputElement
+        if (input) {
+          input.focus()
+          // Place cursor at the end of the text
+          const length = input.value.length
+          input.setSelectionRange(length, length)
+        }
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [showEditDialog, editingGroup])
+
   const handleAddProject = () => {
     if (newProjectName.trim()) {
       onAddGroup(newProjectName, newProjectColor)

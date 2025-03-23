@@ -1275,7 +1275,7 @@ export default function Calendar() {
         if (calendarElement) calendarElement.style.opacity = "1"
       }, 10)
     }
-  }, [events])
+  }, [events]);
 
   return (
     <div className="flex flex-col space-y-1">

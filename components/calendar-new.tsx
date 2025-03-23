@@ -1088,6 +1088,20 @@ export default function Calendar() {
       )
     }
 
+    // Fill in the remaining cells to complete the grid (6 rows x 7 columns = 42 cells)
+    const totalCells = startingDayOfWeek + daysInMonth
+    const remainingCells = 42 - totalCells // Always show 6 weeks
+
+    for (let i = 0; i < remainingCells; i++) {
+      days.push(
+        <div
+          key={`empty-end-${i}`}
+          className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
+          onDragOver={(e) => e.preventDefault()}
+        ></div>,
+      )
+    }
+
     return days
   }
 
@@ -1409,7 +1423,7 @@ export default function Calendar() {
       <div
         ref={fullCalendarRef}
         className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
-        style={{ minHeight: "600px" }}
+        style={{ minHeight: "650px" }}
       >
         <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4">
           <div className="grid grid-cols-3 items-center">
@@ -1564,7 +1578,7 @@ export default function Calendar() {
         onAddGroup={handleAddProjectGroup}
         onRemoveGroup={handleRemoveProjectGroup}
         onEditGroup={handleEditProjectGroup}
-        className="mt-auto pt-8 flex justify-center" // Changed from mt-12 to mt-auto and added pt-8
+        className="mt-4 flex justify-center" // Changed from mt-12 to mt-auto and added pt-8
       />
 
       {/* Event Modal - Updated to match the group dialog style */}

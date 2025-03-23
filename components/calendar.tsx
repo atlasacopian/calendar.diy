@@ -967,7 +967,7 @@ export default function Calendar() {
                     "hover:underline",
                     "max-w-full", // Ensure text doesn't overflow
                     "block", // Make sure it's displayed as a block
-                    "truncate", // Add truncation with ellipsis
+                    "line-clamp-4", // Allow up to 4 lines before truncation
                     "break-words", // Break words to prevent overflow
                   )}
                 >
@@ -992,7 +992,7 @@ export default function Calendar() {
                       "hover:underline",
                       "max-w-full",
                       "block",
-                      "truncate",
+                      "line-clamp-2", // Allow up to 2 lines before truncation
                       "break-words",
                     )}
                   >
@@ -1020,7 +1020,7 @@ export default function Calendar() {
                       "hover:underline",
                       "max-w-full",
                       "block",
-                      "truncate",
+                      "line-clamp-2", // Allow up to 2 lines before truncation
                       "break-words",
                     )}
                   >
@@ -1099,6 +1099,21 @@ export default function Calendar() {
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 100%;
+      white-space: normal;
+    }
+
+    .line-clamp-4 {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+    }
+
+    /* Ensure calendar day cells have proper height for multi-line content */
+    .calendar-day {
+      min-height: 5rem;
     }
     
       /* Make most text uppercase except user input */

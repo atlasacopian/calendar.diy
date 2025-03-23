@@ -819,6 +819,10 @@ export default function Calendar() {
         if (event1?.color?.includes("purple")) color1 = "#9333ea"
 
         eventDiv1.style.color = color1
+        color1 = "#9333ea"
+
+        eventDiv1.style.color = color1
+
         eventsContainer.appendChild(topEventContainer)
 
         // Add centered divider only when there are 2 events
@@ -1408,7 +1412,7 @@ export default function Calendar() {
               <div className="relative date-selector-container">
                 <button
                   onClick={() => setShowDateSelector(!showDateSelector)}
-                  className="font-mono text-lg md:text-xl font-light tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none"
+                  className="font-mono text-lg md:text-xl font-bold tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none"
                 >
                   {format(currentDate, "MMMM yyyy").toUpperCase()}
                 </button>
@@ -1465,7 +1469,7 @@ export default function Calendar() {
                             key={month}
                             onClick={() => {
                               setCurrentDate(new Date(currentDate.getFullYear(), month, 1))
-                              setShowDateSelector(false)
+                              // Don't close the dropdown
                             }}
                             className={`p-1 text-xs rounded ${
                               currentDate.getMonth() === month
@@ -1534,7 +1538,30 @@ export default function Calendar() {
         onRemoveGroup={handleRemoveProjectGroup}
         onEditGroup={handleEditProjectGroup}
         className="mt-12 flex justify-center" // Changed from mt-6 to mt-12 and added flex justify-center
-      />
+      >
+        <button
+          onClick={() => setShowAddDialog(true)}
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          title="Add New Project Group"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3"
+          >
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>NEW TAG</span>
+        </button>
+      </ProjectGroups>
 
       {/* Event Modal - Updated to match the group dialog style */}
       {showModal && (
@@ -1593,11 +1620,10 @@ export default function Calendar() {
 
               {/* Color/Group Selection - Now showing full tags with names */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">GROUP</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">TAG</label>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {projectGroups.map((group) => {
                     const bgColor = getBgFromTextColor(group.color)
-                    const textColor = group.color === "text-black" ? "text-white" : "text-black"
 
                     return (
                       <button
@@ -1630,7 +1656,7 @@ export default function Calendar() {
                         className={cn(
                           "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
                           bgColor,
-                          textColor,
+                          "text-white", // Force white text for all tags
                           selectedColor === group.color ? "shadow-md" : "",
                         )}
                       >
@@ -1865,6 +1891,82 @@ export default function Calendar() {
           </div>
         </div>
       )}
+      {showAddDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">NEW TAG</h3>
+                <button
+                  onClick={() => setShowAddDialog(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <div className="mb-6">
+                <label className="block text-xs mb-2">TAG NAME</label>
+                <input
+                  type="text"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4"
+                  placeholder="ENTER PROJECT NAME"
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block text-xs mb-2">COLOR</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color.name}
+                      onClick={() => setNewProjectColor(color.value)}
+                      className={cn(
+                        "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
+                        color.bg,
+                        color.text,
+                        newProjectColor === color.value ? "shadow-md" : "",
+                      )}
+                    >
+                      {color.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
+              <button
+                type="button"
+                className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                onClick={() => {
+                  handleAddProjectGroup(newProjectName, newProjectColor)
+                  setShowAddDialog(false)
+                }}
+              >
+                SAVE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Project Group Dialog */}
+      {/* Edit Project Group Dialog */}
     </div>
   )
 }

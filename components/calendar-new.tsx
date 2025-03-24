@@ -2027,47 +2027,45 @@ export default function Calendar() {
                 )}
               </div>
 
-              {/* Add New Event button - only show when there's 0 or 1 event */}
-              {eventsForSelectedDate.length < 2 &&
-                eventsForSelectedDate.length > 0 &&
-                !eventsForSelectedDate.some((e) => e.content === "") && (
-                  <button
-                    onClick={() => {
-                      // Create a new empty event
-                      const newEvent = {
-                        id: Math.random().toString(36).substring(2, 11),
-                        date: selectedDate as Date,
-                        content: "",
-                        color: "text-black",
-                        projectId: "default",
-                      }
+              {/* Add New Event button - Show when there's content in the first input or fewer than 2 events */}
+              {eventsForSelectedDate.length < 2 && (
+                <button
+                  onClick={() => {
+                    // Create a new empty event
+                    const newEvent = {
+                      id: Math.random().toString(36).substring(2, 11),
+                      date: selectedDate as Date,
+                      content: "",
+                      color: "text-black",
+                      projectId: "default",
+                    }
 
-                      // Add to the events for this day
-                      setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
+                    // Add to the events for this day
+                    setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
 
-                      // Add to the main events array
-                      setEvents([...events, newEvent])
-                    }}
-                    className="w-full flex items-center justify-center py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 focus:outline-none border border-gray-100 dark:border-gray-800 my-2"
+                    // Add to the main events array
+                    setEvents([...events, newEvent])
+                  }}
+                  className="w-full flex items-center justify-center py-3 px-4 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 my-2 shadow-sm"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 mr-2"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4 mr-2"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    ADD NEW EVENT
-                  </button>
-                )}
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  ADD NEW EVENT
+                </button>
+              )}
               {/* Tag Selection - Now appears below both events */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">TAG</label>

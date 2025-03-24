@@ -1,4 +1,3 @@
-
 "use client"
 
 import type React from "react"
@@ -1086,10 +1085,11 @@ export default function Calendar() {
     // Add only user events (no holidays)
     events.forEach((event) => {
       const dateString = format(event.date, "yyyyMMdd")
+      const uid = `${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`
       icalContent = [
         ...icalContent,
         "BEGIN:VEVENT",
-        `UID:${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`,
+        `UID:${uid}`,
         `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
         `DTSTART;VALUE=DATE:${dateString}`,
         `DTEND;VALUE=DATE:${dateString}`,
@@ -1347,6 +1347,25 @@ export default function Calendar() {
         setSelectedDate(null)
       }
     }
+  }
+
+  // Add a new function to swap the order of events for a day
+  const handleSwapEvents = () => {
+    if (eventsForSelectedDate.length !== 2) return
+
+    // Create a new array with swapped events
+    const swappedEvents = [eventsForSelectedDate[1], eventsForSelectedDate[0]]
+
+    // Update the events for selected date
+    setEventsForSelectedDate(swappedEvents)
+
+    // Update the global events array by removing all events for this day and adding the swapped ones
+    const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
+    const newEvents = [...otherEvents, ...swappedEvents]
+    setEvents(newEvents)
+
+    // Save to localStorage immediately
+    localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
   }
 
   const handleReorderEvents = (dragIndex: number, hoverIndex: number) => {
@@ -1894,6 +1913,29 @@ export default function Calendar() {
                     OTHER EVENTS
                   </label>
                   <div className="space-y-2">
+                    {eventsForSelectedDate.length === 2 && (
+                      <button
+                        onClick={handleSwapEvents}
+                        className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 flex items-center mb-2"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-4 w-4 mr-1"
+                        >
+                          <path d="M7 2L17 12L7 22" />
+                          <path d="M17 2L7 12L17 22" />
+                        </svg>
+                        SWAP ORDER
+                      </button>
+                    )}
                     {eventsForSelectedDate.map(
                       (event) =>
                         event.id !== editingEventId && (
@@ -1991,7 +2033,7 @@ export default function Calendar() {
                 className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
                 onClick={handleSaveAndClose}
               >
-                SAVE
+                {editingEventId ? "UPDATE" : "SAVE"}
               </button>
             </div>
           </div>

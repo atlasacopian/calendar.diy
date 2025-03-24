@@ -1998,7 +1998,7 @@ export default function Calendar() {
                 </div>
               )}
               {/* Add New Event button when there's already an event and we're not in edit mode */}
-              {eventsForSelectedDate.length > 0 && eventsForSelectedDate.length < 2 && !editingEventId && (
+              {eventsForSelectedDate.length > 0 && eventsForSelectedDate.length < 2 && (
                 <div className="mb-6">
                   <button
                     onClick={() => {

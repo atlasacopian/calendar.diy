@@ -589,24 +589,56 @@ export default function Calendar() {
       // Clone the calendar
       const clone = calendarElement.cloneNode(true) as HTMLElement
 
-      // Make sure all text is visible in the clone
-      const textElements = clone.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4")
-      textElements.forEach((element) => {
-        const el = element as HTMLElement
-        el.style.overflow = "visible"
-        el.style.textOverflow = "clip"
-        el.style.whiteSpace = "normal"
-        el.style.webkitLineClamp = "none"
-        el.style.display = "block"
-        el.style.maxHeight = "none"
-      })
+      // Apply styles to ensure text is fully visible
+      const applyFullTextVisibility = (element: HTMLElement) => {
+        // Find all elements with text that might be truncated
+        const allTextElements = element.querySelectorAll(
+          '.preserve-case, .line-clamp-2, .line-clamp-4, [class*="truncate"], [class*="line-clamp"], [class*="overflow"]',
+        )
+
+        allTextElements.forEach((el) => {
+          if (el instanceof HTMLElement) {
+            // Remove all truncation and overflow constraints
+            el.style.overflow = "visible"
+            el.style.textOverflow = "clip"
+            el.style.whiteSpace = "normal"
+            el.style.display = "block"
+            el.style.maxHeight = "none"
+            el.style.maxWidth = "none"
+            el.style.height = "auto"
+            el.style.width = "auto"
+
+            // Remove line clamping
+            if ("webkitLineClamp" in el.style) {
+              el.style.webkitLineClamp = "none"
+            }
+
+            // Remove any classes that might cause truncation
+            el.classList.remove("truncate", "line-clamp-2", "line-clamp-4")
+
+            // Ensure parent containers don't clip content
+            let parent = el.parentElement
+            while (parent) {
+              if (parent instanceof HTMLElement) {
+                parent.style.overflow = "visible"
+                parent.style.height = "auto"
+                parent.style.maxHeight = "none"
+              }
+              parent = parent.parentElement
+            }
+          }
+        })
+      }
+
+      // Apply to the clone
+      applyFullTextVisibility(clone)
 
       // Append to body
       document.body.appendChild(wrapper)
       wrapper.appendChild(clone)
 
-      // Wait a moment for the DOM to update
-      await new Promise((resolve) => setTimeout(resolve, 300))
+      // Wait longer for the DOM to update
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
       // Render with html2canvas
       const canvas = await html2canvas.default(wrapper, {
@@ -623,18 +655,27 @@ export default function Calendar() {
             clonedCalendar.style.height = "auto"
             clonedCalendar.style.overflow = "visible"
 
-            // Make sure all text is visible
-            const textElements = doc.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4")
-            textElements.forEach((element) => {
-              const el = element as HTMLElement
-              el.style.overflow = "visible"
-              el.style.textOverflow = "clip"
-              el.style.whiteSpace = "normal"
-              if (el.style.webkitLineClamp) {
-                el.style.webkitLineClamp = "none"
+            // Apply the same text visibility function to the document in the onclone callback
+            const allElements = doc.querySelectorAll("*")
+            allElements.forEach((el) => {
+              if (el instanceof HTMLElement) {
+                if (
+                  el.classList.contains("preserve-case") ||
+                  el.classList.contains("line-clamp-2") ||
+                  el.classList.contains("line-clamp-4") ||
+                  el.classList.contains("truncate")
+                ) {
+                  el.style.overflow = "visible"
+                  el.style.textOverflow = "clip"
+                  el.style.whiteSpace = "normal"
+                  el.style.webkitLineClamp = "none"
+                  el.style.display = "block"
+                  el.style.maxHeight = "none"
+                  el.style.maxWidth = "none"
+                  el.style.height = "auto"
+                  el.style.width = "auto"
+                }
               }
-              el.style.display = "block"
-              el.style.maxHeight = "none"
             })
           }
         },

@@ -294,7 +294,7 @@ export default function Calendar() {
   }
   
     /* Only uppercase specific elements, not user content */
-    .calendar-controls button, h1, h2, h3, h4, h5, h6, .day-header {
+    .calendar-controls button, .day-header, .month-header {
       text-transform: uppercase !important;
     }
 
@@ -736,6 +736,7 @@ export default function Calendar() {
           eventDiv1.style.overflow = "visible"
           eventDiv1.style.maxWidth = "100%"
           eventDiv1.style.whiteSpace = "normal"
+          eventDiv1.style.textTransform = "none" // Ensure case is preserved
 
           // Convert Tailwind color classes to CSS colors
           let color1 = "#000"
@@ -773,6 +774,7 @@ export default function Calendar() {
           eventDiv2.style.overflow = "visible"
           eventDiv2.style.maxWidth = "100%"
           eventDiv2.style.whiteSpace = "normal"
+          eventDiv2.style.textTransform = "none" // Ensure case is preserved
 
           // Convert Tailwind color classes to CSS colors
           let color2 = "#000"
@@ -1195,11 +1197,11 @@ export default function Calendar() {
         >
           <div className={cn("absolute right-2 top-1 font-mono text-xs text-gray-400 dark:text-gray-500")}>{day}</div>
 
-          <div className="mt-5 space-y-0.5 overflow-hidden">
+          <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
             {dayHolidays.map((holiday, index) => (
               <div
                 key={`holiday-${index}`}
-                className="font-mono text-[9px] tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
+                className="font-mono text-[8px] md:text-[9px] tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words holiday-name"
               >
                 {holiday.name}
               </div>
@@ -1215,7 +1217,7 @@ export default function Calendar() {
                 onDragEnd={handleDragEnd}
               >
                 <span
-                  className="font-mono text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-4 break-words"
+                  className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-4 break-words"
                   style={{
                     color: getExactColorHex(limitedEvents[0].color),
                   }}
@@ -1232,7 +1234,7 @@ export default function Calendar() {
                   onDragEnd={handleDragEnd}
                 >
                   <span
-                    className="font-mono text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
+                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
                     style={{
                       color: getExactColorHex(limitedEvents[0]?.color),
                     }}
@@ -1252,7 +1254,7 @@ export default function Calendar() {
                   onDragEnd={handleDragEnd}
                 >
                   <span
-                    className="font-mono text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
+                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
                     style={{
                       color: getExactColorHex(limitedEvents[1]?.color),
                     }}

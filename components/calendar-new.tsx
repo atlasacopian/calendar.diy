@@ -2027,6 +2027,47 @@ export default function Calendar() {
                 )}
               </div>
 
+              {/* Add New Event button - only show when there's 0 or 1 event */}
+              {eventsForSelectedDate.length < 2 &&
+                eventsForSelectedDate.length > 0 &&
+                !eventsForSelectedDate.some((e) => e.content === "") && (
+                  <button
+                    onClick={() => {
+                      // Create a new empty event
+                      const newEvent = {
+                        id: Math.random().toString(36).substring(2, 11),
+                        date: selectedDate as Date,
+                        content: "",
+                        color: "text-black",
+                        projectId: "default",
+                      }
+
+                      // Add to the events for this day
+                      setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
+
+                      // Add to the main events array
+                      setEvents([...events, newEvent])
+                    }}
+                    className="w-full flex items-center justify-center rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4 mr-1"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    ADD NEW EVENT
+                  </button>
+                )}
               {/* Tag Selection - Now appears below both events */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">TAG</label>
@@ -2092,250 +2133,5 @@ export default function Calendar() {
                   })}
                 </div>
               </div>
-
-              {/* Add New Event button - only show when there's 0 or 1 event */}
-              {eventsForSelectedDate.length < 2 &&
-                eventsForSelectedDate.length > 0 &&
-                !eventsForSelectedDate.some((e) => e.content === "") && (
-                  <button
-                    onClick={() => {
-                      // Create a new empty event
-                      const newEvent = {
-                        id: Math.random().toString(36).substring(2, 11),
-                        date: selectedDate as Date,
-                        content: "",
-                        color: "text-black",
-                        projectId: "default",
-                      }
-
-                      // Add to the events for this day
-                      setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
-
-                      // Add to the main events array
-                      setEvents([...events, newEvent])
-                    }}
-                    className="w-full flex items-center justify-center rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4 mr-1"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    ADD NEW EVENT
-                  </button>
-                )}
-            </div>
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
-              <button
-                type="button"
-                className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-                onClick={handleSaveAndClose}
-              >
-                SAVE
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Confirmation Modal */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={resetModalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
-            style={{ margin: "auto" }}
-          >
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">CONFIRM RESET</h3>
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6 overflow-y-auto dark:text-gray-200">
-              <p className="font-mono text-xs">
-                ARE YOU SURE YOU WANT TO RESET ALL DATA? THIS ACTION CANNOT BE UNDONE.
-              </p>
-            </div>
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
-              <button
-                type="button"
-                className="inline-flex justify-center rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                onClick={handleResetData}
-              >
-                RESET
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Share Modal */}
-      {showShareModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={shareModalRef}
-            className="relative w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
-          >
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">SHARE CALENDAR</h3>
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <label
-                htmlFor="share-url"
-                className="block font-mono text-xs font-medium text-gray-700 dark:text-gray-300"
-              >
-                SHARE LINK
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <input
-                  type="text"
-                  id="share-url"
-                  className="block w-full rounded-md border-gray-300 pr-12 focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm font-mono"
-                  value={shareUrl}
-                  readOnly
-                  ref={shareInputRef}
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center">
-                  <button
-                    id="copy-button"
-                    onClick={copyShareUrl}
-                    className="rounded-r-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600"
-                  >
-                    COPY
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {showAddDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">NEW TAG</h3>
-                <button
-                  onClick={() => setShowAddDialog(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <div className="mb-6">
-                <label className="block text-xs mb-2">TAG</label>
-                <input
-                  type="text"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4"
-                  placeholder="ENTER PROJECT NAME"
-                />
-              </div>
-              <div className="mb-6">
-                <label className="block text-xs mb-2">COLOR</label>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {colorOptions.map((color) => (
-                    <button
-                      key={color.name}
-                      onClick={() => setNewProjectColor(color.value)}
-                      className={cn(
-                        "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
-                        color.bg,
-                        color.text,
-                        newProjectColor === color.value ? "shadow-md" : "",
-                      )}
-                    >
-                      {color.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
-              <button
-                type="button"
-                className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-                onClick={() => {
-                  handleAddProjectGroup(newProjectName, newProjectColor)
-                  setShowAddDialog(false)
-                }}
-              >
-                SAVE
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+\
 

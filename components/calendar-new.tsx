@@ -24,7 +24,7 @@ const colorOptions = [
   { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white", hex: "#ff0000" },
   { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-white", hex: "#ff7200" },
   { name: "Yellow", value: "text-yellow-500", bg: "bg-[#e3e600]", text: "text-white", hex: "#e3e600" },
-  { name: "Green", value="text-green-600", bg: "bg-[#1ae100]", text: "text-white", hex: "#1ae100" },
+  { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white", hex: "#1ae100" },
   { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white", hex: "#0012ff" },
   { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white", hex: "#a800ff" },
 ]

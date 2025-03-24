@@ -590,8 +590,19 @@ export default function Calendar() {
       // Add to body temporarily
       document.body.appendChild(tempDiv)
 
+      // Remove current day highlighting
+      const currentDayElements = tempDiv.querySelectorAll(".bg-gray-50, .bg-gray-50\\/30, .dark\\:bg-gray-900\\/50")
+      currentDayElements.forEach((el) => {
+        if (el instanceof HTMLElement) {
+          el.style.backgroundColor = "white"
+          el.classList.remove("bg-gray-50", "dark:bg-gray-900/50")
+        }
+      })
+
       // Get all text elements in the clone that need to be fixed
-      const textElements = tempDiv.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4, .truncate")
+      const textElements = tempDiv.querySelectorAll(
+        ".preserve-case, .line-clamp-2, .line-clamp-4, .truncate, .whitespace-normal, .break-words, .font-mono, [class*='text-']",
+      )
 
       // Fix each text element
       textElements.forEach((el) => {
@@ -606,6 +617,37 @@ export default function Calendar() {
           newSpan.style.fontFamily = "monospace"
           newSpan.style.fontSize = "10px"
           newSpan.style.fontWeight = "500"
+          newSpan.style.whiteSpace = "normal"
+          newSpan.style.overflow = "visible"
+          newSpan.style.textOverflow = "clip"
+
+          // Replace the element with our new span
+          if (el.parentNode) {
+            el.parentNode.replaceChild(newSpan, el)
+          }
+        }
+      })
+
+      // Specifically find and fix holiday elements
+      const holidayElements = tempDiv.querySelectorAll(
+        ".font-mono.text-\\[8px\\], .font-mono.text-\\[9px\\], .font-mono.md\\:text-\\[9px\\]",
+      )
+      holidayElements.forEach((el) => {
+        if (el instanceof HTMLElement) {
+          // Get the original text content
+          const originalText = el.textContent || ""
+
+          // Create a new span with just the text
+          const newSpan = document.createElement("span")
+          newSpan.textContent = originalText
+          newSpan.style.color = "#666"
+          newSpan.style.fontFamily = "monospace"
+          newSpan.style.fontSize = "10px"
+          newSpan.style.fontWeight = "500"
+          newSpan.style.whiteSpace = "normal"
+          newSpan.style.overflow = "visible"
+          newSpan.style.textOverflow = "clip"
+          newSpan.style.textTransform = "uppercase"
 
           // Replace the element with our new span
           if (el.parentNode) {
@@ -615,7 +657,7 @@ export default function Calendar() {
       })
 
       // Wait for the DOM to update
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       // Render with html2canvas
       const canvas = await html2canvas.default(tempDiv, {
@@ -624,6 +666,35 @@ export default function Calendar() {
         allowTaint: true,
         backgroundColor: "white",
         logging: false,
+        onclone: (doc) => {
+          // Additional processing in the clone document
+          const allDays = doc.querySelectorAll(".calendar-day")
+          allDays.forEach((day) => {
+            if (day instanceof HTMLElement) {
+              // Remove any background color that might indicate current day
+              day.style.backgroundColor = "white"
+
+              // Find all text elements within this day
+              const dayTexts = day.querySelectorAll("*")
+              dayTexts.forEach((text) => {
+                if (text instanceof HTMLElement) {
+                  if (text.classList.contains("rounded-full") && text.textContent?.trim() === "23") {
+                    // Remove current day highlighting
+                    text.style.backgroundColor = "transparent"
+                    text.classList.remove("bg-gray-200", "dark:bg-gray-700")
+                  }
+
+                  // Make all text visible
+                  text.style.overflow = "visible"
+                  text.style.textOverflow = "clip"
+                  text.style.whiteSpace = "normal"
+                  text.style.maxHeight = "none"
+                  text.style.maxWidth = "none"
+                }
+              })
+            }
+          })
+        },
       })
 
       // Convert to image and download

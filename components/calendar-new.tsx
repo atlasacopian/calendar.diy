@@ -562,139 +562,258 @@ export default function Calendar() {
     try {
       setIsDownloading(true)
 
-      // Use html2canvas for high-quality rendering
+      // Use html2canvas for rendering
       const html2canvas = await import("html2canvas")
 
-      // Get the calendar element
-      const calendarElement = fullCalendarRef.current
+      // Create a fresh calendar for screenshot purposes
+      const screenshotDiv = document.createElement("div")
+      screenshotDiv.style.position = "fixed"
+      screenshotDiv.style.left = "-9999px"
+      screenshotDiv.style.top = "0"
+      screenshotDiv.style.width = "1000px"
+      screenshotDiv.style.backgroundColor = "white"
+      screenshotDiv.style.padding = "20px"
+      screenshotDiv.style.fontFamily = '"JetBrains Mono", monospace'
+      document.body.appendChild(screenshotDiv)
 
-      if (!calendarElement) {
-        console.error("Calendar element not found")
-        setIsDownloading(false)
-        return
+      // Create header
+      const header = document.createElement("div")
+      header.style.textAlign = "center"
+      header.style.fontSize = "24px"
+      header.style.fontWeight = "500"
+      header.style.marginBottom = "20px"
+      header.style.textTransform = "uppercase"
+      header.textContent = format(currentDate, "MMMM yyyy")
+      screenshotDiv.appendChild(header)
+
+      // Create calendar grid
+      const grid = document.createElement("div")
+      grid.style.display = "grid"
+      grid.style.gridTemplateColumns = "repeat(7, 1fr)"
+      grid.style.border = "1px solid #eee"
+      grid.style.borderBottom = "none"
+      grid.style.borderRight = "none"
+      screenshotDiv.appendChild(grid)
+
+      // Add day headers
+      weekDays.forEach((day) => {
+        const dayHeader = document.createElement("div")
+        dayHeader.style.padding = "10px"
+        dayHeader.style.textAlign = "center"
+        dayHeader.style.borderBottom = "1px solid #eee"
+        dayHeader.style.borderRight = "1px solid #eee"
+        dayHeader.style.backgroundColor = "#f9f9f9"
+        dayHeader.style.fontSize = "14px"
+        dayHeader.style.color = "#666"
+        dayHeader.style.textTransform = "uppercase"
+        dayHeader.textContent = day
+        grid.appendChild(dayHeader)
+      })
+
+      // Calculate calendar days
+      const daysInMonth = getDaysInMonth(currentDate)
+      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+      const startingDayOfWeek = getDay(firstDayOfMonth)
+
+      // Add empty cells for days before the first day of the month
+      for (let i = 0; i < startingDayOfWeek; i++) {
+        const emptyCell = document.createElement("div")
+        emptyCell.style.borderBottom = "1px solid #eee"
+        emptyCell.style.borderRight = "1px solid #eee"
+        emptyCell.style.height = "120px"
+        emptyCell.style.backgroundColor = "white"
+        grid.appendChild(emptyCell)
       }
 
-      // Create a clean copy of the calendar for rendering
-      const tempDiv = document.createElement("div")
-      tempDiv.style.position = "absolute"
-      tempDiv.style.left = "-9999px"
-      tempDiv.style.top = "0"
-      tempDiv.style.width = calendarElement.offsetWidth + "px"
-      tempDiv.style.backgroundColor = "white"
-      tempDiv.style.padding = "20px"
-      tempDiv.style.zIndex = "-1000"
+      // Add cells for each day of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+        const dayEvents = events.filter(
+          (event) =>
+            isSameDay(event.date, date) &&
+            projectGroups.find(
+              (g) =>
+                g.active &&
+                ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
+            ),
+        )
+        const limitedEvents = dayEvents.slice(0, 2)
+        const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
+        const isWeekend = getDay(date) === 0 || getDay(date) === 6
 
-      // Clone the calendar content
-      tempDiv.innerHTML = calendarElement.outerHTML
+        const dayCell = document.createElement("div")
+        dayCell.style.position = "relative"
+        dayCell.style.padding = "10px"
+        dayCell.style.borderBottom = "1px solid #eee"
+        dayCell.style.borderRight = "1px solid #eee"
+        dayCell.style.height = "120px"
+        dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
 
-      // Add to body temporarily
-      document.body.appendChild(tempDiv)
+        // Add day number
+        const dayNumber = document.createElement("div")
+        dayNumber.style.position = "absolute"
+        dayNumber.style.top = "5px"
+        dayNumber.style.right = "10px"
+        dayNumber.style.fontSize = "14px"
+        dayNumber.style.color = "#999"
+        dayNumber.textContent = day.toString()
+        dayCell.appendChild(dayNumber)
 
-      // Remove current day highlighting
-      const currentDayElements = tempDiv.querySelectorAll(".bg-gray-50, .bg-gray-50\\/30, .dark\\:bg-gray-900\\/50")
-      currentDayElements.forEach((el) => {
-        if (el instanceof HTMLElement) {
-          el.style.backgroundColor = "white"
-          el.classList.remove("bg-gray-50", "dark:bg-gray-900/50")
+        // Add holidays
+        const holidaysContainer = document.createElement("div")
+        holidaysContainer.style.marginTop = "25px"
+        holidaysContainer.style.overflow = "visible"
+
+        dayHolidays.forEach((holiday) => {
+          const holidayDiv = document.createElement("div")
+          holidayDiv.style.fontSize = "10px"
+          holidayDiv.style.textTransform = "uppercase"
+          holidayDiv.style.letterSpacing = "0.05em"
+          holidayDiv.style.color = "#666"
+          holidayDiv.style.marginBottom = "3px"
+          holidayDiv.style.whiteSpace = "normal"
+          holidayDiv.style.wordBreak = "break-word"
+          holidayDiv.textContent = holiday.name
+          holidaysContainer.appendChild(holidayDiv)
+        })
+
+        dayCell.appendChild(holidaysContainer)
+
+        // Add events
+        const eventsContainer = document.createElement("div")
+        eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "15px"
+        eventsContainer.style.display = "flex"
+        eventsContainer.style.flexDirection = "column"
+        eventsContainer.style.height = "calc(100% - 25px)"
+
+        // If there's only one event, center it vertically
+        if (limitedEvents.length === 1) {
+          eventsContainer.style.justifyContent = "center"
+        } else {
+          eventsContainer.style.justifyContent = "space-between"
         }
-      })
 
-      // Get all text elements in the clone that need to be fixed
-      const textElements = tempDiv.querySelectorAll(
-        ".preserve-case, .line-clamp-2, .line-clamp-4, .truncate, .whitespace-normal, .break-words, .font-mono, [class*='text-']",
-      )
+        if (limitedEvents.length === 1) {
+          // Single event - centered vertically
+          const event = limitedEvents[0]
+          const eventDiv = document.createElement("div")
+          eventDiv.textContent = event.content
+          eventDiv.style.fontSize = "11px"
+          eventDiv.style.fontWeight = "500"
+          eventDiv.style.wordBreak = "break-word"
+          eventDiv.style.overflow = "visible"
+          eventDiv.style.maxWidth = "100%"
+          eventDiv.style.whiteSpace = "normal"
 
-      // Fix each text element
-      textElements.forEach((el) => {
-        if (el instanceof HTMLElement) {
-          // Get the original text content
-          const originalText = el.textContent || ""
+          // Convert Tailwind color classes to CSS colors
+          let color = "#000"
+          if (event?.color?.includes("blue")) color = "#0012ff"
+          if (event?.color?.includes("red")) color = "#ff0000"
+          if (event?.color?.includes("yellow")) color = "#e3e600"
+          if (event?.color?.includes("orange")) color = "#ff7200"
+          if (event?.color?.includes("green")) color = "#1ae100"
+          if (event?.color?.includes("purple")) color = "#a800ff"
 
-          // Create a new span with just the text
-          const newSpan = document.createElement("span")
-          newSpan.textContent = originalText
-          newSpan.style.color = el.style.color || "inherit"
-          newSpan.style.fontFamily = "monospace"
-          newSpan.style.fontSize = "10px"
-          newSpan.style.fontWeight = "500"
-          newSpan.style.whiteSpace = "normal"
-          newSpan.style.overflow = "visible"
-          newSpan.style.textOverflow = "clip"
+          eventDiv.style.color = color
+          eventsContainer.appendChild(eventDiv)
+        } else if (limitedEvents.length === 2) {
+          // Two events with centered divider
+          const topEventContainer = document.createElement("div")
+          topEventContainer.style.flex = "1"
+          topEventContainer.style.display = "flex"
+          topEventContainer.style.alignItems = "flex-start"
 
-          // Replace the element with our new span
-          if (el.parentNode) {
-            el.parentNode.replaceChild(newSpan, el)
-          }
+          const event1 = limitedEvents[0]
+          const eventDiv1 = document.createElement("div")
+          eventDiv1.textContent = event1.content
+          eventDiv1.style.fontSize = "11px"
+          eventDiv1.style.fontWeight = "500"
+          eventDiv1.style.wordBreak = "break-word"
+          eventDiv1.style.overflow = "visible"
+          eventDiv1.style.maxWidth = "100%"
+          eventDiv1.style.whiteSpace = "normal"
+
+          // Convert Tailwind color classes to CSS colors
+          let color1 = "#000"
+          if (event1?.color?.includes("blue")) color1 = "#0012ff"
+          if (event1?.color?.includes("red")) color1 = "#ff0000"
+          if (event1?.color?.includes("yellow")) color1 = "#e3e600"
+          if (event1?.color?.includes("orange")) color1 = "#ff7200"
+          if (event1?.color?.includes("green")) color1 = "#1ae100"
+          if (event1?.color?.includes("purple")) color1 = "#a800ff"
+
+          eventDiv1.style.color = color1
+          topEventContainer.appendChild(eventDiv1)
+          eventsContainer.appendChild(topEventContainer)
+
+          // Add centered divider only when there are 2 events
+          const divider = document.createElement("div")
+          divider.style.height = "1px"
+          divider.style.backgroundColor = "#eee"
+          divider.style.width = "100%"
+          divider.style.margin = "auto 0"
+          eventsContainer.appendChild(divider)
+
+          // Bottom event
+          const bottomEventContainer = document.createElement("div")
+          bottomEventContainer.style.flex = "1"
+          bottomEventContainer.style.display = "flex"
+          bottomEventContainer.style.alignItems = "flex-end"
+
+          const event2 = limitedEvents[1]
+          const eventDiv2 = document.createElement("div")
+          eventDiv2.textContent = event2.content
+          eventDiv2.style.fontSize = "11px"
+          eventDiv2.style.fontWeight = "500"
+          eventDiv2.style.wordBreak = "break-word"
+          eventDiv2.style.overflow = "visible"
+          eventDiv2.style.maxWidth = "100%"
+          eventDiv2.style.whiteSpace = "normal"
+
+          // Convert Tailwind color classes to CSS colors
+          let color2 = "#000"
+          if (event2?.color?.includes("blue")) color2 = "#0012ff"
+          if (event2?.color?.includes("red")) color2 = "#ff0000"
+          if (event2?.color?.includes("yellow")) color2 = "#e3e600"
+          if (event2?.color?.includes("orange")) color2 = "#ff7200"
+          if (event2?.color?.includes("green")) color2 = "#1ae100"
+          if (event2?.color?.includes("purple")) color2 = "#a800ff"
+
+          eventDiv2.style.color = color2
+          bottomEventContainer.appendChild(eventDiv2)
+          eventsContainer.appendChild(bottomEventContainer)
         }
-      })
 
-      // Specifically find and fix holiday elements
-      const holidayElements = tempDiv.querySelectorAll(
-        ".font-mono.text-\\[8px\\], .font-mono.text-\\[9px\\], .font-mono.md\\:text-\\[9px\\]",
-      )
-      holidayElements.forEach((el) => {
-        if (el instanceof HTMLElement) {
-          // Get the original text content
-          const originalText = el.textContent || ""
+        dayCell.appendChild(eventsContainer)
+        grid.appendChild(dayCell)
+      }
 
-          // Create a new span with just the text
-          const newSpan = document.createElement("span")
-          newSpan.textContent = originalText
-          newSpan.style.color = "#666"
-          newSpan.style.fontFamily = "monospace"
-          newSpan.style.fontSize = "10px"
-          newSpan.style.fontWeight = "500"
-          newSpan.style.whiteSpace = "normal"
-          newSpan.style.overflow = "visible"
-          newSpan.style.textOverflow = "clip"
-          newSpan.style.textTransform = "uppercase"
+      // Calculate how many cells we've added so far
+      const cellsAdded = startingDayOfWeek + daysInMonth
 
-          // Replace the element with our new span
-          if (el.parentNode) {
-            el.parentNode.replaceChild(newSpan, el)
-          }
-        }
-      })
+      // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
+      const cellsNeeded = 42 - cellsAdded
+
+      // Add empty cells to fill out the grid to exactly 6 rows
+      for (let i = 0; i < cellsNeeded; i++) {
+        const emptyCell = document.createElement("div")
+        emptyCell.style.borderBottom = "1px solid #eee"
+        emptyCell.style.borderRight = "1px solid #eee"
+        emptyCell.style.height = "120px"
+        emptyCell.style.backgroundColor = "white"
+        grid.appendChild(emptyCell)
+      }
 
       // Wait for the DOM to update
-      await new Promise((resolve) => setTimeout(resolve, 200))
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
       // Render with html2canvas
-      const canvas = await html2canvas.default(tempDiv, {
+      const canvas = await html2canvas.default(screenshotDiv, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "white",
         logging: false,
-        onclone: (doc) => {
-          // Additional processing in the clone document
-          const allDays = doc.querySelectorAll(".calendar-day")
-          allDays.forEach((day) => {
-            if (day instanceof HTMLElement) {
-              // Remove any background color that might indicate current day
-              day.style.backgroundColor = "white"
-
-              // Find all text elements within this day
-              const dayTexts = day.querySelectorAll("*")
-              dayTexts.forEach((text) => {
-                if (text instanceof HTMLElement) {
-                  if (text.classList.contains("rounded-full") && text.textContent?.trim() === "23") {
-                    // Remove current day highlighting
-                    text.style.backgroundColor = "transparent"
-                    text.classList.remove("bg-gray-200", "dark:bg-gray-700")
-                  }
-
-                  // Make all text visible
-                  text.style.overflow = "visible"
-                  text.style.textOverflow = "clip"
-                  text.style.whiteSpace = "normal"
-                  text.style.maxHeight = "none"
-                  text.style.maxWidth = "none"
-                }
-              })
-            }
-          })
-        },
       })
 
       // Convert to image and download
@@ -705,7 +824,7 @@ export default function Calendar() {
       link.click()
 
       // Clean up
-      document.body.removeChild(tempDiv)
+      document.body.removeChild(screenshotDiv)
     } catch (error) {
       console.error("Error generating calendar image:", error)
       alert("Failed to generate image. Please try again.")

@@ -591,7 +591,8 @@ export default function Calendar() {
 
       // Make sure all text is visible in the clone
       const textElements = clone.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4")
-      textElements.forEach((el: HTMLElement) => {
+      textElements.forEach((element) => {
+        const el = element as HTMLElement
         el.style.overflow = "visible"
         el.style.textOverflow = "clip"
         el.style.whiteSpace = "normal"
@@ -624,7 +625,8 @@ export default function Calendar() {
 
             // Make sure all text is visible
             const textElements = doc.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4")
-            textElements.forEach((el: HTMLElement) => {
+            textElements.forEach((element) => {
+              const el = element as HTMLElement
               el.style.overflow = "visible"
               el.style.textOverflow = "clip"
               el.style.whiteSpace = "normal"

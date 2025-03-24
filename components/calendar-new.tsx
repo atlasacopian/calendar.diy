@@ -10,10 +10,12 @@ import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
 
 // import html2canvas from 'html2canvas'; // We'll dynamically import this
 
+// In the CalendarEvent type, add a new property to store formatted content
 type CalendarEvent = {
   id: string
   date: Date
   content: string
+  formattedContent?: string // To store HTML with formatting
   color?: string
   projectId?: string
 }
@@ -45,8 +47,6 @@ export default function Calendar() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [showModal, setShowModal] = useState(false)
-  const [eventContent, setEventContent] = useState("")
-  const [selectedColor, setSelectedColor] = useState("text-black")
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const [isDownloading, setIsDownloading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -58,7 +58,6 @@ export default function Calendar() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareUrl, setShareUrl] = useState("")
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
-  const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([
     { id: "default", name: "TAG 01", color: "text-black", active: true },
   ])
@@ -66,6 +65,10 @@ export default function Calendar() {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
   const [newProjectColor, setNewProjectColor] = useState("text-black")
+  // Track which event is currently being edited (0 or 1)
+  const [activeEventIndex, setActiveEventIndex] = useState<number>(0)
+  // Add a new state for text selection
+  const [selectedText, setSelectedText] = useState<{ start: number; end: number } | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -315,6 +318,12 @@ export default function Calendar() {
       text-overflow: ellipsis !important;
       word-break: break-word !important;
     }
+
+    /* Highlight active event */
+    .event-input-active {
+      background-color: rgba(249, 250, 251, 0.8);
+      border-color: rgba(209, 213, 219, 1);
+    }
   `
     document.head.appendChild(style)
 
@@ -335,107 +344,89 @@ export default function Calendar() {
     setSelectedDate(day)
     const existingEvents = events.filter((event) => isSameDay(event.date, day))
     setEventsForSelectedDate(existingEvents)
-
-    // If there are events, select the first one for editing
-    if (existingEvents.length > 0) {
-      setEditingEventId(existingEvents[0].id)
-      setEventContent(existingEvents[0].content)
-      setSelectedColor(existingEvents[0].color || "text-black")
-    } else {
-      // If there are no events, prepare to create a new one
-      setEditingEventId(null)
-      setEventContent("")
-      setSelectedColor("text-black")
-    }
+    setActiveEventIndex(0) // Reset to first event
 
     setShowModal(true)
-  }
-
-  const handleSaveEvent = () => {
-    if (!selectedDate) return
-
-    if (eventContent.trim()) {
-      // Find the selected project by color - make sure we get the exact match
-      const selectedProject =
-        projectGroups.find((p) => p.color === selectedColor && p.id !== "default") ||
-        projectGroups.find((p) => p.id === "default")
-      const projectId = selectedProject?.id || "default"
-
-      // If we're editing an existing event
-      if (editingEventId) {
-        setEvents(
-          events.map((event) =>
-            event.id === editingEventId ? { ...event, content: eventContent, color: selectedColor, projectId } : event,
-          ),
-        )
-
-        // Update the events for selected date
-        setEventsForSelectedDate(
-          eventsForSelectedDate.map((event) =>
-            event.id === editingEventId ? { ...event, content: eventContent, color: selectedColor, projectId } : event,
-          ),
-        )
-      } else {
-        // Check if we already have 2 events for this day
-        const dayEvents = events.filter((event) => isSameDay(event.date, selectedDate))
-        if (dayEvents.length >= 2) {
-          // If we already have 2 events, don't add more
-          alert("Maximum of 2 events per day. Please edit or delete an existing event.")
-          return
-        } else {
-          // We're adding a new event and we have less than 2 events
-          const newEvent = {
-            id: Math.random().toString(36).substring(2, 11),
-            date: selectedDate,
-            content: eventContent,
-            color: selectedColor,
-            projectId,
-          }
-
-          // Add the new event to the events array
-          const updatedEvents = [...events, newEvent]
-          setEvents(updatedEvents)
-
-          // Force save to localStorage immediately
-          localStorage.setItem("calendarEvents", JSON.stringify(updatedEvents))
-
-          // Add to the current day's events
-          setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
-        }
-      }
-    }
-
-    // Reset the form for adding another event
-    setEditingEventId(null)
-    setEventContent("")
-    setSelectedColor("text-black")
-  }
-
-  const handleSaveAndClose = () => {
-    // First save any pending event
-    if (eventContent.trim()) {
-      handleSaveEvent()
-    }
-
-    // Then close the modal
-    setShowModal(false)
-    setSelectedDate(null)
   }
 
   const handleCancelEdit = () => {
     setShowModal(false)
     setSelectedDate(null)
-    setEventContent("")
-    setSelectedColor("text-black")
+    setActiveEventIndex(0)
   }
 
-  // Handle Enter key in textarea
-  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    // Save and close on Enter without shift key (shift+enter allows for line breaks)
+  const handleSaveAndClose = () => {
+    // Save any changes to the events
+    if (eventsForSelectedDate.length > 0) {
+      // First, remove all events for this day from the main events array
+      const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
+
+      // Then add back the updated events for this day
+      const newEvents = [...otherEvents, ...eventsForSelectedDate]
+      setEvents(newEvents)
+
+      // Save to localStorage immediately
+      localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
+    }
+
+    // Close the modal
+    setShowModal(false)
+    setSelectedDate(null)
+    setActiveEventIndex(0)
+  }
+
+  // Update the handleUpdateEventContent function to handle formatted content
+  const handleUpdateEventContent = (index: number, content: string, formattedContent?: string) => {
+    if (index >= eventsForSelectedDate.length) return
+
+    const updatedEvents = [...eventsForSelectedDate]
+    if (formattedContent) {
+      updatedEvents[index] = { ...updatedEvents[index], content, formattedContent }
+    } else {
+      updatedEvents[index] = { ...updatedEvents[index], content }
+    }
+    setEventsForSelectedDate(updatedEvents)
+  }
+
+  // Add a function to handle bold formatting
+  const handleBoldText = () => {
+    if (activeEventIndex >= eventsForSelectedDate.length || !selectedText) return
+
+    const event = eventsForSelectedDate[activeEventIndex]
+    const content = event.content
+
+    // Get the selected text
+    const selectedContent = content.substring(selectedText.start, selectedText.end)
+
+    // Create the formatted content by wrapping selected text in <strong> tags
+    const formattedContent =
+      content.substring(0, selectedText.start) +
+      `<strong>${selectedContent}</strong>` +
+      content.substring(selectedText.end)
+
+    // Update the event with both plain content and formatted content
+    handleUpdateEventContent(activeEventIndex, content, formattedContent)
+
+    // Reset selection
+    setSelectedText(null)
+  }
+
+  // Update the handleTextareaKeyDown function to allow Shift+Enter for new lines
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Only save and close on Enter without shift key (shift+enter allows for line breaks)
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSaveAndClose() // This will save and close the modal
     }
+  }
+
+  // Add a function to track text selection
+  const handleTextSelect = (e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => {
+    const textarea = e.currentTarget
+    setSelectedText({
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    })
   }
 
   // Show reset confirmation modal
@@ -1225,9 +1216,10 @@ export default function Calendar() {
                   style={{
                     color: getExactColorHex(limitedEvents[0].color),
                   }}
-                >
-                  {limitedEvents[0] ? limitedEvents[0].content : ""}
-                </span>
+                  dangerouslySetInnerHTML={{
+                    __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
+                  }}
+                ></span>
               </div>
             ) : (
               // If there are two events, space them with the divider centered
@@ -1243,9 +1235,10 @@ export default function Calendar() {
                     style={{
                       color: getExactColorHex(limitedEvents[0]?.color),
                     }}
-                  >
-                    {limitedEvents[0] ? limitedEvents[0].content : ""}
-                  </span>
+                    dangerouslySetInnerHTML={{
+                      __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
+                    }}
+                  ></span>
                 </div>
 
                 {/* Only show divider when there are two entries */}
@@ -1264,9 +1257,10 @@ export default function Calendar() {
                     style={{
                       color: getExactColorHex(limitedEvents[1]?.color),
                     }}
-                  >
-                    {limitedEvents[1] ? limitedEvents[1].content : ""}
-                  </span>
+                    dangerouslySetInnerHTML={{
+                      __html: limitedEvents[1] ? limitedEvents[1].formattedContent || limitedEvents[1].content : "",
+                    }}
+                  ></span>
                 </div>
               </div>
             )}
@@ -1318,35 +1312,18 @@ export default function Calendar() {
   const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
   const weekDaysMobile = ["S", "M", "T", "W", "T", "F", "S"]
 
-  // Add a function to edit an existing event
-  const handleEditEvent = (event: CalendarEvent) => {
-    setEditingEventId(event.id)
-    setEventContent(event.content)
-    setSelectedColor(event.color || "text-black")
-  }
-
   // Add a function to delete an event
   const handleDeleteEvent = (eventId: string) => {
-    // Remove from global events
-    const updatedEvents = events.filter((event) => event.id !== eventId)
-    setEvents(updatedEvents)
-
     // Remove from current day's events
     const updatedDayEvents = eventsForSelectedDate.filter((event) => event.id !== eventId)
     setEventsForSelectedDate(updatedDayEvents)
 
-    // Reset form if we were editing this event
-    if (editingEventId === eventId) {
-      setEditingEventId(null)
-      setEventContent("")
-      setSelectedColor("text-black")
+    // Remove from global events
+    const updatedEvents = events.filter((event) => event.id !== eventId)
+    setEvents(updatedEvents)
 
-      // If there are no more events for this day, close the modal
-      if (updatedDayEvents.length === 0) {
-        setShowModal(false)
-        setSelectedDate(null)
-      }
-    }
+    // Save to localStorage immediately
+    localStorage.setItem("calendarEvents", JSON.stringify(updatedEvents))
   }
 
   // Add a new function to swap the order of events for a day
@@ -1368,29 +1345,13 @@ export default function Calendar() {
     localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
   }
 
-  const handleReorderEvents = (dragIndex: number, hoverIndex: number) => {
-    // Create a new array with reordered events
-    const updatedDayEvents = [...eventsForSelectedDate]
+  // Update event color
+  const handleUpdateEventColor = (index: number, color: string, projectId: string) => {
+    if (index >= eventsForSelectedDate.length) return
 
-    // Get the dragged event
-    const draggedEvent = updatedDayEvents[dragIndex]
-
-    // Remove the dragged event from the array
-    updatedDayEvents.splice(dragIndex, 1)
-
-    // Insert it at the new position
-    updatedDayEvents.splice(hoverIndex, 0, draggedEvent)
-
-    // Update the state
-    setEventsForSelectedDate(updatedDayEvents)
-
-    // Update the global events array by removing all events for this day and adding the reordered ones
-    const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
-    const newEvents = [...otherEvents, ...updatedDayEvents]
-    setEvents(newEvents)
-
-    // Save to localStorage immediately
-    localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
+    const updatedEvents = [...eventsForSelectedDate]
+    updatedEvents[index] = { ...updatedEvents[index], color, projectId }
+    setEventsForSelectedDate(updatedEvents)
   }
 
   const formatDate = (date: Date | null) => {
@@ -1398,33 +1359,27 @@ export default function Calendar() {
     return format(date, "MMMM d, yyyy").toUpperCase()
   }
 
-  const [eventText, setEventText] = useState("")
-  const [selectedProject, setSelectedProject] = useState("General")
-  const projects = ["General", "Work", "Personal", "Errands"]
-  const colors = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00"]
+  // Add a new event
+  const handleAddNewEvent = () => {
+    if (!selectedDate || eventsForSelectedDate.length >= 2) return
 
-  const closeModal = () => {
-    setShowModal(false)
-  }
-
-  const saveEvent = () => {
-    if (!selectedDate) return
-
+    // Create a new empty event
     const newEvent = {
       id: Math.random().toString(36).substring(2, 11),
       date: selectedDate,
-      content: eventText,
-      color: selectedColor,
+      content: "",
+      color: "text-black",
       projectId: "default",
     }
 
-    setEvents([...events, newEvent])
-    localStorage.setItem("calendarEvents", JSON.stringify([...events, newEvent]))
-    closeModal()
+    // Add to the events for this day
+    setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
+
+    // Set the active index to the new event
+    setActiveEventIndex(eventsForSelectedDate.length)
   }
 
   // Add keyboard event handlers for left and right arrow keys
-  // Add this effect to handle keyboard navigation:
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only handle keyboard events when no modal is open
@@ -1450,11 +1405,10 @@ export default function Calendar() {
   }, [showModal, showResetConfirm, showShareModal, showDateSelector, currentDate])
 
   // Update the event modal to close when clicking outside
-  // Add this effect to handle clicks outside the event modal:
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showModal && eventModalRef.current && !eventModalRef.current.contains(event.target as Node)) {
-        setShowModal(false)
+        handleSaveAndClose() // Save changes before closing
       }
     }
 
@@ -1462,7 +1416,7 @@ export default function Calendar() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
-  }, [showModal])
+  }, [showModal, eventsForSelectedDate])
 
   // Update the reset confirmation modal to close when clicking outside
   useEffect(() => {
@@ -1491,26 +1445,6 @@ export default function Calendar() {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [showShareModal])
-
-  // Add useEffect to focus the textarea and place cursor at the end when the event modal opens
-  // Add this after the existing useEffect hooks
-
-  // Focus textarea and place cursor at end when event modal opens
-  useEffect(() => {
-    if (showModal) {
-      // Focus the textarea after a short delay to ensure the DOM is ready
-      const timer = setTimeout(() => {
-        const input = document.getElementById("event-content") as HTMLInputElement
-        if (input) {
-          input.focus()
-          // Place cursor at the end of the text
-          const length = input.value.length
-          input.setSelectionRange(length, length)
-        }
-      }, 50)
-      return () => clearTimeout(timer)
-    }
-  }, [showModal])
 
   return (
     <div className="flex flex-col space-y-4 min-h-screen">
@@ -1665,7 +1599,7 @@ export default function Calendar() {
                   strokeLinejoin="round"
                   className="h-3 w-3 md:h-4 md:w-4"
                 >
-                  <polyline points="9 18 15 12 9 6"></polyline>
+                  <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
               </button>
             </div>
@@ -1815,7 +1749,7 @@ export default function Calendar() {
                   {formatDate(selectedDate)}
                 </h3>
                 <button
-                  onClick={() => setShowModal(false)}
+                  onClick={handleSaveAndClose}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   <svg
@@ -1847,120 +1781,12 @@ export default function Calendar() {
                 </label>
 
                 {/* First Event */}
-                <div
-                  className="flex gap-2 mb-2 items-center"
-                  draggable={eventsForSelectedDate.length > 1}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData("eventIndex", "0")
-                    e.currentTarget.classList.add("opacity-50")
-                  }}
-                  onDragEnd={(e) => {
-                    e.currentTarget.classList.remove("opacity-50")
-                  }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    const draggedIndex = Number.parseInt(e.dataTransfer.getData("eventIndex"))
-                    if (draggedIndex === 1) {
-                      // If second event was dragged to first position
-                      handleSwapEvents()
-                    }
-                  }}
-                >
-                  {eventsForSelectedDate.length > 1 && (
-                    <div className="cursor-move p-2 text-gray-400">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4"
-                      >
-                        <line x1="8" y1="6" x2="21" y2="6"></line>
-                        <line x1="8" y1="12" x2="21" y2="12"></line>
-                        <line x1="8" y1="18" x2="21" y2="18"></line>
-                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                      </svg>
-                    </div>
-                  )}
-                  <input
-                    type="text"
-                    id="event-content-1"
-                    value={editingEventId ? eventContent : eventsForSelectedDate[0]?.content || eventContent}
-                    onChange={(e) => {
-                      if (editingEventId || eventsForSelectedDate.length === 0) {
-                        setEventContent(e.target.value)
-                      } else {
-                        const updatedEvents = [...eventsForSelectedDate]
-                        updatedEvents[0] = { ...updatedEvents[0], content: e.target.value }
-                        setEventsForSelectedDate(updatedEvents)
-
-                        // Update in the main events array too
-                        setEvents(
-                          events.map((event) =>
-                            event.id === updatedEvents[0].id ? { ...event, content: e.target.value } : event,
-                          ),
-                        )
-                      }
-                    }}
-                    onKeyDown={handleTextareaKeyDown}
-                    ref={eventInputRef}
-                    className="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
-                    placeholder="ENTER EVENT NAME"
-                  />
-                  {eventsForSelectedDate.length > 0 && eventsForSelectedDate[0] && (
-                    <button
-                      onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
-                      className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100 self-center"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-5 w-5"
-                      >
-                        <path d="M3 6h18"></path>
-                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                      </svg>
-                    </button>
-                  )}
-                </div>
-
-                {/* Second Event */}
-                {eventsForSelectedDate.length > 1 && (
+                {eventsForSelectedDate.length > 0 && (
                   <div
-                    className="flex gap-2 items-center"
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("eventIndex", "1")
-                      e.currentTarget.classList.add("opacity-50")
-                    }}
-                    onDragEnd={(e) => {
-                      e.currentTarget.classList.remove("opacity-50")
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      const draggedIndex = Number.parseInt(e.dataTransfer.getData("eventIndex"))
-                      if (draggedIndex === 0) {
-                        // If first event was dragged to second position
-                        handleSwapEvents()
-                      }
-                    }}
+                    className={`flex gap-2 mb-2 items-center rounded-md ${
+                      activeEventIndex === 0 ? "event-input-active" : ""
+                    }`}
+                    onClick={() => setActiveEventIndex(0)}
                   >
                     <div className="cursor-move p-2 text-gray-400">
                       <svg
@@ -1983,25 +1809,114 @@ export default function Calendar() {
                         <line x1="3" y1="18" x2="3.01" y2="18"></line>
                       </svg>
                     </div>
-                    <input
-                      type="text"
-                      id="event-content-2"
-                      value={eventsForSelectedDate[1].content}
-                      onChange={(e) => {
-                        const updatedEvents = [...eventsForSelectedDate]
-                        updatedEvents[1] = { ...updatedEvents[1], content: e.target.value }
-                        setEventsForSelectedDate(updatedEvents)
+                    <div className="flex-1 flex flex-col">
+                      <div className="flex mb-1 gap-1">
+                        <button
+                          onClick={handleBoldText}
+                          className={`p-1 text-xs border rounded ${
+                            selectedText && selectedText.start !== selectedText.end
+                              ? "bg-gray-100 text-gray-800"
+                              : "text-gray-400"
+                          }`}
+                          disabled={!selectedText || selectedText.start === selectedText.end}
+                          title="Bold (select text first)"
+                        >
+                          <span className="font-bold">B</span>
+                        </button>
+                      </div>
+                      <textarea
+                        id="event-content-1"
+                        value={eventsForSelectedDate[0]?.content || ""}
+                        onChange={(e) => handleUpdateEventContent(0, e.target.value)}
+                        onKeyDown={handleTextareaKeyDown}
+                        onMouseUp={handleTextSelect}
+                        onTouchEnd={handleTextSelect}
+                        ref={eventInputRef}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
+                        placeholder="ENTER EVENT NAME"
+                        rows={2}
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
+                      className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100 self-center"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-5 w-5"
+                      >
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                      </svg>
+                    </button>
+                  </div>
+                )}
 
-                        // Update in the main events array too
-                        setEvents(
-                          events.map((event) =>
-                            event.id === updatedEvents[1].id ? { ...event, content: e.target.value } : event,
-                          ),
-                        )
-                      }}
-                      className="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
-                      placeholder="ENTER EVENT NAME"
-                    />
+                {/* Second Event */}
+                {eventsForSelectedDate.length > 1 && (
+                  <div
+                    className={`flex gap-2 mb-2 items-center rounded-md ${
+                      activeEventIndex === 1 ? "event-input-active" : ""
+                    }`}
+                    onClick={() => setActiveEventIndex(1)}
+                  >
+                    <div className="cursor-move p-2 text-gray-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4"
+                      >
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                      </svg>
+                    </div>
+                    <div className="flex-1 flex flex-col">
+                      <div className="flex mb-1 gap-1">
+                        <button
+                          onClick={handleBoldText}
+                          className={`p-1 text-xs border rounded ${
+                            selectedText && selectedText.start !== selectedText.end
+                              ? "bg-gray-100 text-gray-800"
+                              : "text-gray-400"
+                          }`}
+                          disabled={!selectedText || selectedText.start === selectedText.end}
+                          title="Bold (select text first)"
+                        >
+                          <span className="font-bold">B</span>
+                        </button>
+                      </div>
+                      <textarea
+                        id="event-content-2"
+                        value={eventsForSelectedDate[1]?.content || ""}
+                        onChange={(e) => handleUpdateEventContent(1, e.target.value)}
+                        onKeyDown={handleTextareaKeyDown}
+                        onMouseUp={handleTextSelect}
+                        onTouchEnd={handleTextSelect}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
+                        placeholder="ENTER EVENT NAME"
+                        rows={2}
+                      />
+                    </div>
                     <button
                       onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
                       className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100 self-center"
@@ -2027,25 +1942,35 @@ export default function Calendar() {
                 )}
               </div>
 
-              {/* Add New Event button - Show when there's content in the first input or fewer than 2 events */}
+              {/* Swap Order Button - Only show when there are 2 events */}
+              {eventsForSelectedDate.length === 2 && (
+                <button
+                  onClick={handleSwapEvents}
+                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 mb-4 shadow-sm"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 mr-2"
+                  >
+                    <path d="M7 16V4m0 0L3 8m4-4l4 4" />
+                    <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  SWAP ORDER
+                </button>
+              )}
+
+              {/* Add New Event button - Show when there are fewer than 2 events */}
               {eventsForSelectedDate.length < 2 && (
                 <button
-                  onClick={() => {
-                    // Create a new empty event
-                    const newEvent = {
-                      id: Math.random().toString(36).substring(2, 11),
-                      date: selectedDate as Date,
-                      content: "",
-                      color: "text-black",
-                      projectId: "default",
-                    }
-
-                    // Add to the events for this day
-                    setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
-
-                    // Add to the main events array
-                    setEvents([...events, newEvent])
-                  }}
+                  onClick={handleAddNewEvent}
                   className="w-full flex items-center justify-center py-3 px-4 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 my-2 shadow-sm"
                 >
                   <svg
@@ -2066,56 +1991,25 @@ export default function Calendar() {
                   ADD NEW EVENT
                 </button>
               )}
+
               {/* Tag Selection - Now appears below both events */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">TAG</label>
                 <div className="flex flex-wrap gap-2">
                   {projectGroups.map((group) => {
                     const bgColor = getBgFromTextColor(group.color)
-                    const isSelected = editingEventId
-                      ? selectedColor === group.color
-                      : eventsForSelectedDate.length > 0 && eventsForSelectedDate[0]?.color === group.color
+
+                    // Determine if this tag is selected based on the active event
+                    const isSelected =
+                      eventsForSelectedDate.length > activeEventIndex &&
+                      eventsForSelectedDate[activeEventIndex]?.color === group.color
 
                     return (
                       <button
                         key={group.id}
                         onClick={() => {
-                          if (editingEventId || eventsForSelectedDate.length === 0) {
-                            setSelectedColor(group.color)
-                            if (editingEventId) {
-                              setEvents(
-                                events.map((event) =>
-                                  event.id === editingEventId
-                                    ? { ...event, color: group.color, projectId: group.id }
-                                    : event,
-                                ),
-                              )
-                              setEventsForSelectedDate(
-                                eventsForSelectedDate.map((event) =>
-                                  event.id === editingEventId
-                                    ? { ...event, color: group.color, projectId: group.id }
-                                    : event,
-                                ),
-                              )
-                            }
-                          } else if (eventsForSelectedDate.length > 0) {
-                            // Update the first event's color
-                            const updatedEvents = [...eventsForSelectedDate]
-                            updatedEvents[0] = {
-                              ...updatedEvents[0],
-                              color: group.color,
-                              projectId: group.id,
-                            }
-                            setEventsForSelectedDate(updatedEvents)
-
-                            // Update in the main events array too
-                            setEvents(
-                              events.map((event) =>
-                                event.id === updatedEvents[0].id
-                                  ? { ...event, color: group.color, projectId: group.id }
-                                  : event,
-                              ),
-                            )
+                          if (eventsForSelectedDate.length > activeEventIndex) {
+                            handleUpdateEventColor(activeEventIndex, group.color, group.id)
                           }
                         }}
                         className={cn(

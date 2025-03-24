@@ -574,7 +574,7 @@ export default function Calendar() {
         return
       }
 
-      // Create a simple wrapper with padding
+      // Create a wrapper with padding
       const wrapper = document.createElement("div")
       wrapper.style.padding = "40px"
       wrapper.style.backgroundColor = "white"
@@ -584,16 +584,28 @@ export default function Calendar() {
       wrapper.style.zIndex = "-1000"
       wrapper.style.width = calendarElement.offsetWidth + 80 + "px"
       wrapper.style.height = calendarElement.offsetHeight + 80 + "px"
+      wrapper.style.overflow = "visible"
 
       // Clone the calendar
       const clone = calendarElement.cloneNode(true) as HTMLElement
+
+      // Make sure all text is visible in the clone
+      const textElements = clone.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4")
+      textElements.forEach((el: HTMLElement) => {
+        el.style.overflow = "visible"
+        el.style.textOverflow = "clip"
+        el.style.whiteSpace = "normal"
+        el.style.webkitLineClamp = "none"
+        el.style.display = "block"
+        el.style.maxHeight = "none"
+      })
 
       // Append to body
       document.body.appendChild(wrapper)
       wrapper.appendChild(clone)
 
       // Wait a moment for the DOM to update
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
       // Render with html2canvas
       const canvas = await html2canvas.default(wrapper, {
@@ -609,6 +621,19 @@ export default function Calendar() {
             clonedCalendar.style.width = calendarElement.offsetWidth + "px"
             clonedCalendar.style.height = "auto"
             clonedCalendar.style.overflow = "visible"
+
+            // Make sure all text is visible
+            const textElements = doc.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4")
+            textElements.forEach((el: HTMLElement) => {
+              el.style.overflow = "visible"
+              el.style.textOverflow = "clip"
+              el.style.whiteSpace = "normal"
+              if (el.style.webkitLineClamp) {
+                el.style.webkitLineClamp = "none"
+              }
+              el.style.display = "block"
+              el.style.maxHeight = "none"
+            })
           }
         },
       })

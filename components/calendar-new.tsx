@@ -1,4 +1,3 @@
-
 "use client"
 
 import type React from "react"
@@ -25,7 +24,7 @@ const colorOptions = [
   { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white", hex: "#ff0000" },
   { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-white", hex: "#ff7200" },
   { name: "Yellow", value: "text-yellow-500", bg: "bg-[#e3e600]", text: "text-white", hex: "#e3e600" },
-  { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white", hex: "#1ae100" },
+  { name: "Green", value="text-green-600", bg: "bg-[#1ae100]", text: "text-white", hex: "#1ae100" },
   { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white", hex: "#0012ff" },
   { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white", hex: "#a800ff" },
 ]
@@ -638,7 +637,7 @@ export default function Calendar() {
                 ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
             ),
         )
-        const limitedEvents = dayEvents.slice(0, 2)
+        const limitedEventsScreenshot = dayEvents.slice(0, 2)
         const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
         const isWeekend = getDay(date) === 0 || getDay(date) === 6
 
@@ -663,18 +662,15 @@ export default function Calendar() {
         // Add holidays
         const holidaysContainer = document.createElement("div")
         holidaysContainer.style.marginTop = "25px"
-        holidaysContainer.style.overflow = "visible"
 
         dayHolidays.forEach((holiday) => {
           const holidayDiv = document.createElement("div")
-          holidayDiv.style.fontSize = "10px"
+          holidayDiv.textContent = holiday.name.toUpperCase()
+          holidayDiv.style.fontSize = "9px"
           holidayDiv.style.textTransform = "uppercase"
           holidayDiv.style.letterSpacing = "0.05em"
           holidayDiv.style.color = "#666"
           holidayDiv.style.marginBottom = "3px"
-          holidayDiv.style.whiteSpace = "normal"
-          holidayDiv.style.wordBreak = "break-word"
-          holidayDiv.textContent = holiday.name
           holidaysContainer.appendChild(holidayDiv)
         })
 
@@ -688,60 +684,67 @@ export default function Calendar() {
         eventsContainer.style.height = "calc(100% - 25px)"
 
         // If there's only one event, center it vertically
-        if (limitedEvents.length === 1) {
+        if (dayEvents.length === 1) {
           eventsContainer.style.justifyContent = "center"
         } else {
           eventsContainer.style.justifyContent = "space-between"
         }
 
-        if (limitedEvents.length === 1) {
+        // Limit to 2 events
+        const limitedEventsScreenshotSliced = dayEvents.slice(0, 2)
+
+        if (limitedEventsScreenshotSliced.length === 1) {
           // Single event - centered vertically
-          const event = limitedEvents[0]
+          const event = limitedEventsScreenshotSliced[0]
           const eventDiv = document.createElement("div")
           eventDiv.textContent = event.content
           eventDiv.style.fontSize = "11px"
           eventDiv.style.fontWeight = "500"
           eventDiv.style.wordBreak = "break-word"
-          eventDiv.style.overflow = "visible"
+          eventDiv.style.overflow = "hidden"
           eventDiv.style.maxWidth = "100%"
-          eventDiv.style.whiteSpace = "normal"
+          eventDiv.style.textOverflow = "ellipsis"
+          eventDiv.style.whiteSpace = "nowrap"
 
+          // Update the first instance of color mapping in the createPrintableCalendar function for single events
           // Convert Tailwind color classes to CSS colors
           let color = "#000"
-          if (event?.color?.includes("blue")) color = "#0012ff"
-          if (event?.color?.includes("red")) color = "#ff0000"
+          if (event?.color?.includes("blue")) color = "#2563eb"
+          if (event?.color?.includes("red")) color = "#dc2626"
           if (event?.color?.includes("yellow")) color = "#e3e600"
-          if (event?.color?.includes("orange")) color = "#ff7200"
-          if (event?.color?.includes("green")) color = "#1ae100"
-          if (event?.color?.includes("purple")) color = "#a800ff"
+          if (event?.color?.includes("orange")) color = "#f97316"
+          if (event?.color?.includes("green")) color = "#16a34a"
+          if (event?.color?.includes("purple")) color = "#9333ea"
 
           eventDiv.style.color = color
           eventsContainer.appendChild(eventDiv)
-        } else if (limitedEvents.length === 2) {
+        } else if (limitedEventsScreenshotSliced.length === 2) {
           // Two events with centered divider
           const topEventContainer = document.createElement("div")
           topEventContainer.style.flex = "1"
           topEventContainer.style.display = "flex"
           topEventContainer.style.alignItems = "flex-start"
 
-          const event1 = limitedEvents[0]
+          const event1 = limitedEventsScreenshotSliced[0]
           const eventDiv1 = document.createElement("div")
           eventDiv1.textContent = event1.content
           eventDiv1.style.fontSize = "11px"
           eventDiv1.style.fontWeight = "500"
           eventDiv1.style.wordBreak = "break-word"
-          eventDiv1.style.overflow = "visible"
+          eventDiv1.style.overflow = "hidden"
           eventDiv1.style.maxWidth = "100%"
-          eventDiv1.style.whiteSpace = "normal"
+          eventDiv1.style.textOverflow = "ellipsis"
+          eventDiv1.style.whiteSpace = "nowrap"
 
+          // Update the color mapping in the createPrintableCalendar function for yellow
           // Convert Tailwind color classes to CSS colors
           let color1 = "#000"
-          if (event1?.color?.includes("blue")) color1 = "#0012ff"
-          if (event1?.color?.includes("red")) color1 = "#ff0000"
+          if (event1?.color?.includes("blue")) color1 = "#2563eb"
+          if (event1?.color?.includes("red")) color1 = "#dc2626"
           if (event1?.color?.includes("yellow")) color1 = "#e3e600"
-          if (event1?.color?.includes("orange")) color1 = "#ff7200"
-          if (event1?.color?.includes("green")) color1 = "#1ae100"
-          if (event1?.color?.includes("purple")) color1 = "#a800ff"
+          if (event1?.color?.includes("orange")) color1 = "#f97316"
+          if (event1?.color?.includes("green")) color1 = "#16a34a"
+          if (event1?.color?.includes("purple")) color1 = "#9333ea"
 
           eventDiv1.style.color = color1
           topEventContainer.appendChild(eventDiv1)
@@ -761,24 +764,25 @@ export default function Calendar() {
           bottomEventContainer.style.display = "flex"
           bottomEventContainer.style.alignItems = "flex-end"
 
-          const event2 = limitedEvents[1]
+          const event2 = limitedEventsScreenshotSliced[1]
           const eventDiv2 = document.createElement("div")
           eventDiv2.textContent = event2.content
           eventDiv2.style.fontSize = "11px"
           eventDiv2.style.fontWeight = "500"
           eventDiv2.style.wordBreak = "break-word"
-          eventDiv2.style.overflow = "visible"
+          eventDiv2.style.overflow = "hidden"
           eventDiv2.style.maxWidth = "100%"
-          eventDiv2.style.whiteSpace = "normal"
+          eventDiv2.style.textOverflow = "ellipsis"
+          eventDiv2.style.whiteSpace = "nowrap"
 
           // Convert Tailwind color classes to CSS colors
           let color2 = "#000"
-          if (event2?.color?.includes("blue")) color2 = "#0012ff"
-          if (event2?.color?.includes("red")) color2 = "#ff0000"
+          if (event2?.color?.includes("blue")) color2 = "#2563eb"
+          if (event2?.color?.includes("red")) color2 = "#dc2626"
           if (event2?.color?.includes("yellow")) color2 = "#e3e600"
-          if (event2?.color?.includes("orange")) color2 = "#ff7200"
-          if (event2?.color?.includes("green")) color2 = "#1ae100"
-          if (event2?.color?.includes("purple")) color2 = "#a800ff"
+          if (event2?.color?.includes("orange")) color2 = "#f97316"
+          if (event2?.color?.includes("green")) color2 = "#16a34a"
+          if (event2?.color?.includes("purple")) color2 = "#9333ea"
 
           eventDiv2.style.color = color2
           bottomEventContainer.appendChild(eventDiv2)
@@ -959,11 +963,11 @@ export default function Calendar() {
       }
 
       // Limit to 2 events
-      const limitedEvents = dayEvents.slice(0, 2)
+      const limitedEventsPrint = dayEvents.slice(0, 2)
 
-      if (limitedEvents.length === 1) {
+      if (limitedEventsPrint.length === 1) {
         // Single event - centered vertically
-        const event = limitedEvents[0]
+        const event = limitedEventsPrint[0]
         const eventDiv = document.createElement("div")
         eventDiv.textContent = event.content
         eventDiv.style.fontSize = "11px"
@@ -986,14 +990,14 @@ export default function Calendar() {
 
         eventDiv.style.color = color
         eventsContainer.appendChild(eventDiv)
-      } else if (limitedEvents.length === 2) {
+      } else if (limitedEventsPrint.length === 2) {
         // Two events with centered divider
         const topEventContainer = document.createElement("div")
         topEventContainer.style.flex = "1"
         topEventContainer.style.display = "flex"
         topEventContainer.style.alignItems = "flex-start"
 
-        const event1 = limitedEvents[0]
+        const event1 = limitedEventsPrint[0]
         const eventDiv1 = document.createElement("div")
         eventDiv1.textContent = event1.content
         eventDiv1.style.fontSize = "11px"
@@ -1032,7 +1036,7 @@ export default function Calendar() {
         bottomEventContainer.style.display = "flex"
         bottomEventContainer.style.alignItems = "flex-end"
 
-        const event2 = limitedEvents[1]
+        const event2 = limitedEventsPrint[1]
         const eventDiv2 = document.createElement("div")
         eventDiv2.textContent = event2.content
         eventDiv2.style.fontSize = "11px"
@@ -1086,10 +1090,11 @@ export default function Calendar() {
     // Add only user events (no holidays)
     events.forEach((event) => {
       const dateString = format(event.date, "yyyyMMdd")
+      const uid = `${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`
       icalContent = [
         ...icalContent,
         "BEGIN:VEVENT",
-        `UID:${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`,
+        `UID:${uid}`,
         `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
         `DTSTART;VALUE=DATE:${dateString}`,
         `DTEND;VALUE=DATE:${dateString}`,
@@ -1172,7 +1177,7 @@ export default function Calendar() {
           ),
       )
       // Limit to 2 events per day
-      const limitedEvents = dayEvents.slice(0, 2)
+      const limitedEventsRender = dayEvents.slice(0, 2)
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
       const isCurrentDay = isToday(date)
@@ -1185,87 +1190,76 @@ export default function Calendar() {
           onDragOver={(e) => handleDragOver(date, e)}
           onDrop={(e) => handleDrop(date, e)}
           className={cn(
-            "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800 p-1 md:p-2 pt-0.5 md:pt-1",
+            "calendar-day relative h-24 border border-gray-100 dark:border-gray-800 p-2",
             isWeekend ? "bg-gray-50/30 dark:bg-gray-900/30" : "",
-            isCurrentDay ? "bg-gray-50 dark:bg-gray-900/50" : "",
             isDragOver ? "bg-gray-100 dark:bg-gray-800" : "",
           )}
         >
-          <div
-            className={cn(
-              "absolute right-1 md:right-2 top-0.5 flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full font-mono text-[10px] md:text-xs",
-              isCurrentDay ? "bg-gray-200 dark:bg-gray-700" : "text-gray-400 dark:text-gray-500",
-            )}
-          >
-            {day}
-          </div>
+          <div className={cn("absolute right-2 top-1 font-mono text-xs text-gray-400 dark:text-gray-500")}>{day}</div>
 
           <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
             {dayHolidays.map((holiday, index) => (
               <div
                 key={`holiday-${index}`}
-                className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
+                className="font-mono text-[8px] md:text-[9px] tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words holiday-name"
               >
-                {holiday.name.toUpperCase()}
+                {holiday.name}
               </div>
             ))}
           </div>
 
-          <div className="mt-0 pt-0 overflow-visible flex flex-col h-[calc(100%-12px)] justify-center">
-            {limitedEvents.length === 1 ? (
-              // If there's only one event, center it vertically
+          <div className="mt-1 overflow-visible flex flex-col h-[calc(100%-20px)] justify-center">
+            {limitedEventsRender.length === 1 ? (
               <div
                 className="flex-1 flex items-center"
                 draggable
-                onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
+                onDragStart={(e) => handleDragStart(limitedEventsRender[0], e)}
                 onDragEnd={handleDragEnd}
               >
                 <span
                   className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-4 break-words"
                   style={{
-                    color: getExactColorHex(limitedEvents[0].color),
+                    color: getExactColorHex(limitedEventsRender[0].color),
                   }}
                 >
-                  {limitedEvents[0] ? limitedEvents[0].content : ""}
+                  {limitedEventsRender[0] ? limitedEventsRender[0].content : ""}
                 </span>
               </div>
             ) : (
-              // If there are two events, space them with the divider centered
               <div className="flex flex-col h-full">
                 <div
                   className="flex-1 flex items-start"
                   draggable
-                  onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
+                  onDragStart={(e) => handleDragStart(limitedEventsRender[0], e)}
                   onDragEnd={handleDragEnd}
                 >
                   <span
                     className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
                     style={{
-                      color: getExactColorHex(limitedEvents[0]?.color),
+                      color: getExactColorHex(limitedEventsRender[0]?.color),
                     }}
                   >
-                    {limitedEvents[0] ? limitedEvents[0].content : ""}
+                    {limitedEventsRender[0] ? limitedEventsRender[0].content : ""}
                   </span>
                 </div>
 
-                {/* Only show divider when there are two entries */}
-                {limitedEvents.length === 2 && (
+                {limitedEventsRender.length === 2 && (
                   <div className="border-t border-gray-200 dark:border-gray-700 w-full my-auto"></div>
                 )}
 
                 <div
                   className="flex-1 flex items-end"
                   draggable
-                  onDragStart={(e) => handleDragStart(limitedEvents[1], e)}
+                  onDragStart={(e) => handleDragStart(limitedEventsRender[1], e)}
                   onDragEnd={handleDragEnd}
                 >
                   <span
                     className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
                     style={{
-                      color: getExactColorHex(limitedEvents[1]?.color),
+                      color: getExactColorHex(limitedEventsRender[1]?.color),
                     }}
                   >
-                    {limitedEvents[1] ? limitedEvents[1].content : ""}
+                    {limitedEventsRender[1] ? limitedEventsRender[1].content : ""}
                   </span>
                 </div>
               </div>
@@ -1347,6 +1341,27 @@ export default function Calendar() {
         setSelectedDate(null)
       }
     }
+  }
+
+  // Add a new function to swap the order of events for a day
+  // Add this after the handleDeleteEvent function
+
+  const handleSwapEvents = () => {
+    if (eventsForSelectedDate.length !== 2) return
+
+    // Create a new array with swapped events
+    const swappedEvents = [eventsForSelectedDate[1], eventsForSelectedDate[0]]
+
+    // Update the events for selected date
+    setEventsForSelectedDate(swappedEvents)
+
+    // Update the global events array by removing all events for this day and adding the swapped ones
+    const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
+    const newEvents = [...otherEvents, ...swappedEvents]
+    setEvents(newEvents)
+
+    // Save to localStorage immediately
+    localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
   }
 
   const handleReorderEvents = (dragIndex: number, hoverIndex: number) => {
@@ -1495,144 +1510,111 @@ export default function Calendar() {
 
   return (
     <div className="flex flex-col space-y-4 min-h-screen">
-      {/* Calendar Controls - Now with reset button on left and others on right */}
-      <div className="calendar-controls flex items-center justify-between gap-2 p-0 mb-1">
-        {/* Reset button on the left */}
-        <div>
-          <button
-            onClick={handleShowResetConfirm}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Reset Calendar Data"
+      <div className="calendar-controls flex items-center justify-center gap-4 p-0 mb-6">
+        <button
+          onClick={handleShowResetConfirm}
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3 mr-1"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3 w-3"
-            >
-              <path d="M3 2v6h6"></path>
-              <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
-              <path d="M21 22v-6h-6"></path>
-              <path d="M3 12a9  9 0 0 0 15 6.7l3-2.7"></path>
-            </svg>
-            <span>RESET</span>
-          </button>
-        </div>
+            <path d="M3 2v6h6"></path>
+            <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
+            <path d="M21 22v-6h-6"></path>
+            <path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path>
+          </svg>
+          RESET
+        </button>
 
-        {/* Other buttons on the right */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={downloadCalendarAsImage}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Download as Image"
-            disabled={isDownloading}
+        <button
+          onClick={downloadCalendarAsImage}
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          disabled={isDownloading}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3 mr-1"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3 w-3"
-            >
-              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-              <circle cx="12" cy="13" r="3" />
-            </svg>
-            <span>SCREENSHOT</span>
-          </button>
-          <button
-            onClick={exportToIcal}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Export to iCal"
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+            <circle cx="12" cy="13" r="3" />
+          </svg>
+          SCREENSHOT
+        </button>
+
+        <button
+          onClick={exportToIcal}
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3 mr-1"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3 w-3"
-            >
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span>ICAL</span>
-          </button>
-          <button
-            onClick={exportToGoogleCalendar}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Export to Google Calendar"
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          ICAL
+        </button>
+
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3 w-3 mr-1"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3 w-3"
-            >
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span>GOOGLE</span>
-          </button>
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Share Calendar"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3 w-3"
-            >
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-            </svg>
-            <span>SHARE</span>
-          </button>
-        </div>
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+          SHARE
+        </button>
       </div>
 
       <div
         ref={fullCalendarRef}
         className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
       >
-        <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4">
-          <div className="grid grid-cols-3 items-center">
+        <div className="border-b border-gray-100 dark:border-gray-800 p-4 flex justify-center">
+          <div className="grid grid-cols-3 items-center w-full">
             <div className="flex justify-start">
               <button
                 onClick={handlePreviousMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="flex h-7 w-7 items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1644,7 +1626,7 @@ export default function Calendar() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="h-3 w-3 md:h-4 md:w-4"
+                  className="h-4 w-4 rotate-180"
                 >
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
@@ -1652,88 +1634,13 @@ export default function Calendar() {
             </div>
 
             <div className="flex justify-center">
-              <div className="relative date-selector-container">
-                <button
-                  onClick={() => setShowDateSelector(!showDateSelector)}
-                  className="font-mono text-lg md:text-xl tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none px-2 py-1 border-b-2 border-transparent hover:border-gray-200"
-                >
-                  {format(currentDate, "MMMM yyyy").toUpperCase()}
-                </button>
-
-                {showDateSelector && (
-                  <div
-                    ref={dateSelectorRef}
-                    className="absolute z-10 mt-1 w-56 origin-top-center left-1/2 transform -translate-x-1/2 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="menu-button"
-                  >
-                    <div className="py-1" role="none">
-                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                        <div className="grid grid-cols-1 gap-1">
-                          <select
-                            value={currentDate.getFullYear()}
-                            onChange={(e) => {
-                              setCurrentDate(new Date(Number.parseInt(e.target.value), currentDate.getMonth(), 1))
-                            }}
-                            className="p-1 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded focus:ring-black focus:border-black"
-                          >
-                            {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
-                              <option key={year} value={year}>
-                                {year}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <button
-                          onClick={() => setShowDateSelector(false)}
-                          className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-4 w-4"
-                          >
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1 p-2">
-                        {Array.from({ length: 12 }, (_, i) => i).map((month) => (
-                          <button
-                            key={month}
-                            onClick={() => {
-                              setCurrentDate(new Date(currentDate.getFullYear(), month, 1))
-                              // Don't close the dropdown
-                            }}
-                            className={`p-1 text-xs rounded ${
-                              currentDate.getMonth() === month
-                                ? "bg-gray-200 dark:bg-gray-700 font-bold"
-                                : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                            }`}
-                          >
-                            {format(new Date(2000, month, 1), "MMM")}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <h2 className="font-mono text-xl tracking-tight">{format(currentDate, "MMMM yyyy")}</h2>
             </div>
 
             <div className="flex justify-end">
               <button
                 onClick={handleNextMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="flex h-7 w-7 items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1745,7 +1652,7 @@ export default function Calendar() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="h-3 w-3 md:h-4 md:w-4"
+                  className="h-4 w-4"
                 >
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
@@ -1756,12 +1663,12 @@ export default function Calendar() {
 
         <div className="flex">
           <div className="flex-1">
-            <div className="w-full">
+            <div className="w-full border border-gray-100 dark:border-gray-800">
               <div ref={calendarContentRef} className="grid grid-cols-7">
-                {(isMobile ? weekDaysMobile : weekDays).map((day) => (
+                {weekDays.map((day) => (
                   <div
                     key={day}
-                    className="border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500 dark:text-gray-400"
+                    className="border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 text-center font-mono text-xs font-light text-gray-500 dark:text-gray-400"
                   >
                     {day}
                   </div>
@@ -1894,6 +1801,29 @@ export default function Calendar() {
                     OTHER EVENTS
                   </label>
                   <div className="space-y-2">
+                    {eventsForSelectedDate.length === 2 && (
+                      <button
+                        onClick={handleSwapEvents}
+                        className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 flex items-center mb-2"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-4 w-4 mr-1"
+                        >
+                          <path d="M7 2L17 12L7 22" />
+                          <path d="M17 2L7 12L17 22" />
+                        </svg>
+                        SWAP
+                      </button>
+                    )}
                     {eventsForSelectedDate.map(
                       (event) =>
                         event.id !== editingEventId && (

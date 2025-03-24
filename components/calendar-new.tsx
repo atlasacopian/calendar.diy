@@ -2048,7 +2048,7 @@ export default function Calendar() {
                       // Add to the main events array
                       setEvents([...events, newEvent])
                     }}
-                    className="w-full flex items-center justify-center rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
+                    className="w-full flex items-center justify-center py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 focus:outline-none border border-gray-100 dark:border-gray-800 my-2"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -2060,7 +2060,7 @@ export default function Calendar() {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="h-4 w-4 mr-1"
+                      className="h-4 w-4 mr-2"
                     >
                       <line x1="12" y1="5" x2="12" y2="19"></line>
                       <line x1="5" y1="12" x2="19" y2="12"></line>

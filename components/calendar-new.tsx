@@ -1837,62 +1837,211 @@ export default function Calendar() {
               </div>
             </div>
             <div className="p-4 sm:p-6">
-              {/* First Event */}
+              {/* Event Inputs - Stacked directly one under the other */}
               <div className="mb-4">
-                <div className="mb-3">
-                  <label
-                    htmlFor="event-content-1"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                <label
+                  htmlFor="event-content-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  EVENT
+                </label>
+
+                {/* First Event */}
+                <div
+                  className="flex gap-2 mb-2 items-center"
+                  draggable={eventsForSelectedDate.length > 1}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("eventIndex", "0")
+                    e.currentTarget.classList.add("opacity-50")
+                  }}
+                  onDragEnd={(e) => {
+                    e.currentTarget.classList.remove("opacity-50")
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const draggedIndex = Number.parseInt(e.dataTransfer.getData("eventIndex"))
+                    if (draggedIndex === 1) {
+                      // If second event was dragged to first position
+                      handleSwapEvents()
+                    }
+                  }}
+                >
+                  {eventsForSelectedDate.length > 1 && (
+                    <div className="cursor-move p-2 text-gray-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4"
+                      >
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                      </svg>
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    id="event-content-1"
+                    value={editingEventId ? eventContent : eventsForSelectedDate[0]?.content || eventContent}
+                    onChange={(e) => {
+                      if (editingEventId || eventsForSelectedDate.length === 0) {
+                        setEventContent(e.target.value)
+                      } else {
+                        const updatedEvents = [...eventsForSelectedDate]
+                        updatedEvents[0] = { ...updatedEvents[0], content: e.target.value }
+                        setEventsForSelectedDate(updatedEvents)
+
+                        // Update in the main events array too
+                        setEvents(
+                          events.map((event) =>
+                            event.id === updatedEvents[0].id ? { ...event, content: e.target.value } : event,
+                          ),
+                        )
+                      }
+                    }}
+                    onKeyDown={handleTextareaKeyDown}
+                    ref={eventInputRef}
+                    className="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
+                    placeholder="ENTER EVENT NAME"
+                  />
+                  {eventsForSelectedDate.length > 0 && eventsForSelectedDate[0] && (
+                    <button
+                      onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
+                      className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100 self-center"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-5 w-5"
+                      >
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Second Event */}
+                {eventsForSelectedDate.length > 1 && (
+                  <div
+                    className="flex gap-2 items-center"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("eventIndex", "1")
+                      e.currentTarget.classList.add("opacity-50")
+                    }}
+                    onDragEnd={(e) => {
+                      e.currentTarget.classList.remove("opacity-50")
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      const draggedIndex = Number.parseInt(e.dataTransfer.getData("eventIndex"))
+                      if (draggedIndex === 0) {
+                        // If first event was dragged to second position
+                        handleSwapEvents()
+                      }
+                    }}
                   >
-                    EVENT
-                  </label>
-                  <div className="flex gap-2">
+                    <div className="cursor-move p-2 text-gray-400">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4"
+                      >
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                      </svg>
+                    </div>
                     <input
                       type="text"
-                      id="event-content-1"
-                      value={editingEventId ? eventContent : eventsForSelectedDate[0]?.content || eventContent}
-                      onChange={(e) => setEventContent(e.target.value)}
-                      onKeyDown={handleTextareaKeyDown}
-                      ref={eventInputRef}
+                      id="event-content-2"
+                      value={eventsForSelectedDate[1].content}
+                      onChange={(e) => {
+                        const updatedEvents = [...eventsForSelectedDate]
+                        updatedEvents[1] = { ...updatedEvents[1], content: e.target.value }
+                        setEventsForSelectedDate(updatedEvents)
+
+                        // Update in the main events array too
+                        setEvents(
+                          events.map((event) =>
+                            event.id === updatedEvents[1].id ? { ...event, content: e.target.value } : event,
+                          ),
+                        )
+                      }}
                       className="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
                       placeholder="ENTER EVENT NAME"
                     />
-                    {eventsForSelectedDate.length > 0 && eventsForSelectedDate[0] && (
-                      <button
-                        onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
-                        className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100 self-center"
+                    <button
+                      onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
+                      className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100 self-center"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-5 w-5"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-5 w-5"
-                        >
-                          <path d="M3 6h18"></path>
-                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                        </svg>
-                      </button>
-                    )}
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                      </svg>
+                    </button>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">TAG</label>
-                  <div className="flex flex-wrap gap-2">
-                    {projectGroups.map((group) => {
-                      const bgColor = getBgFromTextColor(group.color)
-                      const isSelected = selectedColor === group.color
+                )}
+              </div>
 
-                      return (
-                        <button
-                          key={group.id}
-                          onClick={() => {
+              {/* Tag Selection - Now appears below both events */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">TAG</label>
+                <div className="flex flex-wrap gap-2">
+                  {projectGroups.map((group) => {
+                    const bgColor = getBgFromTextColor(group.color)
+                    const isSelected = editingEventId
+                      ? selectedColor === group.color
+                      : eventsForSelectedDate.length > 0 && eventsForSelectedDate[0]?.color === group.color
+
+                    return (
+                      <button
+                        key={group.id}
+                        onClick={() => {
+                          if (editingEventId || eventsForSelectedDate.length === 0) {
                             setSelectedColor(group.color)
                             if (editingEventId) {
                               setEvents(
@@ -1910,130 +2059,39 @@ export default function Calendar() {
                                 ),
                               )
                             }
-                          }}
-                          className={cn(
-                            "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
-                            bgColor,
-                            "text-white",
-                            isSelected ? "ring-2 ring-black ring-offset-2" : "",
-                          )}
-                        >
-                          {group.name}
-                        </button>
-                      )
-                    })}
-                  </div>
+                          } else if (eventsForSelectedDate.length > 0) {
+                            // Update the first event's color
+                            const updatedEvents = [...eventsForSelectedDate]
+                            updatedEvents[0] = {
+                              ...updatedEvents[0],
+                              color: group.color,
+                              projectId: group.id,
+                            }
+                            setEventsForSelectedDate(updatedEvents)
+
+                            // Update in the main events array too
+                            setEvents(
+                              events.map((event) =>
+                                event.id === updatedEvents[0].id
+                                  ? { ...event, color: group.color, projectId: group.id }
+                                  : event,
+                              ),
+                            )
+                          }
+                        }}
+                        className={cn(
+                          "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
+                          bgColor,
+                          "text-white",
+                          isSelected ? "ring-2 ring-black ring-offset-2" : "",
+                        )}
+                      >
+                        {group.name}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
-
-              {/* Second Event (if exists or being added) */}
-              {(eventsForSelectedDate.length > 1 || (eventsForSelectedDate.length === 1 && !editingEventId)) && (
-                <>
-                  <div className="w-full border-t border-gray-200 dark:border-gray-700 my-4"></div>
-                  <div className="mb-4">
-                    <div className="mb-3">
-                      <label
-                        htmlFor="event-content-2"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                      >
-                        EVENT 2
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          id="event-content-2"
-                          value={eventsForSelectedDate.length > 1 ? eventsForSelectedDate[1].content : ""}
-                          onChange={(e) => {
-                            if (eventsForSelectedDate.length > 1) {
-                              const updatedEvents = [...eventsForSelectedDate]
-                              updatedEvents[1] = { ...updatedEvents[1], content: e.target.value }
-                              setEventsForSelectedDate(updatedEvents)
-
-                              // Update in the main events array too
-                              setEvents(
-                                events.map((event) =>
-                                  event.id === updatedEvents[1].id ? { ...event, content: e.target.value } : event,
-                                ),
-                              )
-                            }
-                          }}
-                          className="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
-                          placeholder="ENTER EVENT NAME"
-                        />
-                        {eventsForSelectedDate.length > 1 && (
-                          <button
-                            onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
-                            className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100 self-center"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-5 w-5"
-                            >
-                              <path d="M3 6h18"></path>
-                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {eventsForSelectedDate.length > 1 && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">TAG</label>
-                        <div className="flex flex-wrap gap-2">
-                          {projectGroups.map((group) => {
-                            const bgColor = getBgFromTextColor(group.color)
-                            const isSelected = eventsForSelectedDate[1]?.color === group.color
-
-                            return (
-                              <button
-                                key={group.id}
-                                onClick={() => {
-                                  // Update the second event's color
-                                  if (eventsForSelectedDate.length > 1) {
-                                    const updatedEvents = [...eventsForSelectedDate]
-                                    updatedEvents[1] = {
-                                      ...updatedEvents[1],
-                                      color: group.color,
-                                      projectId: group.id,
-                                    }
-                                    setEventsForSelectedDate(updatedEvents)
-
-                                    // Update in the main events array too
-                                    setEvents(
-                                      events.map((event) =>
-                                        event.id === updatedEvents[1].id
-                                          ? { ...event, color: group.color, projectId: group.id }
-                                          : event,
-                                      ),
-                                    )
-                                  }
-                                }}
-                                className={cn(
-                                  "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
-                                  bgColor,
-                                  "text-white",
-                                  isSelected ? "ring-2 ring-black ring-offset-2" : "",
-                                )}
-                              >
-                                {group.name}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
 
               {/* Add New Event button - only show when there's 0 or 1 event */}
               {eventsForSelectedDate.length < 2 &&
@@ -2076,31 +2134,6 @@ export default function Calendar() {
                     ADD NEW EVENT
                   </button>
                 )}
-
-              {/* Swap order button - only show when there are 2 events */}
-              {eventsForSelectedDate.length === 2 && (
-                <button
-                  onClick={handleSwapEvents}
-                  className="w-full flex items-center justify-center rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 mr-1"
-                  >
-                    <path d="M7 16V4m0 0L3 8m4-4l4 4" />
-                    <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                  SWAP ORDER
-                </button>
-              )}
             </div>
             <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
               <button

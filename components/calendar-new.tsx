@@ -1,3 +1,4 @@
+
 "use client"
 
 import type React from "react"
@@ -293,22 +294,19 @@ export default function Calendar() {
     min-height: 5rem;
   }
   
-    /* Only uppercase specific elements, not user content */
-    .calendar-controls button, .day-header, .month-header {
+    /* Make most text uppercase except user input */
+    .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span:not(.preserve-case), div:not(.preserve-case), a, label {
       text-transform: uppercase !important;
-    }
-
-    /* Make sure user content preserves its case */
-    .preserve-case, .event-content, .holiday-name {
-      text-transform: none !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      word-break: break-word !important;
     }
 
     /* Add body class to prevent scrolling when modal is open */
     body.modal-open {
       overflow: hidden;
+    }
+
+    /* Make sure text is preserved as lowercase in inputs */
+    input, textarea {
+      text-transform: none !important;
     }
 
     /* Ensure event text is not cut off */
@@ -353,9 +351,6 @@ export default function Calendar() {
 
     setShowModal(true)
   }
-
-  // Update the handleSaveEvent function to make it clearer that we're limiting to 2 events per day
-  // Replace the existing handleSaveEvent function with this:
 
   const handleSaveEvent = () => {
     if (!selectedDate) return
@@ -672,14 +667,14 @@ export default function Calendar() {
 
         dayHolidays.forEach((holiday) => {
           const holidayDiv = document.createElement("div")
-          holidayDiv.textContent = holiday.name
           holidayDiv.style.fontSize = "10px"
+          holidayDiv.style.textTransform = "uppercase"
           holidayDiv.style.letterSpacing = "0.05em"
           holidayDiv.style.color = "#666"
           holidayDiv.style.marginBottom = "3px"
           holidayDiv.style.whiteSpace = "normal"
           holidayDiv.style.wordBreak = "break-word"
-          holidayDiv.style.textTransform = "none" // Ensure case is preserved
+          holidayDiv.textContent = holiday.name
           holidaysContainer.appendChild(holidayDiv)
         })
 
@@ -710,7 +705,6 @@ export default function Calendar() {
           eventDiv.style.overflow = "visible"
           eventDiv.style.maxWidth = "100%"
           eventDiv.style.whiteSpace = "normal"
-          eventDiv.style.textTransform = "none" // Ensure case is preserved
 
           // Convert Tailwind color classes to CSS colors
           let color = "#000"
@@ -739,7 +733,6 @@ export default function Calendar() {
           eventDiv1.style.overflow = "visible"
           eventDiv1.style.maxWidth = "100%"
           eventDiv1.style.whiteSpace = "normal"
-          eventDiv1.style.textTransform = "none" // Ensure case is preserved
 
           // Convert Tailwind color classes to CSS colors
           let color1 = "#000"
@@ -777,7 +770,6 @@ export default function Calendar() {
           eventDiv2.style.overflow = "visible"
           eventDiv2.style.maxWidth = "100%"
           eventDiv2.style.whiteSpace = "normal"
-          eventDiv2.style.textTransform = "none" // Ensure case is preserved
 
           // Convert Tailwind color classes to CSS colors
           let color2 = "#000"
@@ -1094,11 +1086,10 @@ export default function Calendar() {
     // Add only user events (no holidays)
     events.forEach((event) => {
       const dateString = format(event.date, "yyyyMMdd")
-      const uid = `${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`
       icalContent = [
         ...icalContent,
         "BEGIN:VEVENT",
-        `UID:${uid}`,
+        `UID:${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`,
         `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
         `DTSTART;VALUE=DATE:${dateString}`,
         `DTEND;VALUE=DATE:${dateString}`,
@@ -1194,26 +1185,35 @@ export default function Calendar() {
           onDragOver={(e) => handleDragOver(date, e)}
           onDrop={(e) => handleDrop(date, e)}
           className={cn(
-            "calendar-day relative h-24 border border-gray-100 dark:border-gray-800 p-2",
+            "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800 p-1 md:p-2 pt-0.5 md:pt-1",
             isWeekend ? "bg-gray-50/30 dark:bg-gray-900/30" : "",
+            isCurrentDay ? "bg-gray-50 dark:bg-gray-900/50" : "",
             isDragOver ? "bg-gray-100 dark:bg-gray-800" : "",
           )}
         >
-          <div className={cn("absolute right-2 top-1 font-mono text-xs text-gray-400 dark:text-gray-500")}>{day}</div>
+          <div
+            className={cn(
+              "absolute right-1 md:right-2 top-0.5 flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full font-mono text-[10px] md:text-xs",
+              isCurrentDay ? "bg-gray-200 dark:bg-gray-700" : "text-gray-400 dark:text-gray-500",
+            )}
+          >
+            {day}
+          </div>
 
           <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
             {dayHolidays.map((holiday, index) => (
               <div
                 key={`holiday-${index}`}
-                className="font-mono text-[8px] md:text-[9px] tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words holiday-name"
+                className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
               >
-                {holiday.name}
+                {holiday.name.toUpperCase()}
               </div>
             ))}
           </div>
 
-          <div className="mt-1 overflow-visible flex flex-col h-[calc(100%-20px)] justify-center">
+          <div className="mt-0 pt-0 overflow-visible flex flex-col h-[calc(100%-12px)] justify-center">
             {limitedEvents.length === 1 ? (
+              // If there's only one event, center it vertically
               <div
                 className="flex-1 flex items-center"
                 draggable
@@ -1230,6 +1230,7 @@ export default function Calendar() {
                 </span>
               </div>
             ) : (
+              // If there are two events, space them with the divider centered
               <div className="flex flex-col h-full">
                 <div
                   className="flex-1 flex items-start"
@@ -1247,6 +1248,7 @@ export default function Calendar() {
                   </span>
                 </div>
 
+                {/* Only show divider when there are two entries */}
                 {limitedEvents.length === 2 && (
                   <div className="border-t border-gray-200 dark:border-gray-700 w-full my-auto"></div>
                 )}
@@ -1345,27 +1347,6 @@ export default function Calendar() {
         setSelectedDate(null)
       }
     }
-  }
-
-  // Add a new function to swap the order of events for a day
-  // Add this after the handleDeleteEvent function
-
-  const handleSwapEvents = () => {
-    if (eventsForSelectedDate.length !== 2) return
-
-    // Create a new array with swapped events
-    const swappedEvents = [eventsForSelectedDate[1], eventsForSelectedDate[0]]
-
-    // Update the events for selected date
-    setEventsForSelectedDate(swappedEvents)
-
-    // Update the global events array by removing all events for this day and adding the swapped ones
-    const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
-    const newEvents = [...otherEvents, ...swappedEvents]
-    setEvents(newEvents)
-
-    // Save to localStorage immediately
-    localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
   }
 
   const handleReorderEvents = (dragIndex: number, hoverIndex: number) => {
@@ -1514,111 +1495,144 @@ export default function Calendar() {
 
   return (
     <div className="flex flex-col space-y-4 min-h-screen">
-      <div className="calendar-controls flex items-center justify-center gap-4 p-0 mb-6">
-        <button
-          onClick={handleShowResetConfirm}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3 mr-1"
+      {/* Calendar Controls - Now with reset button on left and others on right */}
+      <div className="calendar-controls flex items-center justify-between gap-2 p-0 mb-1">
+        {/* Reset button on the left */}
+        <div>
+          <button
+            onClick={handleShowResetConfirm}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Reset Calendar Data"
           >
-            <path d="M3 2v6h6"></path>
-            <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
-            <path d="M21 22v-6h-6"></path>
-            <path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path>
-          </svg>
-          RESET
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3 w-3"
+            >
+              <path d="M3 2v6h6"></path>
+              <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
+              <path d="M21 22v-6h-6"></path>
+              <path d="M3 12a9  9 0 0 0 15 6.7l3-2.7"></path>
+            </svg>
+            <span>RESET</span>
+          </button>
+        </div>
 
-        <button
-          onClick={downloadCalendarAsImage}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-          disabled={isDownloading}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3 mr-1"
+        {/* Other buttons on the right */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={downloadCalendarAsImage}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Download as Image"
+            disabled={isDownloading}
           >
-            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-            <circle cx="12" cy="13" r="3" />
-          </svg>
-          SCREENSHOT
-        </button>
-
-        <button
-          onClick={exportToIcal}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3 mr-1"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3 w-3"
+            >
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+            <span>SCREENSHOT</span>
+          </button>
+          <button
+            onClick={exportToIcal}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Export to iCal"
           >
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          GOOGLE
-        </button>
-
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-3 w-3 mr-1"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3 w-3"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>ICAL</span>
+          </button>
+          <button
+            onClick={exportToGoogleCalendar}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Export to Google Calendar"
           >
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-          </svg>
-          SHARE
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3 w-3"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>GOOGLE</span>
+          </button>
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Share Calendar"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3 w-3"
+            >
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            <span>SHARE</span>
+          </button>
+        </div>
       </div>
 
       <div
         ref={fullCalendarRef}
         className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
       >
-        <div className="border-b border-gray-100 dark:border-gray-800 p-4 flex justify-center">
-          <div className="grid grid-cols-3 items-center w-full">
+        <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4">
+          <div className="grid grid-cols-3 items-center">
             <div className="flex justify-start">
               <button
                 onClick={handlePreviousMonth}
-                className="flex h-7 w-7 items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1630,7 +1644,7 @@ export default function Calendar() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="h-4 w-4 rotate-180"
+                  className="h-3 w-3 md:h-4 md:w-4"
                 >
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
@@ -1638,13 +1652,88 @@ export default function Calendar() {
             </div>
 
             <div className="flex justify-center">
-              <h2 className="font-mono text-xl tracking-tight">{format(currentDate, "MMMM yyyy")}</h2>
+              <div className="relative date-selector-container">
+                <button
+                  onClick={() => setShowDateSelector(!showDateSelector)}
+                  className="font-mono text-lg md:text-xl tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none px-2 py-1 border-b-2 border-transparent hover:border-gray-200"
+                >
+                  {format(currentDate, "MMMM yyyy").toUpperCase()}
+                </button>
+
+                {showDateSelector && (
+                  <div
+                    ref={dateSelectorRef}
+                    className="absolute z-10 mt-1 w-56 origin-top-center left-1/2 transform -translate-x-1/2 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    role="menu"
+                    aria-orientation="vertical"
+                    aria-labelledby="menu-button"
+                  >
+                    <div className="py-1" role="none">
+                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <div className="grid grid-cols-1 gap-1">
+                          <select
+                            value={currentDate.getFullYear()}
+                            onChange={(e) => {
+                              setCurrentDate(new Date(Number.parseInt(e.target.value), currentDate.getMonth(), 1))
+                            }}
+                            className="p-1 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded focus:ring-black focus:border-black"
+                          >
+                            {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
+                          onClick={() => setShowDateSelector(false)}
+                          className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 p-2">
+                        {Array.from({ length: 12 }, (_, i) => i).map((month) => (
+                          <button
+                            key={month}
+                            onClick={() => {
+                              setCurrentDate(new Date(currentDate.getFullYear(), month, 1))
+                              // Don't close the dropdown
+                            }}
+                            className={`p-1 text-xs rounded ${
+                              currentDate.getMonth() === month
+                                ? "bg-gray-200 dark:bg-gray-700 font-bold"
+                                : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            {format(new Date(2000, month, 1), "MMM")}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end">
               <button
                 onClick={handleNextMonth}
-                className="flex h-7 w-7 items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1656,7 +1745,7 @@ export default function Calendar() {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="h-4 w-4"
+                  className="h-3 w-3 md:h-4 md:w-4"
                 >
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
@@ -1667,12 +1756,12 @@ export default function Calendar() {
 
         <div className="flex">
           <div className="flex-1">
-            <div className="w-full border border-gray-100 dark:border-gray-800">
+            <div className="w-full">
               <div ref={calendarContentRef} className="grid grid-cols-7">
-                {weekDays.map((day) => (
+                {(isMobile ? weekDaysMobile : weekDays).map((day) => (
                   <div
                     key={day}
-                    className="border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 text-center font-mono text-xs font-light text-gray-500 dark:text-gray-400"
+                    className="border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500 dark:text-gray-400"
                   >
                     {day}
                   </div>
@@ -1805,29 +1894,6 @@ export default function Calendar() {
                     OTHER EVENTS
                   </label>
                   <div className="space-y-2">
-                    {eventsForSelectedDate.length === 2 && (
-                      <button
-                        onClick={handleSwapEvents}
-                        className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 flex items-center mb-2"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4 mr-1"
-                        >
-                          <path d="M7 2L17 12L7 22" />
-                          <path d="M17 2L7 12L17 22" />
-                        </svg>
-                        SWAP
-                      </button>
-                    )}
                     {eventsForSelectedDate.map(
                       (event) =>
                         event.id !== editingEventId && (
@@ -1893,54 +1959,40 @@ export default function Calendar() {
                 </div>
               )}
             </div>
-            {/* Update the modal footer to make the save button more contextual */}
-            {/* Replace the existing modal footer with this: */}
-
-            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-between">
-              <div>
-                {/* Only show delete button if we're editing an existing event */}
-                {editingEventId && (
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteEvent(editingEventId)}
-                    className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 flex items-center"
+            <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3 flex justify-end">
+              {/* Only show delete button if we're editing an existing event */}
+              {editingEventId && (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEvent(editingEventId)}
+                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 flex items-center mr-auto"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 mr-1"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4 mr-1"
-                    >
-                      <path d="M3 6h18"></path>
-                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                    </svg>
-                    DELETE
-                  </button>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                  onClick={() => setShowModal(false)}
-                >
-                  CANCEL
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  </svg>
+                  DELETE
                 </button>
-                <button
-                  type="button"
-                  className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-                  onClick={handleSaveAndClose}
-                >
-                  {editingEventId ? "UPDATE" : "SAVE"}
-                </button>
-              </div>
+              )}
+              <button
+                type="button"
+                className="inline-flex justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                onClick={handleSaveAndClose}
+              >
+                SAVE
+              </button>
             </div>
           </div>
         </div>

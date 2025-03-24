@@ -574,111 +574,56 @@ export default function Calendar() {
         return
       }
 
-      // Create a wrapper with padding
-      const wrapper = document.createElement("div")
-      wrapper.style.padding = "40px"
-      wrapper.style.backgroundColor = "white"
-      wrapper.style.position = "fixed"
-      wrapper.style.top = "0"
-      wrapper.style.left = "0"
-      wrapper.style.zIndex = "-1000"
-      wrapper.style.width = calendarElement.offsetWidth + 80 + "px"
-      wrapper.style.height = calendarElement.offsetHeight + 80 + "px"
-      wrapper.style.overflow = "visible"
+      // Create a clean copy of the calendar for rendering
+      const tempDiv = document.createElement("div")
+      tempDiv.style.position = "absolute"
+      tempDiv.style.left = "-9999px"
+      tempDiv.style.top = "0"
+      tempDiv.style.width = calendarElement.offsetWidth + "px"
+      tempDiv.style.backgroundColor = "white"
+      tempDiv.style.padding = "20px"
+      tempDiv.style.zIndex = "-1000"
 
-      // Clone the calendar
-      const clone = calendarElement.cloneNode(true) as HTMLElement
+      // Clone the calendar content
+      tempDiv.innerHTML = calendarElement.outerHTML
 
-      // Apply styles to ensure text is fully visible
-      const applyFullTextVisibility = (element: HTMLElement) => {
-        // Find all elements with text that might be truncated
-        const allTextElements = element.querySelectorAll(
-          '.preserve-case, .line-clamp-2, .line-clamp-4, [class*="truncate"], [class*="line-clamp"], [class*="overflow"]',
-        )
+      // Add to body temporarily
+      document.body.appendChild(tempDiv)
 
-        allTextElements.forEach((el) => {
-          if (el instanceof HTMLElement) {
-            // Remove all truncation and overflow constraints
-            el.style.overflow = "visible"
-            el.style.textOverflow = "clip"
-            el.style.whiteSpace = "normal"
-            el.style.display = "block"
-            el.style.maxHeight = "none"
-            el.style.maxWidth = "none"
-            el.style.height = "auto"
-            el.style.width = "auto"
+      // Get all text elements in the clone that need to be fixed
+      const textElements = tempDiv.querySelectorAll(".preserve-case, .line-clamp-2, .line-clamp-4, .truncate")
 
-            // Remove line clamping
-            if ("webkitLineClamp" in el.style) {
-              el.style.webkitLineClamp = "none"
-            }
+      // Fix each text element
+      textElements.forEach((el) => {
+        if (el instanceof HTMLElement) {
+          // Get the original text content
+          const originalText = el.textContent || ""
 
-            // Remove any classes that might cause truncation
-            el.classList.remove("truncate", "line-clamp-2", "line-clamp-4")
+          // Create a new span with just the text
+          const newSpan = document.createElement("span")
+          newSpan.textContent = originalText
+          newSpan.style.color = el.style.color || "inherit"
+          newSpan.style.fontFamily = "monospace"
+          newSpan.style.fontSize = "10px"
+          newSpan.style.fontWeight = "500"
 
-            // Ensure parent containers don't clip content
-            let parent = el.parentElement
-            while (parent) {
-              if (parent instanceof HTMLElement) {
-                parent.style.overflow = "visible"
-                parent.style.height = "auto"
-                parent.style.maxHeight = "none"
-              }
-              parent = parent.parentElement
-            }
+          // Replace the element with our new span
+          if (el.parentNode) {
+            el.parentNode.replaceChild(newSpan, el)
           }
-        })
-      }
+        }
+      })
 
-      // Apply to the clone
-      applyFullTextVisibility(clone)
-
-      // Append to body
-      document.body.appendChild(wrapper)
-      wrapper.appendChild(clone)
-
-      // Wait longer for the DOM to update
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      // Wait for the DOM to update
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
       // Render with html2canvas
-      const canvas = await html2canvas.default(wrapper, {
+      const canvas = await html2canvas.default(tempDiv, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "white",
-        logging: true,
-        onclone: (doc) => {
-          // Make sure all elements are visible in the clone
-          const clonedCalendar = doc.querySelector(".calendar-full-container") as HTMLElement
-          if (clonedCalendar) {
-            clonedCalendar.style.width = calendarElement.offsetWidth + "px"
-            clonedCalendar.style.height = "auto"
-            clonedCalendar.style.overflow = "visible"
-
-            // Apply the same text visibility function to the document in the onclone callback
-            const allElements = doc.querySelectorAll("*")
-            allElements.forEach((el) => {
-              if (el instanceof HTMLElement) {
-                if (
-                  el.classList.contains("preserve-case") ||
-                  el.classList.contains("line-clamp-2") ||
-                  el.classList.contains("line-clamp-4") ||
-                  el.classList.contains("truncate")
-                ) {
-                  el.style.overflow = "visible"
-                  el.style.textOverflow = "clip"
-                  el.style.whiteSpace = "normal"
-                  el.style.webkitLineClamp = "none"
-                  el.style.display = "block"
-                  el.style.maxHeight = "none"
-                  el.style.maxWidth = "none"
-                  el.style.height = "auto"
-                  el.style.width = "auto"
-                }
-              }
-            })
-          }
-        },
+        logging: false,
       })
 
       // Convert to image and download
@@ -689,7 +634,7 @@ export default function Calendar() {
       link.click()
 
       // Clean up
-      document.body.removeChild(wrapper)
+      document.body.removeChild(tempDiv)
     } catch (error) {
       console.error("Error generating calendar image:", error)
       alert("Failed to generate image. Please try again.")

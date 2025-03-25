@@ -451,7 +451,9 @@ export default function Calendar() {
 
   // Handle drag start for events
   const handleDragStart = (event: CalendarEvent, e: React.DragEvent) => {
+    e.stopPropagation() // Prevent event bubbling
     setDraggedEvent(event)
+
     // Set a ghost drag image
     if (e.dataTransfer) {
       const ghostElement = document.createElement("div")
@@ -1784,28 +1786,9 @@ export default function Calendar() {
 
                 {eventsForSelectedDate.length > 0 && (
                   <div
-                    className={`flex gap-1 mb-2 items-center rounded-md ${
-                      activeEventIndex === 0 ? "event-input-active" : ""
-                    }`}
+                    className={`mb-4 ${activeEventIndex === 0 ? "event-input-active" : ""}`}
                     onClick={() => setActiveEventIndex(0)}
                   >
-                    <div className="cursor-move text-gray-300 flex items-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3"
-                      >
-                        <circle cx="9" cy="12" r="1" />
-                        <circle cx="15" cy="12" r="1" />
-                      </svg>
-                    </div>
                     <textarea
                       id="event-content-1"
                       value={eventsForSelectedDate[0]?.content || ""}
@@ -1814,59 +1797,58 @@ export default function Calendar() {
                       onMouseUp={handleTextSelect}
                       onTouchEnd={handleTextSelect}
                       ref={eventInputRef}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-2 preserve-case"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
                       placeholder="ENTER EVENT NAME"
                       rows={2}
                     />
-                    <button
-                      onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
-                      className="text-gray-300 hover:text-gray-500 self-center"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4"
+                    <div className="flex justify-end mt-1 space-x-2">
+                      <div className="cursor-move text-gray-400 flex items-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-4 w-4"
+                        >
+                          <circle cx="9" cy="12" r="1" />
+                          <circle cx="15" cy="12" r="1" />
+                        </svg>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
+                        className="text-gray-400 hover:text-gray-600"
                       >
-                        <path d="M18 6L6 18"></path>
-                        <path d="M6 6l12 12"></path>
-                      </svg>
-                    </button>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-4 w-4"
+                        >
+                          <path d="M18 6L6 18"></path>
+                          <path d="M6 6l12 12"></path>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 )}
 
                 {/* Second Event */}
-
                 {eventsForSelectedDate.length > 1 && (
                   <div
-                    className={`flex gap-1 mb-2 items-center rounded-md ${
-                      activeEventIndex === 1 ? "event-input-active" : ""
-                    }`}
+                    className={`mb-4 ${activeEventIndex === 1 ? "event-input-active" : ""}`}
                     onClick={() => setActiveEventIndex(1)}
                   >
-                    <div className="cursor-move text-gray-300 flex items-center">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3"
-                      >
-                        <circle cx="9" cy="12" r="1" />
-                        <circle cx="15" cy="12" r="1" />
-                      </svg>
-                    </div>
                     <textarea
                       id="event-content-2"
                       value={eventsForSelectedDate[1]?.content || ""}
@@ -1874,85 +1856,52 @@ export default function Calendar() {
                       onKeyDown={handleTextareaKeyDown}
                       onMouseUp={handleTextSelect}
                       onTouchEnd={handleTextSelect}
-                      ref={eventInputRef}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-2 preserve-case"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
                       placeholder="ENTER EVENT NAME"
                       rows={2}
                     />
-                    <button
-                      onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
-                      className="text-gray-300 hover:text-gray-500 self-center"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4"
+                    <div className="flex justify-end mt-1 space-x-2">
+                      <div className="cursor-move text-gray-400 flex items-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-4 w-4"
+                        >
+                          <circle cx="9" cy="12" r="1" />
+                          <circle cx="15" cy="12" r="1" />
+                        </svg>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
+                        className="text-gray-400 hover:text-gray-600"
                       >
-                        <path d="M18 6L6 18"></path>
-                        <path d="M6 6l12 12"></path>
-                      </svg>
-                    </button>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-4 w-4"
+                        >
+                          <path d="M18 6L6 18"></path>
+                          <path d="M6 6l12 12"></path>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
-
-              {/* Swap Order Button - Only show when there are 2 events */}
-
-              {eventsForSelectedDate.length === 2 && (
-                <button
-                  onClick={handleSwapEvents}
-                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-3 w-3 mr-1"
-                  >
-                    <path d="M7 16V4m0 0L3 8m4-4l4 4" />
-                    <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                  SWAP
-                </button>
-              )}
-
-              {/* Add New Event button - Show when there are fewer than 2 events */}
-              {eventsForSelectedDate.length < 2 && (
-                <button
-                  onClick={handleAddNewEvent}
-                  className="w-full flex items-center justify-center py-3 px-4 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 my-2 shadow-sm"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 mr-2"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  ADD NEW EVENT
-                </button>
-              )}
 
               {/* Tag Selection - Now appears below both events */}
               <div className="mb-4">

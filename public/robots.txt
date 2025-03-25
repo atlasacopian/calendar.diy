@@ -3,5 +3,5 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://calendar.diy/sitemap.xml
+Sitemap: https://www.calendar.diy/sitemap.xml
 

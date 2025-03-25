@@ -81,7 +81,7 @@ export default function Calendar() {
   const dateSelectorRef = useRef<HTMLDivElement>(null)
   const eventModalRef = useRef<HTMLDivElement>(null)
   const shareModalRef = useRef<HTMLDivElement>(null)
-  const eventInputRef = useRef<HTMLInputElement>(null)
+  const eventInputRef = useRef<HTMLTextAreaElement>(null)
 
   const handleToggleProjectGroup = useCallback((groupId: string) => {
     setProjectGroups((prevGroups) =>

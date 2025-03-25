@@ -1781,18 +1781,51 @@ export default function Calendar() {
                 </label>
 
                 {/* First Event */}
+
                 {eventsForSelectedDate.length > 0 && (
                   <div
-                    className={`flex gap-2 mb-2 items-center rounded-md ${
+                    className={`flex gap-1 mb-2 items-center rounded-md ${
                       activeEventIndex === 0 ? "event-input-active" : ""
                     }`}
                     onClick={() => setActiveEventIndex(0)}
                   >
-                    <div className="cursor-move p-2 text-gray-400">
+                    <div className="cursor-move text-gray-300 flex items-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-3 w-3"
+                      >
+                        <circle cx="9" cy="12" r="1" />
+                        <circle cx="15" cy="12" r="1" />
+                      </svg>
+                    </div>
+                    <textarea
+                      id="event-content-1"
+                      value={eventsForSelectedDate[0]?.content || ""}
+                      onChange={(e) => handleUpdateEventContent(0, e.target.value)}
+                      onKeyDown={handleTextareaKeyDown}
+                      onMouseUp={handleTextSelect}
+                      onTouchEnd={handleTextSelect}
+                      ref={eventInputRef}
+                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-2 preserve-case"
+                      placeholder="ENTER EVENT NAME"
+                      rows={2}
+                    />
+                    <button
+                      onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
+                      className="text-gray-300 hover:text-gray-500 self-center"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -1801,79 +1834,59 @@ export default function Calendar() {
                         strokeLinejoin="round"
                         className="h-4 w-4"
                       >
-                        <line x1="8" y1="6" x2="21" y2="6"></line>
-                        <line x1="8" y1="12" x2="21" y2="12"></line>
-                        <line x1="8" y1="18" x2="21" y2="18"></line>
-                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                      </svg>
-                    </div>
-                    <div className="flex-1 flex flex-col">
-                      <div className="flex mb-1 gap-1">
-                        <button
-                          onClick={handleBoldText}
-                          className={`p-1 text-xs border rounded ${
-                            selectedText && selectedText.start !== selectedText.end
-                              ? "bg-gray-100 text-gray-800"
-                              : "text-gray-400"
-                          }`}
-                          disabled={!selectedText || selectedText.start === selectedText.end}
-                          title="Bold (select text first)"
-                        >
-                          <span className="font-bold">B</span>
-                        </button>
-                      </div>
-                      <textarea
-                        id="event-content-1"
-                        value={eventsForSelectedDate[0]?.content || ""}
-                        onChange={(e) => handleUpdateEventContent(0, e.target.value)}
-                        onKeyDown={handleTextareaKeyDown}
-                        onMouseUp={handleTextSelect}
-                        onTouchEnd={handleTextSelect}
-                        ref={eventInputRef}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
-                        placeholder="ENTER EVENT NAME"
-                        rows={2}
-                      />
-                    </div>
-                    <button
-                      onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
-                      className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100 self-center"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-5 w-5"
-                      >
-                        <path d="M3 6h18"></path>
-                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        <path d="M18 6L6 18"></path>
+                        <path d="M6 6l12 12"></path>
                       </svg>
                     </button>
                   </div>
                 )}
 
                 {/* Second Event */}
+
                 {eventsForSelectedDate.length > 1 && (
                   <div
-                    className={`flex gap-2 mb-2 items-center rounded-md ${
+                    className={`flex gap-1 mb-2 items-center rounded-md ${
                       activeEventIndex === 1 ? "event-input-active" : ""
                     }`}
                     onClick={() => setActiveEventIndex(1)}
                   >
-                    <div className="cursor-move p-2 text-gray-400">
+                    <div className="cursor-move text-gray-300 flex items-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-3 w-3"
+                      >
+                        <circle cx="9" cy="12" r="1" />
+                        <circle cx="15" cy="12" r="1" />
+                      </svg>
+                    </div>
+                    <textarea
+                      id="event-content-2"
+                      value={eventsForSelectedDate[1]?.content || ""}
+                      onChange={(e) => handleUpdateEventContent(1, e.target.value)}
+                      onKeyDown={handleTextareaKeyDown}
+                      onMouseUp={handleTextSelect}
+                      onTouchEnd={handleTextSelect}
+                      ref={eventInputRef}
+                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-2 preserve-case"
+                      placeholder="ENTER EVENT NAME"
+                      rows={2}
+                    />
+                    <button
+                      onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
+                      className="text-gray-300 hover:text-gray-500 self-center"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -1882,60 +1895,8 @@ export default function Calendar() {
                         strokeLinejoin="round"
                         className="h-4 w-4"
                       >
-                        <line x1="8" y1="6" x2="21" y2="6"></line>
-                        <line x1="8" y1="12" x2="21" y2="12"></line>
-                        <line x1="8" y1="18" x2="21" y2="18"></line>
-                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                      </svg>
-                    </div>
-                    <div className="flex-1 flex flex-col">
-                      <div className="flex mb-1 gap-1">
-                        <button
-                          onClick={handleBoldText}
-                          className={`p-1 text-xs border rounded ${
-                            selectedText && selectedText.start !== selectedText.end
-                              ? "bg-gray-100 text-gray-800"
-                              : "text-gray-400"
-                          }`}
-                          disabled={!selectedText || selectedText.start === selectedText.end}
-                          title="Bold (select text first)"
-                        >
-                          <span className="font-bold">B</span>
-                        </button>
-                      </div>
-                      <textarea
-                        id="event-content-2"
-                        value={eventsForSelectedDate[1]?.content || ""}
-                        onChange={(e) => handleUpdateEventContent(1, e.target.value)}
-                        onKeyDown={handleTextareaKeyDown}
-                        onMouseUp={handleTextSelect}
-                        onTouchEnd={handleTextSelect}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
-                        placeholder="ENTER EVENT NAME"
-                        rows={2}
-                      />
-                    </div>
-                    <button
-                      onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
-                      className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100 self-center"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-5 w-5"
-                      >
-                        <path d="M3 6h18"></path>
-                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        <path d="M18 6L6 18"></path>
+                        <path d="M6 6l12 12"></path>
                       </svg>
                     </button>
                   </div>
@@ -1943,27 +1904,28 @@ export default function Calendar() {
               </div>
 
               {/* Swap Order Button - Only show when there are 2 events */}
+
               {eventsForSelectedDate.length === 2 && (
                 <button
                   onClick={handleSwapEvents}
-                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 mb-4 shadow-sm"
+                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
+                    width="12"
+                    height="12"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="h-4 w-4 mr-2"
+                    className="h-3 w-3 mr-1"
                   >
                     <path d="M7 16V4m0 0L3 8m4-4l4 4" />
                     <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
                   </svg>
-                  SWAP ORDER
+                  SWAP
                 </button>
               )}
 

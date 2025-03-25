@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   robots: "index, follow",
   // Explicitly disable AMP
   alternates: {
-    canonical: "https://calendar.diy",
+    canonical: "https://www.calendar.diy/",
   },
 }
 
@@ -67,6 +67,7 @@ export default function RootLayout({
         {/* Use calendar emoji as favicon - with Apple-style emoji */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
+        <link rel="canonical" href="https://www.calendar.diy/" />
         <title>Free Calendar Template</title>
 
         {/* Add direct meta tags for social sharing with calendar emoji */}

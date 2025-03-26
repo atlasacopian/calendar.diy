@@ -339,6 +339,18 @@ export default function Calendar() {
   .calendar-day .bold-text {
     font-weight: bold;
   }
+
+/* Improve drag and drop visual feedback */
+.cursor-grab {
+  cursor: grab;
+}
+.cursor-grab:active {
+  cursor: grabbing;
+}
+.cursor-grab:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
 `
     document.head.appendChild(style)
 
@@ -1889,27 +1901,35 @@ export default function Calendar() {
                     className={`flex gap-1 mb-2 items-center rounded-md ${
                       activeEventIndex === 0 ? "event-input-active" : ""
                     }`}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("text/plain", "0")
-                      setActiveEventIndex(0)
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault()
-                      e.dataTransfer.dropEffect = "move"
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      if (eventsForSelectedDate.length > 1) {
-                        // Swap the events
-                        const swappedEvents = [...eventsForSelectedDate]
-                        ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
-                        setEventsForSelectedDate(swappedEvents)
-                      }
-                    }}
                   >
-                    <div className="cursor-grab text-gray-300 flex items-center">
+                    <div
+                      className="cursor-grab text-gray-300 flex items-center h-full"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("text/plain", "drag-0")
+                        e.dataTransfer.effectAllowed = "move"
+                        // Add a ghost image
+                        const ghost = document.createElement("div")
+                        ghost.style.width = "1px"
+                        ghost.style.height = "1px"
+                        document.body.appendChild(ghost)
+                        e.dataTransfer.setDragImage(ghost, 0, 0)
+                        setTimeout(() => document.body.removeChild(ghost), 0)
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        e.dataTransfer.dropEffect = "move"
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        if (eventsForSelectedDate.length > 1) {
+                          // Swap the events
+                          const swappedEvents = [...eventsForSelectedDate]
+                          ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
+                          setEventsForSelectedDate(swappedEvents)
+                        }
+                      }}
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="12"
@@ -1987,27 +2007,35 @@ export default function Calendar() {
                     className={`flex gap-1 mb-2 items-center rounded-md ${
                       activeEventIndex === 1 ? "event-input-active" : ""
                     }`}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("text/plain", "1")
-                      setActiveEventIndex(1)
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault()
-                      e.dataTransfer.dropEffect = "move"
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      if (eventsForSelectedDate.length > 1) {
-                        // Swap the events
-                        const swappedEvents = [...eventsForSelectedDate]
-                        ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
-                        setEventsForSelectedDate(swappedEvents)
-                      }
-                    }}
                   >
-                    <div className="cursor-grab text-gray-300 flex items-center">
+                    <div
+                      className="cursor-grab text-gray-300 flex items-center h-full"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("text/plain", "drag-1")
+                        e.dataTransfer.effectAllowed = "move"
+                        // Add a ghost image
+                        const ghost = document.createElement("div")
+                        ghost.style.width = "1px"
+                        ghost.style.height = "1px"
+                        document.body.appendChild(ghost)
+                        e.dataTransfer.setDragImage(ghost, 0, 0)
+                        setTimeout(() => document.body.removeChild(ghost), 0)
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        e.dataTransfer.dropEffect = "move"
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        if (eventsForSelectedDate.length > 1) {
+                          // Swap the events
+                          const swappedEvents = [...eventsForSelectedDate]
+                          ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
+                          setEventsForSelectedDate(swappedEvents)
+                        }
+                      }}
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="12"

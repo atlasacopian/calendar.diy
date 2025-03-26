@@ -1879,7 +1879,6 @@ export default function Calendar() {
                     className={`flex gap-1 mb-2 items-center rounded-md ${
                       activeEventIndex === 0 ? "event-input-active" : ""
                     }`}
-                    onClick={() => setActiveEventIndex(0)}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", "0")
@@ -1954,7 +1953,6 @@ export default function Calendar() {
                     className={`flex gap-1 mb-2 items-center rounded-md ${
                       activeEventIndex === 1 ? "event-input-active" : ""
                     }`}
-                    onClick={() => setActiveEventIndex(1)}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", "1")

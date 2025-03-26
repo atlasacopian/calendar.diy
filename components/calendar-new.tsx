@@ -1116,7 +1116,9 @@ export default function Calendar() {
     // Just use the first event as an example
     const event = events[0]
     const dateString = format(event.date, "yyyyMMdd")
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.content)}&dates=${dateString}/${dateString}`
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+      event.content,
+    )}&dates=${dateString}/${dateString}`
     window.open(url, "_blank")
   }
 
@@ -1783,7 +1785,6 @@ export default function Calendar() {
                 </label>
 
                 {/* First Event */}
-
                 {eventsForSelectedDate.length > 0 && (
                   <div
                     className={`mb-4 ${activeEventIndex === 0 ? "event-input-active" : ""}`}
@@ -1802,7 +1803,16 @@ export default function Calendar() {
                       rows={2}
                     />
                     <div className="flex justify-end mt-1 space-x-2">
-                      <div className="cursor-move text-gray-400 flex items-center">
+                      <button
+                        className="cursor-move text-gray-400 hover:text-gray-600 flex items-center"
+                        draggable
+                        onDragStart={(e) => {
+                          e.stopPropagation()
+                          if (eventsForSelectedDate.length > 0) {
+                            handleDragStart(eventsForSelectedDate[0], e)
+                          }
+                        }}
+                      >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="14"
@@ -1818,7 +1828,7 @@ export default function Calendar() {
                           <circle cx="9" cy="12" r="1" />
                           <circle cx="15" cy="12" r="1" />
                         </svg>
-                      </div>
+                      </button>
                       <button
                         onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
                         className="text-gray-400 hover:text-gray-600"
@@ -1861,7 +1871,16 @@ export default function Calendar() {
                       rows={2}
                     />
                     <div className="flex justify-end mt-1 space-x-2">
-                      <div className="cursor-move text-gray-400 flex items-center">
+                      <button
+                        className="cursor-move text-gray-400 hover:text-gray-600 flex items-center"
+                        draggable
+                        onDragStart={(e) => {
+                          e.stopPropagation()
+                          if (eventsForSelectedDate.length > 1) {
+                            handleDragStart(eventsForSelectedDate[1], e)
+                          }
+                        }}
+                      >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="14"
@@ -1877,7 +1896,7 @@ export default function Calendar() {
                           <circle cx="9" cy="12" r="1" />
                           <circle cx="15" cy="12" r="1" />
                         </svg>
-                      </div>
+                      </button>
                       <button
                         onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
                         className="text-gray-400 hover:text-gray-600"
@@ -1900,6 +1919,31 @@ export default function Calendar() {
                       </button>
                     </div>
                   </div>
+                )}
+
+                {/* Add New Event button - Show when there are fewer than 2 events */}
+                {eventsForSelectedDate.length < 2 && (
+                  <button
+                    onClick={handleAddNewEvent}
+                    className="w-full flex items-center justify-center py-3 px-4 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 my-2 shadow-sm"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4 mr-2"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    ADD NEW EVENT
+                  </button>
                 )}
               </div>
 

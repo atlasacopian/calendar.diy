@@ -1953,7 +1953,6 @@ export default function Calendar() {
                     className={`flex gap-1 mb-2 items-center rounded-md ${
                       activeEventIndex === 1 ? "event-input-active" : ""
                     }`}
-                    onClick={() => setActiveEventIndex(1)}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", "1")
@@ -1990,10 +1989,23 @@ export default function Calendar() {
                     <textarea
                       id="event-content-2"
                       value={eventsForSelectedDate[1]?.content || ""}
-                      onChange={(e) => handleUpdateEventContent(1, e.target.value)}
-                      onKeyDown={handleTextareaKeyDown}
-                      onMouseUp={handleTextSelect}
-                      onTouchEnd={handleTextSelect}
+                      onChange={(e) => {
+                        handleUpdateEventContent(1, e.target.value)
+                        setActiveEventIndex(1) // Force active index to stay on second event
+                      }}
+                      onFocus={() => setActiveEventIndex(1)} // Set active index when focused
+                      onKeyDown={(e) => {
+                        setActiveEventIndex(1) // Ensure active index stays on second event
+                        handleTextareaKeyDown(e)
+                      }}
+                      onMouseUp={(e) => {
+                        setActiveEventIndex(1)
+                        handleTextSelect(e)
+                      }}
+                      onTouchEnd={(e) => {
+                        setActiveEventIndex(1)
+                        handleTextSelect(e)
+                      }}
                       onClick={(e) => {
                         e.stopPropagation()
                         setActiveEventIndex(1)

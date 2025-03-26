@@ -82,6 +82,7 @@ export default function Calendar() {
   const eventModalRef = useRef<HTMLDivElement>(null)
   const shareModalRef = useRef<HTMLDivElement>(null)
   const eventInputRef = useRef<HTMLTextAreaElement>(null)
+  const firstEventInputRef = useRef<HTMLTextAreaElement>(null)
 
   const handleToggleProjectGroup = useCallback((groupId: string) => {
     setProjectGroups((prevGroups) =>
@@ -104,9 +105,8 @@ export default function Calendar() {
 
     // Update any events using this project group to use the default color
     setEvents((prev) =>
-      prev.map((event) =>
-        event.projectId === groupId ? { ...event, color: "text-black", projectId: "default" } : event,
-      ),
+    prev.map((event) =>
+      event.projectId === groupId ? { ...event, color: "text-black", projectId: "default" } : event)),
     )
   }, [])
 
@@ -226,105 +226,119 @@ export default function Calendar() {
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
-    .calendar-day {
-      position: relative;
-    }
-    .calendar-day:hover {
-      background-color: rgba(249, 250, 251, 1) !important;
-    }
-    
-    .dark .calendar-day:hover {
-      background-color: rgba(30, 30, 30, 1) !important;
-    }
-
-    /* Explicitly remove any styling for day 22 */
-    .calendar-day:nth-child(29) .rounded-full {
-      background-color: transparent !important;
-      color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
-    }
-    
-    /* Print styles */
-    @media print {
-      body {
-        background: white !important;
-        color: black !important;
-      }
-      
-      .calendar-container {
-        border: 1px solid #eee !important;
-        box-shadow: none !important;
-      }
-      
-      .calendar-day {
-        border: 1px solid #eee !important;
-      }
-      
-      .calendar-controls, .dark-mode-toggle {
-        display: none !important;
-      }
-    }
-    
-  /* Ensure text doesn't overflow and is properly truncated */
-  .calendar-day .truncate {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
-  
-  .calendar-day .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    white-space: normal;
-  }
-
-  .line-clamp-4 {
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: normal;
-  }
-
-  /* Ensure calendar day cells have proper height for multi-line content */
   .calendar-day {
-    min-height: 5rem;
+    position: relative;
+  }
+  .calendar-day:hover {
+    background-color: rgba(249, 250, 251, 1) !important;
   }
   
-    /* Make most text uppercase except user input */
-    .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span:not(.preserve-case), div:not(.preserve-case), a, label {
-      text-transform: uppercase !important;
-    }
+  .dark .calendar-day:hover {
+    background-color: rgba(30, 30, 30, 1) !important;
+  }
 
-    /* Add body class to prevent scrolling when modal is open */
-    body.modal-open {
-      overflow: hidden;
+  /* Explicitly remove any styling for day 22 */
+  .calendar-day:nth-child(29) .rounded-full {
+    background-color: transparent !important;
+    color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
+  }
+  
+  /* Print styles */
+  @media print {
+    body {
+      background: white !important;
+      color: black !important;
     }
+    
+    .calendar-container {
+      border: 1px solid #eee !important;
+      box-shadow: none !important;
+    }
+    
+    .calendar-day {
+      border: 1px solid #eee !important;
+    }
+    
+    .calendar-controls, .dark-mode-toggle {
+      display: none !important;
+    }
+  }
+  
+/* Ensure text doesn't overflow and is properly truncated */
+.calendar-day .truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
 
-    /* Make sure text is preserved as lowercase in inputs */
-    input, textarea {
-      text-transform: none !important;
-    }
+.calendar-day .line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  white-space: normal;
+}
 
-    /* Ensure event text is not cut off */
-    .preserve-case {
-      text-transform: none !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      word-break: break-word !important;
-    }
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
 
-    /* Highlight active event */
-    .event-input-active {
-      background-color: rgba(249, 250, 251, 0.8);
-      border-color: rgba(209, 213, 219, 1);
-    }
-  `
+/* Ensure calendar day cells have proper height for multi-line content */
+.calendar-day {
+  min-height: 5rem;
+}
+
+  /* Make most text uppercase except user input */
+  .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span:not(.preserve-case), div:not(.preserve-case), a, label {
+    text-transform: uppercase !important;
+  }
+
+  /* Add body class to prevent scrolling when modal is open */
+  body.modal-open {
+    overflow: hidden;
+  }
+
+  /* Make sure text is preserved as lowercase in inputs */
+  input, textarea {
+    text-transform: none !important;
+  }
+
+  /* Ensure event text is not cut off */
+  .preserve-case {
+    text-transform: none !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    word-break: break-word !important;
+  }
+
+  /* Highlight active event */
+  .event-input-active {
+    background-color: rgba(249, 250, 251, 0.8);
+    border-color: rgba(209, 213, 219, 1);
+  }
+  
+  /* Make event items draggable with visual cue */
+  .event-draggable {
+    cursor: grab;
+  }
+  
+  .event-draggable:active {
+    cursor: grabbing;
+  }
+  
+  /* Bold text styling */
+  .calendar-day .bold-text {
+    font-weight: bold;
+  }
+`
     document.head.appendChild(style)
 
     return () => {
@@ -347,6 +361,25 @@ export default function Calendar() {
     setActiveEventIndex(0) // Reset to first event
 
     setShowModal(true)
+
+    // If there are no events for this day, automatically create one
+    if (existingEvents.length === 0) {
+      const newEvent = {
+        id: Math.random().toString(36).substring(2, 11),
+        date: day,
+        content: "",
+        color: "text-black",
+        projectId: "default",
+      }
+      setEventsForSelectedDate([newEvent])
+
+      // Focus the input field after a short delay to ensure the DOM is ready
+      setTimeout(() => {
+        if (firstEventInputRef.current) {
+          firstEventInputRef.current.focus()
+        }
+      }, 50)
+    }
   }
 
   const handleCancelEdit = () => {
@@ -358,11 +391,14 @@ export default function Calendar() {
   const handleSaveAndClose = () => {
     // Save any changes to the events
     if (eventsForSelectedDate.length > 0) {
+      // Filter out empty events
+      const nonEmptyEvents = eventsForSelectedDate.filter((event) => event.content.trim() !== "")
+
       // First, remove all events for this day from the main events array
       const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
 
       // Then add back the updated events for this day
-      const newEvents = [...otherEvents, ...eventsForSelectedDate]
+      const newEvents = [...otherEvents, ...nonEmptyEvents]
       setEvents(newEvents)
 
       // Save to localStorage immediately
@@ -412,7 +448,24 @@ export default function Calendar() {
   }
 
   // Update the handleTextareaKeyDown function to allow Shift+Enter for new lines
+  // and handle Cmd+B or Ctrl+B for bold text
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle Cmd+B or Ctrl+B for bold text
+    if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+      e.preventDefault()
+
+      // Get the current selection from the textarea
+      const textarea = e.currentTarget
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+
+      if (start !== end) {
+        setSelectedText({ start, end })
+        handleBoldText()
+      }
+      return
+    }
+
     // Only save and close on Enter without shift key (shift+enter allows for line breaks)
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
@@ -449,13 +502,18 @@ export default function Calendar() {
     setShowResetConfirm(false)
   }
 
+  // Improved drag and drop functionality
   // Handle drag start for events
   const handleDragStart = (event: CalendarEvent, e: React.DragEvent) => {
-    e.stopPropagation() // Prevent event bubbling
+    e.stopPropagation()
     setDraggedEvent(event)
 
-    // Set a ghost drag image
+    // Set data for drag operation
     if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move"
+      e.dataTransfer.setData("text/plain", event.id)
+
+      // Set a ghost drag image
       const ghostElement = document.createElement("div")
       ghostElement.classList.add("event-ghost")
       ghostElement.textContent = event.content
@@ -483,12 +541,15 @@ export default function Calendar() {
   // Handle drag over for calendar days
   const handleDragOver = (day: Date, e: React.DragEvent) => {
     e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
     setDragOverDate(day)
   }
 
   // Handle drop for calendar days
   const handleDrop = (day: Date, e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+
     if (draggedEvent) {
       // Check if the target day already has 2 events
       const dayEvents = events.filter((event) => isSameDay(event.date, day) && event.id !== draggedEvent.id)
@@ -504,20 +565,28 @@ export default function Calendar() {
       const filteredEvents = events.filter((event) => event.id !== draggedEvent.id)
 
       // Add it to the new date
-      setEvents([
-        ...filteredEvents,
-        {
-          ...draggedEvent,
-          date: day,
-        },
-      ])
+      const updatedEvent = {
+        ...draggedEvent,
+        date: day,
+      }
+
+      setEvents([...filteredEvents, updatedEvent])
+
+      // If the modal is open and showing the target day, update the events for that day
+      if (showModal && selectedDate && isSameDay(selectedDate, day)) {
+        const updatedDayEvents = [...eventsForSelectedDate.filter((e) => e.id !== draggedEvent.id), updatedEvent]
+        setEventsForSelectedDate(updatedDayEvents)
+      }
     }
+
     setDraggedEvent(null)
     setDragOverDate(null)
   }
 
   // Handle drag end
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     setDraggedEvent(null)
     setDragOverDate(null)
   }
@@ -666,7 +735,7 @@ export default function Calendar() {
           holidayDiv.style.marginBottom = "3px"
           holidayDiv.style.whiteSpace = "normal"
           holidayDiv.style.wordBreak = "break-word"
-          holidayDiv.textContent = holiday.name
+          holidayDiv.textContent = holiday.name.toUpperCase()
           holidaysContainer.appendChild(holidayDiv)
         })
 
@@ -704,6 +773,7 @@ export default function Calendar() {
           if (event?.color?.includes("red")) color = "#ff0000"
           if (event?.color?.includes("yellow")) color = "#e3e600"
           if (event?.color?.includes("orange")) color = "#ff7200"
+          if (event?.color?.includes("green")) color = color = "#ff7200"
           if (event?.color?.includes("green")) color = "#1ae100"
           if (event?.color?.includes("purple")) color = "#a800ff"
 
@@ -1116,9 +1186,7 @@ export default function Calendar() {
     // Just use the first event as an example
     const event = events[0]
     const dateString = format(event.date, "yyyyMMdd")
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-      event.content,
-    )}&dates=${dateString}/${dateString}`
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.content)}&dates=${dateString}/${dateString}`
     window.open(url, "_blank")
   }
 
@@ -1210,7 +1278,7 @@ export default function Calendar() {
             {limitedEvents.length === 1 ? (
               // If there's only one event, center it vertically
               <div
-                className="flex-1 flex items-center"
+                className="flex-1 flex items-center event-draggable"
                 draggable
                 onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
                 onDragEnd={handleDragEnd}
@@ -1229,7 +1297,7 @@ export default function Calendar() {
               // If there are two events, space them with the divider centered
               <div className="flex flex-col h-full">
                 <div
-                  className="flex-1 flex items-start"
+                  className="flex-1 flex items-start event-draggable"
                   draggable
                   onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
                   onDragEnd={handleDragEnd}
@@ -1251,7 +1319,7 @@ export default function Calendar() {
                 )}
 
                 <div
-                  className="flex-1 flex items-end"
+                  className="flex-1 flex items-end event-draggable"
                   draggable
                   onDragStart={(e) => handleDragStart(limitedEvents[1], e)}
                   onDragEnd={handleDragEnd}
@@ -1381,6 +1449,13 @@ export default function Calendar() {
 
     // Set the active index to the new event
     setActiveEventIndex(eventsForSelectedDate.length)
+
+    // Focus the new event input after a short delay
+    setTimeout(() => {
+      if (firstEventInputRef.current) {
+        firstEventInputRef.current.focus()
+      }
+    }, 50)
   }
 
   // Add keyboard event handlers for left and right arrow keys
@@ -1449,6 +1524,17 @@ export default function Calendar() {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [showShareModal])
+
+  // Focus the first event input when modal opens
+  useEffect(() => {
+    if (showModal && eventsForSelectedDate.length > 0) {
+      setTimeout(() => {
+        if (firstEventInputRef.current) {
+          firstEventInputRef.current.focus()
+        }
+      }, 50)
+    }
+  }, [showModal, eventsForSelectedDate])
 
   return (
     <div className="flex flex-col space-y-4 min-h-screen">
@@ -1787,9 +1873,28 @@ export default function Calendar() {
                 {/* First Event */}
                 {eventsForSelectedDate.length > 0 && (
                   <div
-                    className={`mb-4 ${activeEventIndex === 0 ? "event-input-active" : ""}`}
+                    className={`flex gap-1 mb-2 items-center rounded-md ${
+                      activeEventIndex === 0 ? "event-input-active" : ""
+                    }`}
                     onClick={() => setActiveEventIndex(0)}
                   >
+                    <div className="cursor-move text-gray-300 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-3 w-3"
+                      >
+                        <circle cx="9" cy="12" r="1" />
+                        <circle cx="15" cy="12" r="1" />
+                      </svg>
+                    </div>
                     <textarea
                       id="event-content-1"
                       value={eventsForSelectedDate[0]?.content || ""}
@@ -1797,68 +1902,59 @@ export default function Calendar() {
                       onKeyDown={handleTextareaKeyDown}
                       onMouseUp={handleTextSelect}
                       onTouchEnd={handleTextSelect}
-                      ref={eventInputRef}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
+                      ref={firstEventInputRef}
+                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
                       placeholder="ENTER EVENT NAME"
                       rows={2}
                     />
-                    <div className="flex justify-end mt-1 space-x-2">
-                      <button
-                        className="cursor-move text-gray-400 hover:text-gray-600 flex items-center"
-                        draggable
-                        onDragStart={(e) => {
-                          e.stopPropagation()
-                          if (eventsForSelectedDate.length > 0) {
-                            handleDragStart(eventsForSelectedDate[0], e)
-                          }
-                        }}
+                    <button
+                      onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
+                      className="text-gray-300 hover:text-gray-500 self-center"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4"
-                        >
-                          <circle cx="9" cy="12" r="1" />
-                          <circle cx="15" cy="12" r="1" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4"
-                        >
-                          <path d="M18 6L6 18"></path>
-                          <path d="M6 6l12 12"></path>
-                        </svg>
-                      </button>
-                    </div>
+                        <path d="M18 6L6 18"></path>
+                        <path d="M6 6l12 12"></path>
+                      </svg>
+                    </button>
                   </div>
                 )}
 
                 {/* Second Event */}
                 {eventsForSelectedDate.length > 1 && (
                   <div
-                    className={`mb-4 ${activeEventIndex === 1 ? "event-input-active" : ""}`}
+                    className={`flex gap-1 mb-2 items-center rounded-md ${
+                      activeEventIndex === 1 ? "event-input-active" : ""
+                    }`}
                     onClick={() => setActiveEventIndex(1)}
                   >
+                    <div className="cursor-move text-gray-300 flex items-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-3 w-3"
+                      >
+                        <circle cx="9" cy="12" r="1" />
+                        <circle cx="15" cy="12" r="1" />
+                      </svg>
+                    </div>
                     <textarea
                       id="event-content-2"
                       value={eventsForSelectedDate[1]?.content || ""}
@@ -1866,86 +1962,83 @@ export default function Calendar() {
                       onKeyDown={handleTextareaKeyDown}
                       onMouseUp={handleTextSelect}
                       onTouchEnd={handleTextSelect}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
+                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
                       placeholder="ENTER EVENT NAME"
                       rows={2}
                     />
-                    <div className="flex justify-end mt-1 space-x-2">
-                      <button
-                        className="cursor-move text-gray-400 hover:text-gray-600 flex items-center"
-                        draggable
-                        onDragStart={(e) => {
-                          e.stopPropagation()
-                          if (eventsForSelectedDate.length > 1) {
-                            handleDragStart(eventsForSelectedDate[1], e)
-                          }
-                        }}
+                    <button
+                      onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
+                      className="text-gray-300 hover:text-gray-500 self-center"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4"
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4"
-                        >
-                          <circle cx="9" cy="12" r="1" />
-                          <circle cx="15" cy="12" r="1" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="h-4 w-4"
-                        >
-                          <path d="M18 6L6 18"></path>
-                          <path d="M6 6l12 12"></path>
-                        </svg>
-                      </button>
-                    </div>
+                        <path d="M18 6L6 18"></path>
+                        <path d="M6 6l12 12"></path>
+                      </svg>
+                    </button>
                   </div>
                 )}
-
-                {/* Add New Event button - Show when there are fewer than 2 events */}
-                {eventsForSelectedDate.length < 2 && (
-                  <button
-                    onClick={handleAddNewEvent}
-                    className="w-full flex items-center justify-center py-3 px-4 text-sm font-medium text-gray-800 dark:text-gray-200 focus:outline-none border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 my-2 shadow-sm"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4 mr-2"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    ADD NEW EVENT
-                  </button>
-                )}
               </div>
+
+              {/* Swap Order Button - Only show when there are 2 events */}
+              {eventsForSelectedDate.length === 2 && (
+                <button
+                  onClick={handleSwapEvents}
+                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3 w-3 mr-1"
+                  >
+                    <path d="M7 16V4m0 0L3 8m4-4l4 4" />
+                    <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  SWAP
+                </button>
+              )}
+
+              {/* Add New Event button - Show when there are fewer than 2 events */}
+              {eventsForSelectedDate.length < 2 && (
+                <button
+                  onClick={handleAddNewEvent}
+                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 mr-2"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  ADD NEW EVENT
+                </button>
+              )}
 
               {/* Tag Selection - Now appears below both events */}
               <div className="mb-4">

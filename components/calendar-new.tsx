@@ -1450,15 +1450,20 @@ export default function Calendar() {
     setEventsForSelectedDate(updatedEvents)
 
     // Set the active index to the new event
-    setActiveEventIndex(updatedEvents.length - 1)
+    const newIndex = updatedEvents.length - 1
+    setActiveEventIndex(newIndex)
 
     // Focus the new event input after a short delay
     setTimeout(() => {
-      const textareas = document.querySelectorAll("textarea")
-      if (textareas.length > 0 && textareas[updatedEvents.length - 1]) {
-        textareas[updatedEvents.length - 1].focus()
+      if (newIndex === 0 && firstEventInputRef.current) {
+        firstEventInputRef.current.focus()
+      } else {
+        const textareas = document.querySelectorAll("textarea")
+        if (textareas.length > newIndex) {
+          textareas[newIndex].focus()
+        }
       }
-    }, 50)
+    }, 100)
   }
 
   // Add keyboard event handlers for left and right arrow keys
@@ -1528,16 +1533,21 @@ export default function Calendar() {
     }
   }, [showShareModal])
 
-  // Focus the first event input when modal opens
+  // Focus the appropriate event input when modal opens
   useEffect(() => {
     if (showModal && eventsForSelectedDate.length > 0) {
       setTimeout(() => {
-        if (firstEventInputRef.current) {
+        if (activeEventIndex === 0 && firstEventInputRef.current) {
           firstEventInputRef.current.focus()
+        } else {
+          const textareas = document.querySelectorAll("textarea")
+          if (textareas.length > activeEventIndex) {
+            textareas[activeEventIndex].focus()
+          }
         }
-      }, 50)
+      }, 100)
     }
-  }, [showModal, eventsForSelectedDate])
+  }, [showModal, eventsForSelectedDate, activeEventIndex])
 
   return (
     <div className="flex flex-col space-y-4 min-h-screen">
@@ -1882,7 +1892,6 @@ export default function Calendar() {
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", "0")
-                      setActiveEventIndex(0)
                     }}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
@@ -1915,17 +1924,37 @@ export default function Calendar() {
                     <textarea
                       id="event-content-1"
                       value={eventsForSelectedDate[0]?.content || ""}
-                      onChange={(e) => handleUpdateEventContent(0, e.target.value)}
-                      onKeyDown={handleTextareaKeyDown}
-                      onMouseUp={handleTextSelect}
-                      onTouchEnd={handleTextSelect}
+                      onChange={(e) => {
+                        handleUpdateEventContent(0, e.target.value)
+                        setActiveEventIndex(0)
+                      }}
+                      onFocus={() => setActiveEventIndex(0)}
+                      onKeyDown={(e) => {
+                        setActiveEventIndex(0)
+                        handleTextareaKeyDown(e)
+                      }}
+                      onMouseUp={(e) => {
+                        setActiveEventIndex(0)
+                        handleTextSelect(e)
+                      }}
+                      onTouchEnd={(e) => {
+                        setActiveEventIndex(0)
+                        handleTextSelect(e)
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveEventIndex(0)
+                      }}
                       ref={firstEventInputRef}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
+                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case"
                       placeholder="ENTER EVENT NAME"
                       rows={2}
                     />
                     <button
-                      onClick={() => handleDeleteEvent(eventsForSelectedDate[0].id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteEvent(eventsForSelectedDate[0].id)
+                      }}
                       className="text-gray-300 hover:text-gray-500 self-center"
                     >
                       <svg
@@ -1947,7 +1976,7 @@ export default function Calendar() {
                   </div>
                 )}
 
-                {/* Second Event */}
+                {/* Second Event - Completely isolated from the first */}
                 {eventsForSelectedDate.length > 1 && (
                   <div
                     className={`flex gap-1 mb-2 items-center rounded-md ${
@@ -1956,7 +1985,6 @@ export default function Calendar() {
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", "1")
-                      setActiveEventIndex(1)
                     }}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
@@ -1991,11 +2019,11 @@ export default function Calendar() {
                       value={eventsForSelectedDate[1]?.content || ""}
                       onChange={(e) => {
                         handleUpdateEventContent(1, e.target.value)
-                        setActiveEventIndex(1) // Force active index to stay on second event
+                        setActiveEventIndex(1)
                       }}
-                      onFocus={() => setActiveEventIndex(1)} // Set active index when focused
+                      onFocus={() => setActiveEventIndex(1)}
                       onKeyDown={(e) => {
-                        setActiveEventIndex(1) // Ensure active index stays on second event
+                        setActiveEventIndex(1)
                         handleTextareaKeyDown(e)
                       }}
                       onMouseUp={(e) => {
@@ -2010,7 +2038,7 @@ export default function Calendar() {
                         e.stopPropagation()
                         setActiveEventIndex(1)
                       }}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
+                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case"
                       placeholder="ENTER EVENT NAME"
                       rows={2}
                     />

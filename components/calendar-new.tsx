@@ -1701,7 +1701,7 @@ export default function Calendar() {
               <div className="relative date-selector-container">
                 <button
                   onClick={() => setShowDateSelector(!showDateSelector)}
-                  className="font-mono text-lg md:text-xl tracking-tight uppercase text-center dark:text-white focus:outline-none px-2 py-1"
+                  className="font-mono text-lg md:text-xl tracking-tight uppercase text-center dark:text-white focus:outline-none px-2 py-1 hover:underline"
                 >
                   {format(currentDate, "MMMM yyyy").toUpperCase()}
                 </button>
@@ -1953,6 +1953,7 @@ export default function Calendar() {
                     className={`flex gap-1 mb-2 items-center rounded-md ${
                       activeEventIndex === 1 ? "event-input-active" : ""
                     }`}
+                    onClick={() => setActiveEventIndex(1)}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", "1")
@@ -1993,12 +1994,19 @@ export default function Calendar() {
                       onKeyDown={handleTextareaKeyDown}
                       onMouseUp={handleTextSelect}
                       onTouchEnd={handleTextSelect}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setActiveEventIndex(1)
+                      }}
                       className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-3 px-4 preserve-case"
                       placeholder="ENTER EVENT NAME"
                       rows={2}
                     />
                     <button
-                      onClick={() => handleDeleteEvent(eventsForSelectedDate[1].id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteEvent(eventsForSelectedDate[1].id)
+                      }}
                       className="text-gray-300 hover:text-gray-500 self-center"
                     >
                       <svg

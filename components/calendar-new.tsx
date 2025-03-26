@@ -1446,15 +1446,17 @@ export default function Calendar() {
     }
 
     // Add to the events for this day
-    setEventsForSelectedDate([...eventsForSelectedDate, newEvent])
+    const updatedEvents = [...eventsForSelectedDate, newEvent]
+    setEventsForSelectedDate(updatedEvents)
 
     // Set the active index to the new event
-    setActiveEventIndex(eventsForSelectedDate.length)
+    setActiveEventIndex(updatedEvents.length - 1)
 
     // Focus the new event input after a short delay
     setTimeout(() => {
-      if (firstEventInputRef.current) {
-        firstEventInputRef.current.focus()
+      const textareas = document.querySelectorAll("textarea")
+      if (textareas.length > 0 && textareas[updatedEvents.length - 1]) {
+        textareas[updatedEvents.length - 1].focus()
       }
     }, 50)
   }
@@ -1699,7 +1701,7 @@ export default function Calendar() {
               <div className="relative date-selector-container">
                 <button
                   onClick={() => setShowDateSelector(!showDateSelector)}
-                  className="font-mono text-lg md:text-xl tracking-tight uppercase text-center dark:text-white hover:underline focus:outline-none px-2 py-1 border-b-2 border-transparent hover:border-gray-200"
+                  className="font-mono text-lg md:text-xl tracking-tight uppercase text-center dark:text-white focus:outline-none px-2 py-1"
                 >
                   {format(currentDate, "MMMM yyyy").toUpperCase()}
                 </button>
@@ -1878,8 +1880,23 @@ export default function Calendar() {
                       activeEventIndex === 0 ? "event-input-active" : ""
                     }`}
                     onClick={() => setActiveEventIndex(0)}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/plain", "0")
+                      setActiveEventIndex(0)
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      const sourceIndex = Number.parseInt(e.dataTransfer.getData("text/plain"))
+                      if (sourceIndex !== 0 && eventsForSelectedDate.length > 1) {
+                        const swappedEvents = [...eventsForSelectedDate]
+                        ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
+                        setEventsForSelectedDate(swappedEvents)
+                      }
+                    }}
                   >
-                    <div className="cursor-move text-gray-300 flex items-center">
+                    <div className="cursor-grab text-gray-300 flex items-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="12"
@@ -1938,8 +1955,23 @@ export default function Calendar() {
                       activeEventIndex === 1 ? "event-input-active" : ""
                     }`}
                     onClick={() => setActiveEventIndex(1)}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/plain", "1")
+                      setActiveEventIndex(1)
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      const sourceIndex = Number.parseInt(e.dataTransfer.getData("text/plain"))
+                      if (sourceIndex !== 1 && eventsForSelectedDate.length > 1) {
+                        const swappedEvents = [...eventsForSelectedDate]
+                        ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
+                        setEventsForSelectedDate(swappedEvents)
+                      }
+                    }}
                   >
-                    <div className="cursor-move text-gray-300 flex items-center">
+                    <div className="cursor-grab text-gray-300 flex items-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="12"
@@ -1990,31 +2022,6 @@ export default function Calendar() {
                   </div>
                 )}
               </div>
-
-              {/* Swap Order Button - Only show when there are 2 events */}
-              {eventsForSelectedDate.length === 2 && (
-                <button
-                  onClick={handleSwapEvents}
-                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-3 w-3 mr-1"
-                  >
-                    <path d="M7 16V4m0 0L3 8m4-4l4 4" />
-                    <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                  SWAP
-                </button>
-              )}
 
               {/* Add New Event button - Show when there are fewer than 2 events */}
               {eventsForSelectedDate.length < 2 && (

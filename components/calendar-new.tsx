@@ -1892,12 +1892,17 @@ export default function Calendar() {
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", "0")
+                      setActiveEventIndex(0)
                     }}
-                    onDragOver={(e) => e.preventDefault()}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.dataTransfer.dropEffect = "move"
+                    }}
                     onDrop={(e) => {
                       e.preventDefault()
-                      const sourceIndex = Number.parseInt(e.dataTransfer.getData("text/plain"))
-                      if (sourceIndex !== 0 && eventsForSelectedDate.length > 1) {
+                      e.stopPropagation()
+                      if (eventsForSelectedDate.length > 1) {
+                        // Swap the events
                         const swappedEvents = [...eventsForSelectedDate]
                         ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
                         setEventsForSelectedDate(swappedEvents)
@@ -1985,12 +1990,17 @@ export default function Calendar() {
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", "1")
+                      setActiveEventIndex(1)
                     }}
-                    onDragOver={(e) => e.preventDefault()}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.dataTransfer.dropEffect = "move"
+                    }}
                     onDrop={(e) => {
                       e.preventDefault()
-                      const sourceIndex = Number.parseInt(e.dataTransfer.getData("text/plain"))
-                      if (sourceIndex !== 1 && eventsForSelectedDate.length > 1) {
+                      e.stopPropagation()
+                      if (eventsForSelectedDate.length > 1) {
+                        // Swap the events
                         const swappedEvents = [...eventsForSelectedDate]
                         ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
                         setEventsForSelectedDate(swappedEvents)
@@ -2068,6 +2078,30 @@ export default function Calendar() {
                   </div>
                 )}
               </div>
+
+              {/* Add a swap button between the events and the Add New Event button */}
+              {eventsForSelectedDate.length === 2 && (
+                <button
+                  onClick={handleSwapEvents}
+                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 mr-2"
+                  >
+                    <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  SWAP EVENTS
+                </button>
+              )}
 
               {/* Add New Event button - Show when there are fewer than 2 events */}
               {eventsForSelectedDate.length < 2 && (

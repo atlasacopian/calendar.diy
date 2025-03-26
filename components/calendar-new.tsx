@@ -105,8 +105,9 @@ export default function Calendar() {
 
     // Update any events using this project group to use the default color
     setEvents((prev) =>
-    prev.map((event) =>
-      event.projectId === groupId ? { ...event, color: "text-black", projectId: "default" } : event)),
+      prev.map((event) =>
+        event.projectId === groupId ? { ...event, color: "text-black", projectId: "default" } : event,
+      ),
     )
   }, [])
 

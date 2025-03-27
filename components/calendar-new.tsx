@@ -385,6 +385,33 @@ export default function Calendar() {
 .dark .calendar-day:nth-last-child(-n+7) {
   border-bottom: 1px solid rgba(75, 85, 99, 1);
 }
+
+/* Prevent vertical scrolling */
+body {
+  overflow-y: hidden;
+  height: 100vh;
+  position: fixed;
+  width: 100%;
+}
+
+/* Make calendar fit in viewport */
+.calendar-full-container {
+  max-height: calc(100vh - 150px);
+}
+
+/* Adjust cell heights to fit in viewport */
+@media (max-height: 700px) {
+  .calendar-day {
+    height: 14vw !important;
+    min-height: 3.5rem !important;
+  }
+}
+
+/* Ensure month title stays on one line */
+.date-selector-container button {
+  white-space: nowrap;
+  display: inline-block;
+}
 `
     document.head.appendChild(style)
 
@@ -1595,7 +1622,7 @@ export default function Calendar() {
   }, [showModal, eventsForSelectedDate, activeEventIndex])
 
   return (
-    <div className="flex flex-col space-y-4 min-h-screen">
+    <div className="flex flex-col space-y-4 min-h-screen max-h-screen overflow-hidden">
       {/* Calendar Controls - Now with reset button on left and others on right */}
       <div className="calendar-controls flex flex-wrap items-center justify-between gap-1 p-0 mb-1">
         {/* Reset button on the left */}
@@ -1733,7 +1760,7 @@ export default function Calendar() {
             <div className="flex justify-start">
               <button
                 onClick={handlePreviousMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1756,7 +1783,7 @@ export default function Calendar() {
               <div className="relative date-selector-container">
                 <button
                   onClick={() => setShowDateSelector(!showDateSelector)}
-                  className="font-mono text-lg md:text-xl tracking-tight uppercase text-center dark:text-white focus:outline-none px-2 py-1 hover:underline"
+                  className="font-mono text-lg md:text-xl tracking-tight uppercase text-center dark:text-white focus:outline-none px-2 py-1 hover:underline whitespace-nowrap"
                 >
                   {format(currentDate, "MMMM yyyy").toUpperCase()}
                 </button>
@@ -1834,7 +1861,7 @@ export default function Calendar() {
             <div className="flex justify-end">
               <button
                 onClick={handleNextMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

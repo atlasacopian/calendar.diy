@@ -375,7 +375,7 @@ export default function Calendar() {
   grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
-/* Fix the last row alignment */
+/* Fix empty cells in last row */
 .calendar-day:last-child,
 .calendar-day:nth-last-child(-n+7) {
   border-bottom: 1px solid rgba(229, 231, 235, 1);
@@ -415,56 +415,17 @@ body {
 
 /* Fix navigation arrow highlight issue */
 .nav-arrow {
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* Fix grid alignment issues */
-.grid-cols-7 {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  width: 100%;
-}
-
-.grid-cols-7 > div {
-  border-right: 1px solid rgba(229, 231, 235, 1);
-  border-bottom: 1px solid rgba(229, 231, 235, 1);
-}
-
-.dark .grid-cols-7 > div {
-  border-right: 1px solid rgba(75, 85, 99, 1);
-  border-bottom: 1px solid rgba(75, 85, 99, 1);
-}
-
-/* Fix empty cells in last row */
-.grid-cols-7 > div:empty {
-  border-right: 1px solid rgba(229, 231, 235, 1);
-  border-bottom: 1px solid rgba(229, 231, 235, 1);
-}
-
-.dark .grid-cols-7 > div:empty {
-  border-right: 1px solid rgba(75, 85, 99, 1);
-  border-bottom: 1px solid rgba(75, 85, 99, 1);
-}
-
-/* Add more space at the top on mobile */
-@media (max-width: 768px) {
-  .calendar-wrapper {
-    padding-top: 16px;
-  }
-}
-
-/* Fix navigation arrow highlight issue - more aggressive approach */
-.nav-arrow {
   -webkit-tap-highlight-color: transparent !important;
   -webkit-user-select: none !important;
   user-select: none !important;
   -webkit-touch-callout: none !important;
   outline: none !important;
+  touch-action: manipulation;
 }
 
-.nav-arrow:focus {
+button.nav-arrow:active,
+button.nav-arrow:focus {
+  background-color: transparent !important;
   outline: none !important;
   box-shadow: none !important;
 }
@@ -480,17 +441,52 @@ body {
 .grid-cols-7 {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: 1fr;
 }
 
 .grid-cols-7 > div {
   min-height: 5rem;
-  height: auto;
+  border-right: 1px solid rgba(229, 231, 235, 1);
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
 }
 
-/* Ensure all cells in the last row have the same height */
-.grid-cols-7 > div:nth-child(n+36) {
-  height: 5rem !important;
+.dark .grid-cols-7 > div {
+  border-right: 1px solid rgba(75, 85, 99, 1);
+  border-bottom: 1px solid rgba(75, 85, 99, 1);
+}
+
+/* Fix empty cells in last row */
+.grid-cols-7 > div:empty {
+  border-right: 1px solid rgba(229, 231, 235, 1);
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
+  min-height: 5rem;
+}
+
+.dark .grid-cols-7 > div:empty {
+  border-right: 1px solid rgba(75, 85, 99, 1);
+  border-bottom: 1px solid rgba(75, 85, 99, 1);
+}
+
+/* Fix the last row cells */
+.calendar-grid-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  width: 100%;
+}
+
+.calendar-grid-row > div {
+  min-height: 5rem;
+  border-right: 1px solid rgba(229, 231, 235, 1);
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
+}
+
+.dark .calendar-grid-row > div {
+  border-right: 1px solid rgba(75, 85, 99, 1);
+  border-bottom: 1px solid rgba(75, 85, 99, 1);
+}
+
+/* Completely disable tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
 }
 `
     document.head.appendChild(style)
@@ -1355,163 +1351,164 @@ body {
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
     const startingDayOfWeek = getDay(firstDayOfMonth)
 
-    const days = []
-
-    // Calculate how many rows we need for this month
+    // Calculate total number of rows needed
     const totalDays = startingDayOfWeek + daysInMonth
-    const rowsNeeded = Math.ceil(totalDays / 7)
+    const totalRows = Math.ceil(totalDays / 7)
 
-    // We want to always show 6 rows (42 cells) for consistency
-    const targetRows = 6
+    // Create rows array to hold each week
+    const rows = []
+    let currentRow = []
+    let currentDay = 1 - startingDayOfWeek // Start with negative days to account for previous month days
 
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(
-        <div
-          key={`empty-${i}`}
-          className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
-          onDragOver={(e) => e.preventDefault()}
-        ></div>,
-      )
-    }
+    // Generate all calendar cells organized by rows
+    for (let row = 0; row < 6; row++) {
+      currentRow = []
 
-    // Add cells for each day of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      const dayEvents = events.filter(
-        (event) =>
-          isSameDay(event.date, date) &&
-          projectGroups.find(
-            (g) =>
-              g.active &&
-              ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
-          ),
-      )
-      // Limit to 2 events per day
-      const limitedEvents = dayEvents.slice(0, 2)
-      const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
-      const isWeekend = getDay(date) === 0 || getDay(date) === 6
-      const isCurrentDay = isToday(date)
-      const isDragOver = dragOverDate && isSameDay(dragOverDate, date)
+      for (let col = 0; col < 7; col++) {
+        if (currentDay <= 0 || currentDay > daysInMonth) {
+          // Empty cell (previous or next month)
+          currentRow.push(
+            <div
+              key={`empty-${row}-${col}`}
+              className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
+              onDragOver={(e) => e.preventDefault()}
+            ></div>,
+          )
+        } else {
+          // Valid day in current month
+          const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDay)
+          const dayEvents = events.filter(
+            (event) =>
+              isSameDay(event.date, date) &&
+              projectGroups.find(
+                (g) =>
+                  g.active &&
+                  ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
+              ),
+          )
+          // Limit to 2 events per day
+          const limitedEvents = dayEvents.slice(0, 2)
+          const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
+          const isWeekend = getDay(date) === 0 || getDay(date) === 6
+          const isCurrentDay = isToday(date)
+          const isDragOver = dragOverDate && isSameDay(dragOverDate, date)
 
-      days.push(
-        <div
-          key={day}
-          onClick={() => handleDayClick(date)}
-          onDragOver={(e) => handleDragOver(date, e)}
-          onDrop={(e) => handleDrop(date, e)}
-          className={cn(
-            "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800 p-1 md:p-2 pt-0.5 md:pt-1",
-            isWeekend ? "bg-gray-50/30 dark:bg-gray-900/30" : "",
-            isCurrentDay ? "bg-gray-50 dark:bg-gray-900/50" : "",
-            isDragOver ? "bg-gray-100 dark:bg-gray-800" : "",
-          )}
-        >
-          <div
-            className={cn(
-              "absolute right-1 md:right-2 top-0.5 flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full font-mono text-[10px] md:text-xs",
-              isCurrentDay ? "bg-gray-200 dark:bg-gray-700" : "text-gray-400 dark:text-gray-500",
-            )}
-          >
-            {day}
-          </div>
-
-          <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
-            {dayHolidays.map((holiday, index) => (
+          currentRow.push(
+            <div
+              key={currentDay}
+              onClick={() => handleDayClick(date)}
+              onDragOver={(e) => handleDragOver(date, e)}
+              onDrop={(e) => handleDrop(date, e)}
+              className={cn(
+                "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800 p-1 md:p-2 pt-0.5 md:pt-1",
+                isWeekend ? "bg-gray-50/30 dark:bg-gray-900/30" : "",
+                isCurrentDay ? "bg-gray-50 dark:bg-gray-900/50" : "",
+                isDragOver ? "bg-gray-100 dark:bg-gray-800" : "",
+              )}
+            >
               <div
-                key={`holiday-${index}`}
-                className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
-              >
-                {holiday.name.toUpperCase()}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-0 pt-0 overflow-visible flex flex-col h-[calc(100%-12px)] justify-center">
-            {limitedEvents.length === 1 ? (
-              // If there's only one event, center it vertically
-              <div
-                className="flex-1 flex items-center event-draggable"
-                draggable
-                onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
-                onDragEnd={handleDragEnd}
-              >
-                <span
-                  className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-4 break-words"
-                  style={{
-                    color: getExactColorHex(limitedEvents[0].color),
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
-                  }}
-                ></span>
-              </div>
-            ) : (
-              // If there are two events, space them with the divider centered
-              <div className="flex flex-col h-full">
-                <div
-                  className="flex-1 flex items-start event-draggable"
-                  draggable
-                  onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <span
-                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
-                    style={{
-                      color: getExactColorHex(limitedEvents[0]?.color),
-                    }}
-                    dangerouslySetInnerHTML={{
-                      __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
-                    }}
-                  ></span>
-                </div>
-
-                {/* Only show divider when there are two entries */}
-                {limitedEvents.length === 2 && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 w-full my-auto"></div>
+                className={cn(
+                  "absolute right-1 md:right-2 top-0.5 flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full font-mono text-[10px] md:text-xs",
+                  isCurrentDay ? "bg-gray-200 dark:bg-gray-700" : "text-gray-400 dark:text-gray-500",
                 )}
-
-                <div
-                  className="flex-1 flex items-end event-draggable"
-                  draggable
-                  onDragStart={(e) => handleDragStart(limitedEvents[1], e)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <span
-                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
-                    style={{
-                      color: getExactColorHex(limitedEvents[1]?.color),
-                    }}
-                    dangerouslySetInnerHTML={{
-                      __html: limitedEvents[1] ? limitedEvents[1].formattedContent || limitedEvents[1].content : "",
-                    }}
-                  ></span>
-                </div>
+              >
+                {currentDay}
               </div>
-            )}
-          </div>
+
+              <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
+                {dayHolidays.map((holiday, index) => (
+                  <div
+                    key={`holiday-${index}`}
+                    className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
+                  >
+                    {holiday.name.toUpperCase()}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-0 pt-0 overflow-visible flex flex-col h-[calc(100%-12px)] justify-center">
+                {limitedEvents.length === 1 ? (
+                  // If there's only one event, center it vertically
+                  <div
+                    className="flex-1 flex items-center event-draggable"
+                    draggable
+                    onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <span
+                      className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-4 break-words"
+                      style={{
+                        color: getExactColorHex(limitedEvents[0].color),
+                      }}
+                      dangerouslySetInnerHTML={{
+                        __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
+                      }}
+                    ></span>
+                  </div>
+                ) : (
+                  // If there are two events, space them with the divider centered
+                  <div className="flex flex-col h-full">
+                    <div
+                      className="flex-1 flex items-start event-draggable"
+                      draggable
+                      onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <span
+                        className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
+                        style={{
+                          color: getExactColorHex(limitedEvents[0]?.color),
+                        }}
+                        dangerouslySetInnerHTML={{
+                          __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
+                        }}
+                      ></span>
+                    </div>
+
+                    {/* Only show divider when there are two entries */}
+                    {limitedEvents.length === 2 && (
+                      <div className="border-t border-gray-200 dark:border-gray-700 w-full my-auto"></div>
+                    )}
+
+                    <div
+                      className="flex-1 flex items-end event-draggable"
+                      draggable
+                      onDragStart={(e) => handleDragStart(limitedEvents[1], e)}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <span
+                        className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
+                        style={{
+                          color: getExactColorHex(limitedEvents[1]?.color),
+                        }}
+                        dangerouslySetInnerHTML={{
+                          __html: limitedEvents[1] ? limitedEvents[1].formattedContent || limitedEvents[1].content : "",
+                        }}
+                      ></span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>,
+          )
+        }
+
+        currentDay++
+      }
+
+      rows.push(
+        <div key={`row-${row}`} className="calendar-grid-row">
+          {currentRow}
         </div>,
       )
+
+      // If we've rendered all days and empty cells, we can stop
+      if (currentDay > daysInMonth && row >= Math.ceil((daysInMonth + startingDayOfWeek) / 7) - 1) {
+        break
+      }
     }
 
-    // Calculate how many cells we've added so far
-    const cellsAdded = startingDayOfWeek + daysInMonth
-
-    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
-    const cellsNeeded = 42 - cellsAdded
-
-    // Add empty cells to fill out the grid to exactly 6 rows
-    for (let i = 0; i < cellsNeeded; i++) {
-      days.push(
-        <div
-          key={`empty-end-${i}`}
-          className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
-          onDragOver={(e) => e.preventDefault()}
-        ></div>,
-      )
-    }
-
-    return days
+    return rows
   }
 
   // Add this helper function to get the exact hex color
@@ -1845,6 +1842,7 @@ body {
                 onClick={handlePreviousMonth}
                 tabIndex={-1}
                 className="nav-arrow flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1947,6 +1945,7 @@ body {
                 onClick={handleNextMonth}
                 tabIndex={-1}
                 className="nav-arrow flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1979,8 +1978,8 @@ body {
                     {day}
                   </div>
                 ))}
-                {renderCalendar()}
               </div>
+              <div className="calendar-grid">{renderCalendar()}</div>
             </div>
           </div>
         </div>

@@ -412,6 +412,48 @@ body {
   white-space: nowrap;
   display: inline-block;
 }
+
+/* Fix navigation arrow highlight issue */
+.nav-arrow {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Fix grid alignment issues */
+.grid-cols-7 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  width: 100%;
+}
+
+.grid-cols-7 > div {
+  border-right: 1px solid rgba(229, 231, 235, 1);
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
+}
+
+.dark .grid-cols-7 > div {
+  border-right: 1px solid rgba(75, 85, 99, 1);
+  border-bottom: 1px solid rgba(75, 85, 99, 1);
+}
+
+/* Fix empty cells in last row */
+.grid-cols-7 > div:empty {
+  border-right: 1px solid rgba(229, 231, 235, 1);
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
+}
+
+.dark .grid-cols-7 > div:empty {
+  border-right: 1px solid rgba(75, 85, 99, 1);
+  border-bottom: 1px solid rgba(75, 85, 99, 1);
+}
+
+/* Add more space at the top on mobile */
+@media (max-width: 768px) {
+  .calendar-wrapper {
+    padding-top: 16px;
+  }
+}
 `
     document.head.appendChild(style)
 
@@ -1622,9 +1664,9 @@ body {
   }, [showModal, eventsForSelectedDate, activeEventIndex])
 
   return (
-    <div className="flex flex-col space-y-4 min-h-screen max-h-screen overflow-hidden">
+    <div className="flex flex-col space-y-4 min-h-screen max-h-screen overflow-hidden calendar-wrapper">
       {/* Calendar Controls - Now with reset button on left and others on right */}
-      <div className="calendar-controls flex flex-wrap items-center justify-between gap-1 p-0 mb-1">
+      <div className="calendar-controls flex flex-wrap items-center justify-between gap-1 p-0 mb-1 pt-4 sm:pt-0">
         {/* Reset button on the left */}
         <div>
           <button
@@ -1760,7 +1802,7 @@ body {
             <div className="flex justify-start">
               <button
                 onClick={handlePreviousMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
+                className="nav-arrow flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -1861,7 +1903,7 @@ body {
             <div className="flex justify-end">
               <button
                 onClick={handleNextMonth}
-                className="flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
+                className="nav-arrow flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

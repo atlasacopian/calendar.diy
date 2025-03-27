@@ -454,6 +454,44 @@ body {
     padding-top: 16px;
   }
 }
+
+/* Fix navigation arrow highlight issue - more aggressive approach */
+.nav-arrow {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  outline: none !important;
+}
+
+.nav-arrow:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Add more space at the top on mobile */
+@media (max-width: 768px) {
+  .calendar-wrapper {
+    padding-top: 24px !important;
+  }
+}
+
+/* Fix grid alignment issues - ensure all cells have the same height */
+.grid-cols-7 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+}
+
+.grid-cols-7 > div {
+  min-height: 5rem;
+  height: auto;
+}
+
+/* Ensure all cells in the last row have the same height */
+.grid-cols-7 > div:nth-child(n+36) {
+  height: 5rem !important;
+}
 `
     document.head.appendChild(style)
 
@@ -1664,7 +1702,10 @@ body {
   }, [showModal, eventsForSelectedDate, activeEventIndex])
 
   return (
-    <div className="flex flex-col space-y-4 min-h-screen max-h-screen overflow-hidden calendar-wrapper">
+    <div
+      className="flex flex-col space-y-4 min-h-screen max-h-screen overflow-hidden calendar-wrapper"
+      style={{ paddingTop: isMobile ? "24px" : "0" }}
+    >
       {/* Calendar Controls - Now with reset button on left and others on right */}
       <div className="calendar-controls flex flex-wrap items-center justify-between gap-1 p-0 mb-1 pt-4 sm:pt-0">
         {/* Reset button on the left */}
@@ -1802,6 +1843,7 @@ body {
             <div className="flex justify-start">
               <button
                 onClick={handlePreviousMonth}
+                tabIndex="-1"
                 className="nav-arrow flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
               >
                 <svg
@@ -1903,6 +1945,7 @@ body {
             <div className="flex justify-end">
               <button
                 onClick={handleNextMonth}
+                tabIndex="-1"
                 className="nav-arrow flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
               >
                 <svg

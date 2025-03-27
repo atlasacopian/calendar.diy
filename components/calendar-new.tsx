@@ -500,6 +500,37 @@ button.nav-arrow:focus {
 * {
   -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
 }
+
+/* Ensure consistent grid layout */
+.grid-cols-7 {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+  width: 100%;
+}
+
+/* Make all cells the same height */
+.grid-cols-7 > div {
+  height: 5rem !important;
+  min-height: 5rem !important;
+  max-height: 5rem !important;
+}
+
+/* Make day header row shorter */
+.day-header {
+  height: 2rem !important;
+  min-height: 2rem !important;
+  max-height: 2rem !important;
+}
+
+/* Ensure consistent cell sizing on mobile */
+@media (max-width: 768px) {
+  .grid-cols-7 > div {
+    height: 4rem !important;
+    min-height: 4rem !important;
+    max-height: 4rem !important;
+  }
+}
 `
     document.head.appendChild(style)
 
@@ -1365,6 +1396,9 @@ button.nav-arrow:focus {
 
     const days = []
 
+    // Always create exactly 6 rows (42 cells) for consistent layout
+    const totalCells = 42
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(
@@ -1498,11 +1532,11 @@ button.nav-arrow:focus {
     // Calculate how many cells we've added so far
     const cellsAdded = startingDayOfWeek + daysInMonth
 
-    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
-    const cellsNeeded = 42 - cellsAdded
+    // Calculate how many more cells we need to add to reach exactly 42 cells (6 rows)
+    const remainingCells = totalCells - cellsAdded
 
     // Add empty cells to fill out the grid to exactly 6 rows
-    for (let i = 0; i < cellsNeeded; i++) {
+    for (let i = 0; i < remainingCells; i++) {
       days.push(
         <div
           key={`empty-end-${i}`}

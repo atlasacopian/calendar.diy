@@ -1498,11 +1498,11 @@ button.nav-arrow:focus {
     // Calculate how many cells we've added so far
     const cellsAdded = startingDayOfWeek + daysInMonth
 
-    // Calculate how many more cells we need to add to complete the current row
-    const remainingCellsInLastRow = cellsAdded % 7 === 0 ? 0 : 7 - (cellsAdded % 7)
+    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
+    const cellsNeeded = 42 - cellsAdded
 
-    // Only add empty cells to complete the current row, not to fill out to 6 rows
-    for (let i = 0; i < remainingCellsInLastRow; i++) {
+    // Add empty cells to fill out the grid to exactly 6 rows
+    for (let i = 0; i < cellsNeeded; i++) {
       days.push(
         <div
           key={`empty-end-${i}`}

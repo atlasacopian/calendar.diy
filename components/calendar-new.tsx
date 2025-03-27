@@ -351,6 +351,40 @@ export default function Calendar() {
   background-color: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
 }
+
+/* Fix mobile layout */
+@media (max-width: 640px) {
+  .calendar-controls {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  
+  .calendar-controls button {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+  
+  .calendar-controls button svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* Ensure the grid is properly aligned */
+.grid-cols-7 {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+/* Fix the last row alignment */
+.calendar-day:last-child,
+.calendar-day:nth-last-child(-n+7) {
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
+}
+
+.dark .calendar-day:last-child,
+.dark .calendar-day:nth-last-child(-n+7) {
+  border-bottom: 1px solid rgba(75, 85, 99, 1);
+}
 `
     document.head.appendChild(style)
 
@@ -786,7 +820,6 @@ export default function Calendar() {
           if (event?.color?.includes("red")) color = "#ff0000"
           if (event?.color?.includes("yellow")) color = "#e3e600"
           if (event?.color?.includes("orange")) color = "#ff7200"
-          if (event?.color?.includes("green")) color = color = "#ff7200"
           if (event?.color?.includes("green")) color = "#1ae100"
           if (event?.color?.includes("purple")) color = "#a800ff"
 
@@ -1564,25 +1597,25 @@ export default function Calendar() {
   return (
     <div className="flex flex-col space-y-4 min-h-screen">
       {/* Calendar Controls - Now with reset button on left and others on right */}
-      <div className="calendar-controls flex items-center justify-between gap-2 p-0 mb-1">
+      <div className="calendar-controls flex flex-wrap items-center justify-between gap-1 p-0 mb-1">
         {/* Reset button on the left */}
         <div>
           <button
             onClick={handleShowResetConfirm}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             title="Reset Calendar Data"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
+              width="10"
+              height="10"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="h-3 w-3"
+              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
             >
               <path d="M3 2v6h6"></path>
               <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
@@ -1594,24 +1627,24 @@ export default function Calendar() {
         </div>
 
         {/* Other buttons on the right */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1">
           <button
             onClick={downloadCalendarAsImage}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             title="Download as Image"
             disabled={isDownloading}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
+              width="10"
+              height="10"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="h-3 w-3"
+              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
             >
               <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
               <circle cx="12" cy="13" r="3" />
@@ -1620,20 +1653,20 @@ export default function Calendar() {
           </button>
           <button
             onClick={exportToIcal}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             title="Export to iCal"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
+              width="10"
+              height="10"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="h-3 w-3"
+              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
             >
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
               <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -1644,20 +1677,20 @@ export default function Calendar() {
           </button>
           <button
             onClick={exportToGoogleCalendar}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             title="Export to Google Calendar"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
+              width="10"
+              height="10"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="h-3 w-3"
+              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
             >
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
               <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -1668,20 +1701,20 @@ export default function Calendar() {
           </button>
           <button
             onClick={handleShare}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             title="Share Calendar"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
+              width="10"
+              height="10"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="h-3 w-3"
+              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
             >
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />

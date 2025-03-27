@@ -372,6 +372,7 @@ export default function Calendar() {
 
 /* Ensure the grid is properly aligned */
 .grid-cols-7 {
+  display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
@@ -441,10 +442,12 @@ button.nav-arrow:focus {
 .grid-cols-7 {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  width: 100%;
 }
 
 .grid-cols-7 > div {
   min-height: 5rem;
+  height: 5rem;
   border-right: 1px solid rgba(229, 231, 235, 1);
   border-bottom: 1px solid rgba(229, 231, 235, 1);
 }
@@ -452,6 +455,15 @@ button.nav-arrow:focus {
 .dark .grid-cols-7 > div {
   border-right: 1px solid rgba(75, 85, 99, 1);
   border-bottom: 1px solid rgba(75, 85, 99, 1);
+}
+
+/* Make the day header row more compact */
+.day-header {
+  height: 2rem !important;
+  min-height: 2rem !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Fix empty cells in last row */
@@ -1341,175 +1353,167 @@ button.nav-arrow:focus {
 
   // Generate calendar grid
   const renderCalendar = () => {
-    // Ensure events is defined and is an array
-    if (!Array.isArray(events)) {
-      console.error("Events is not an array:", events)
-      return []
-    }
-
-    const daysInMonth = getDaysInMonth(currentDate)
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    const startingDayOfWeek = getDay(firstDayOfMonth)
-
-    // Calculate total number of rows needed
-    const totalDays = startingDayOfWeek + daysInMonth
-    const totalRows = Math.ceil(totalDays / 7)
-
-    // Create rows array to hold each week
-    const rows = []
-    let currentRow = []
-    let currentDay = 1 - startingDayOfWeek // Start with negative days to account for previous month days
-
-    // Generate all calendar cells organized by rows
-    for (let row = 0; row < 6; row++) {
-      currentRow = []
-
-      for (let col = 0; col < 7; col++) {
-        if (currentDay <= 0 || currentDay > daysInMonth) {
-          // Empty cell (previous or next month)
-          currentRow.push(
-            <div
-              key={`empty-${row}-${col}`}
-              className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
-              onDragOver={(e) => e.preventDefault()}
-            ></div>,
-          )
-        } else {
-          // Valid day in current month
-          const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDay)
-          const dayEvents = events.filter(
-            (event) =>
-              isSameDay(event.date, date) &&
-              projectGroups.find(
-                (g) =>
-                  g.active &&
-                  ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
-              ),
-          )
-          // Limit to 2 events per day
-          const limitedEvents = dayEvents.slice(0, 2)
-          const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
-          const isWeekend = getDay(date) === 0 || getDay(date) === 6
-          const isCurrentDay = isToday(date)
-          const isDragOver = dragOverDate && isSameDay(dragOverDate, date)
-
-          currentRow.push(
-            <div
-              key={currentDay}
-              onClick={() => handleDayClick(date)}
-              onDragOver={(e) => handleDragOver(date, e)}
-              onDrop={(e) => handleDrop(date, e)}
-              className={cn(
-                "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800 p-1 md:p-2 pt-0.5 md:pt-1",
-                isWeekend ? "bg-gray-50/30 dark:bg-gray-900/30" : "",
-                isCurrentDay ? "bg-gray-50 dark:bg-gray-900/50" : "",
-                isDragOver ? "bg-gray-100 dark:bg-gray-800" : "",
-              )}
-            >
-              <div
-                className={cn(
-                  "absolute right-1 md:right-2 top-0.5 flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full font-mono text-[10px] md:text-xs",
-                  isCurrentDay ? "bg-gray-200 dark:bg-gray-700" : "text-gray-400 dark:text-gray-500",
-                )}
-              >
-                {currentDay}
-              </div>
-
-              <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
-                {dayHolidays.map((holiday, index) => (
-                  <div
-                    key={`holiday-${index}`}
-                    className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
-                  >
-                    {holiday.name.toUpperCase()}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-0 pt-0 overflow-visible flex flex-col h-[calc(100%-12px)] justify-center">
-                {limitedEvents.length === 1 ? (
-                  // If there's only one event, center it vertically
-                  <div
-                    className="flex-1 flex items-center event-draggable"
-                    draggable
-                    onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <span
-                      className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-4 break-words"
-                      style={{
-                        color: getExactColorHex(limitedEvents[0].color),
-                      }}
-                      dangerouslySetInnerHTML={{
-                        __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
-                      }}
-                    ></span>
-                  </div>
-                ) : (
-                  // If there are two events, space them with the divider centered
-                  <div className="flex flex-col h-full">
-                    <div
-                      className="flex-1 flex items-start event-draggable"
-                      draggable
-                      onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span
-                        className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
-                        style={{
-                          color: getExactColorHex(limitedEvents[0]?.color),
-                        }}
-                        dangerouslySetInnerHTML={{
-                          __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
-                        }}
-                      ></span>
-                    </div>
-
-                    {/* Only show divider when there are two entries */}
-                    {limitedEvents.length === 2 && (
-                      <div className="border-t border-gray-200 dark:border-gray-700 w-full my-auto"></div>
-                    )}
-
-                    <div
-                      className="flex-1 flex items-end event-draggable"
-                      draggable
-                      onDragStart={(e) => handleDragStart(limitedEvents[1], e)}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <span
-                        className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
-                        style={{
-                          color: getExactColorHex(limitedEvents[1]?.color),
-                        }}
-                        dangerouslySetInnerHTML={{
-                          __html: limitedEvents[1] ? limitedEvents[1].formattedContent || limitedEvents[1].content : "",
-                        }}
-                      ></span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>,
-          )
-        }
-
-        currentDay++
-      }
-
-      rows.push(
-        <div key={`row-${row}`} className="calendar-grid-row">
-          {currentRow}
-        </div>,
-      )
-
-      // If we've rendered all days and empty cells, we can stop
-      if (currentDay > daysInMonth && row >= Math.ceil((daysInMonth + startingDayOfWeek) / 7) - 1) {
-        break
-      }
-    }
-
-    return rows
+  // Ensure events is defined and is an array
+  if (!Array.isArray(events)) {
+    console.error("Events is not an array:", events)
+    return []
   }
+
+  const daysInMonth = getDaysInMonth(currentDate)
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+  const startingDayOfWeek = getDay(firstDayOfMonth)
+
+  const days = []
+
+  // Add empty cells for days before the first day of the month
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    days.push(
+      <div
+        key={`empty-${i}`}
+        className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
+        onDragOver={(e) => e.preventDefault()}
+      ></div>,
+    )
+  }
+
+  // Add cells for each day of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+    const dayEvents = events.filter(
+      (event) =>
+        isSameDay(event.date, date) &&
+        projectGroups.find(
+          (g) =>
+            g.active &&
+            ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
+        ),
+    )
+    // Limit to 2 events per day
+    const limitedEvents = dayEvents.slice(0, 2)
+    const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
+    const isWeekend = getDay(date) === 0 || getDay(date) === 6
+    const isCurrentDay = isToday(date)
+    const isDragOver = dragOverDate && isSameDay(dragOverDate, date)
+
+    days.push(
+      <div
+        key={day}
+        onClick={() => handleDayClick(date)}
+        onDragOver={(e) => handleDragOver(date, e)}
+        onDrop={(e) => handleDrop(date, e)}
+        className={cn(
+          "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800 p-1 md:p-2 pt-0.5 md:pt-1",
+          isWeekend ? "bg-gray-50/30 dark:bg-gray-900/30" : "",
+          isCurrentDay ? "bg-gray-50 dark:bg-gray-900/50" : "",
+          isDragOver ? "bg-gray-100 dark:bg-gray-800" : "",
+        )}
+      >
+        <div
+          className={cn(
+            "absolute right-1 md:right-2 top-0.5 flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full font-mono text-[10px] md:text-xs",
+            isCurrentDay ? "bg-gray-200 dark:bg-gray-700" : "text-gray-400 dark:text-gray-500",
+          )}
+        >
+          {day}
+        </div>
+
+        <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
+          {dayHolidays.map((holiday, index) => (
+            <div
+              key={`holiday-${index}`}
+              className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
+            >
+              {holiday.name.toUpperCase()}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-0 pt-0 overflow-visible flex flex-col h-[calc(100%-12px)] justify-center">
+          {limitedEvents.length === 1 ? (
+            // If there's only one event, center it vertically
+            <div
+              className="flex-1 flex items-center event-draggable"
+              draggable
+              onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
+              onDragEnd={handleDragEnd}
+            >
+              <span
+                className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-4 break-words"
+                style={{
+                  color: getExactColorHex(limitedEvents[0].color),
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
+                }}
+              ></span>
+            </div>
+          ) : (
+            // If there are two events, space them with the divider centered
+            <div className="flex flex-col h-full">
+              <div
+                className="flex-1 flex items-start event-draggable"
+                draggable
+                onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
+                onDragEnd={handleDragEnd}
+              >
+                <span
+                  className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
+                  style={{
+                    color: getExactColorHex(limitedEvents[0]?.color),
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
+                  }}
+                ></span>
+              </div>
+
+              {/* Only show divider when there are two entries */}
+              {limitedEvents.length === 2 && (
+                <div className="border-t border-gray-200 dark:border-gray-700 w-full my-auto"></div>
+              )}
+
+              <div
+                className="flex-1 flex items-end event-draggable"
+                draggable
+                onDragStart={(e) => handleDragStart(limitedEvents[1], e)}
+                onDragEnd={handleDragEnd}
+              >
+                <span
+                  className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
+                  style={{
+                    color: getExactColorHex(limitedEvents[1]?.color),
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: limitedEvents[1] ? limitedEvents[1].formattedContent || limitedEvents[1].content : "",
+                  }}
+                ></span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>,
+    )
+  }
+
+  // Calculate how many cells we've added so far
+  const cellsAdded = startingDayOfWeek + daysInMonth
+
+  // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
+  const cellsNeeded = 42 - cellsAdded
+
+  // Add empty cells to fill out the grid to exactly 6 rows
+  for (let i = 0; i < cellsNeeded; i++) {
+    days.push(
+      <div
+        key={`empty-end-${i}`}
+        className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
+        onDragOver={(e) => e.preventDefault()}
+      ></div>,
+    )
+  }
+
+  return days
+}
 
   // Add this helper function to get the exact hex color
   const getExactColorHex = (colorClass: string | undefined) => {
@@ -1970,16 +1974,18 @@ button.nav-arrow:focus {
           <div className="flex-1">
             <div className="w-full">
               <div ref={calendarContentRef} className="grid grid-cols-7">
-                {(isMobile ? weekDaysMobile : weekDays).map((day) => (
+                {(isMobile ? weekDaysMobile : weekDaysMobile).map((day) => (
                   <div
                     key={day}
-                    className="border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1 md:p-2 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500 dark:text-gray-400"
+                    className="day-header border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500 dark:text-gray-400"
                   >
                     {day}
                   </div>
                 ))}
               </div>
-              <div className="calendar-grid">{renderCalendar()}</div>
+              <div className="grid grid-cols-7">
+                {renderCalendar()}
+              </div>
             </div>
           </div>
         </div>
@@ -2172,315 +2178,4 @@ button.nav-arrow:focus {
                       }}
                       onDrop={(e) => {
                         e.preventDefault()
-                        if (eventsForSelectedDate.length > 1) {
-                          // Swap the events
-                          const swappedEvents = [...eventsForSelectedDate]
-                          ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
-                          setEventsForSelectedDate(swappedEvents)
-                        }
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3"
-                      >
-                        <circle cx="9" cy="12" r="1" />
-                        <circle cx="15" cy="12" r="1" />
-                      </svg>
-                    </div>
-                    <textarea
-                      id="event-content-2"
-                      value={eventsForSelectedDate[1]?.content || ""}
-                      onChange={(e) => {
-                        handleUpdateEventContent(1, e.target.value)
-                        setActiveEventIndex(1)
-                      }}
-                      onFocus={() => setActiveEventIndex(1)}
-                      onKeyDown={(e) => {
-                        setActiveEventIndex(1)
-                        handleTextareaKeyDown(e)
-                      }}
-                      onMouseUp={(e) => {
-                        setActiveEventIndex(1)
-                        handleTextSelect(e)
-                      }}
-                      onTouchEnd={(e) => {
-                        setActiveEventIndex(1)
-                        handleTextSelect(e)
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setActiveEventIndex(1)
-                      }}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case"
-                      placeholder="ENTER EVENT NAME"
-                      rows={2}
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteEvent(eventsForSelectedDate[1].id)
-                      }}
-                      className="text-gray-300 hover:text-gray-500 self-center"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4"
-                      >
-                        <path d="M18 6L6 18"></path>
-                        <path d="M6 6l12 12"></path>
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Add a swap button between the events and the Add New Event button */}
-              {eventsForSelectedDate.length === 2 && (
-                <button
-                  onClick={handleSwapEvents}
-                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 mr-2"
-                  >
-                    <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                  SWAP EVENTS
-                </button>
-              )}
-
-              {/* Add New Event button - Show when there are fewer than 2 events */}
-              {eventsForSelectedDate.length < 2 && (
-                <button
-                  onClick={handleAddNewEvent}
-                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 mr-2"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  ADD NEW EVENT
-                </button>
-              )}
-
-              {/* Tag Selection - Now appears below both events */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">TAG</label>
-                <div className="flex flex-wrap gap-2">
-                  {projectGroups.map((group) => {
-                    const bgColor = getBgFromTextColor(group.color)
-
-                    // Determine if this tag is selected based on the active event
-                    const isSelected =
-                      eventsForSelectedDate.length > activeEventIndex &&
-                      eventsForSelectedDate[activeEventIndex]?.color === group.color
-
-                    return (
-                      <button
-                        key={group.id}
-                        onClick={() => {
-                          if (eventsForSelectedDate.length > activeEventIndex) {
-                            handleUpdateEventColor(activeEventIndex, group.color, group.id)
-                          }
-                        }}
-                        className={cn(
-                          "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
-                          bgColor,
-                          "text-white",
-                          isSelected ? "ring-2 ring-black ring-offset-2" : "",
-                        )}
-                      >
-                        {group.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={handleCancelEdit}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleSaveAndClose}
-                  className="rounded-md border border-transparent bg-black dark:bg-white py-2 px-4 text-sm font-medium text-white dark:text-black shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none"
-                >
-                  SAVE
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Confirmation Modal */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={resetModalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
-          >
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">RESET CALENDAR DATA</h3>
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                ARE YOU SURE YOU WANT TO RESET ALL CALENDAR DATA? THIS ACTION CANNOT BE UNDONE.
-              </p>
-              <div className="mt-5 flex justify-end gap-2">
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleResetData}
-                  className="rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none"
-                >
-                  RESET DATA
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Share Modal */}
-      {showShareModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={shareModalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
-          >
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">SHARE CALENDAR</h3>
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <label htmlFor="share-url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                SHAREABLE URL
-              </label>
-              <div className="flex rounded-md shadow-sm">
-                <div className="relative flex items-stretch flex-grow focus-within:z-10">
-                  <input
-                    type="text"
-                    id="share-url"
-                    className="block w-full rounded-none rounded-l-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
-                    value={shareUrl}
-                    readOnly
-                    ref={shareInputRef}
-                    onClick={(e) => {
-                      ;(e.target as HTMLInputElement).select()
-                    }}
-                  />
-                </div>
-                <button
-                  type="button"
-                  id="copy-button"
-                  onClick={copyShareUrl}
-                  className="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-100 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-                >
-                  <span>COPY</span>
-                </button>
-              </div>
-              <div className="mt-5 flex justify-end">
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CLOSE
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 

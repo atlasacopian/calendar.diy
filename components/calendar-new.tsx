@@ -1396,9 +1396,6 @@ button.nav-arrow:focus {
 
     const days = []
 
-    // Always create exactly 6 rows (42 cells) for consistent layout
-    const totalCells = 42
-
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(
@@ -1532,11 +1529,13 @@ button.nav-arrow:focus {
     // Calculate how many cells we've added so far
     const cellsAdded = startingDayOfWeek + daysInMonth
 
-    // Calculate how many more cells we need to add to reach exactly 42 cells (6 rows)
-    const remainingCells = totalCells - cellsAdded
+    // Calculate how many more cells we need to add to complete the last row
+    const remainingCells = 7 - (cellsAdded % 7)
+    // Only add cells if we need to complete the last row (if cellsAdded is already a multiple of 7, remainingCells will be 7)
+    const cellsToAdd = remainingCells === 7 ? 0 : remainingCells
 
-    // Add empty cells to fill out the grid to exactly 6 rows
-    for (let i = 0; i < remainingCells; i++) {
+    // Add empty cells to complete the last row
+    for (let i = 0; i < cellsToAdd; i++) {
       days.push(
         <div
           key={`empty-end-${i}`}

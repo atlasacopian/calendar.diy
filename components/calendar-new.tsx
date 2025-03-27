@@ -1843,7 +1843,7 @@ body {
             <div className="flex justify-start">
               <button
                 onClick={handlePreviousMonth}
-                tabIndex="-1"
+                tabIndex={-1}
                 className="nav-arrow flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
               >
                 <svg
@@ -1945,7 +1945,7 @@ body {
             <div className="flex justify-end">
               <button
                 onClick={handleNextMonth}
-                tabIndex="-1"
+                tabIndex={-1}
                 className="nav-arrow flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
               >
                 <svg

@@ -1284,6 +1284,22 @@ button.nav-arrow:focus {
       grid.appendChild(dayCell)
     }
 
+    // Calculate how many cells we've added so far
+    const cellsAdded = startingDayOfWeek + daysInMonth
+
+    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
+    const cellsNeeded = 42 - cellsAdded
+
+    // Add empty cells to fill out the grid to exactly 6 rows
+    for (let i = 0; i < cellsNeeded; i++) {
+      const emptyCell = document.createElement("div")
+      emptyCell.style.borderBottom = "1px solid #eee"
+      emptyCell.style.borderRight = "1px solid #eee"
+      emptyCell.style.height = "120px"
+      emptyCell.style.backgroundColor = "white"
+      grid.appendChild(emptyCell)
+    }
+
     printableDiv.appendChild(grid)
 
     // Add more bottom padding
@@ -1495,21 +1511,21 @@ button.nav-arrow:focus {
       )
     }
 
-    // Add empty cells to complete the last row
+    // Calculate how many cells we've added so far
     const totalCellsAdded = startingDayOfWeek + daysInMonth
-    const remainingCells = 7 - (totalCellsAdded % 7)
 
-    // Only add cells if we need to complete the row (and not a full 7)
-    if (remainingCells < 7) {
-      for (let i = 0; i < remainingCells; i++) {
-        days.push(
-          <div
-            key={`empty-end-${i}`}
-            className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
-            onDragOver={(e) => e.preventDefault()}
-          ></div>,
-        )
-      }
+    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
+    const cellsNeeded = 42 - totalCellsAdded
+
+    // Always add empty cells to complete the grid to exactly 6 rows
+    for (let i = 0; i < cellsNeeded; i++) {
+      days.push(
+        <div
+          key={`empty-end-${i}`}
+          className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
+          onDragOver={(e) => e.preventDefault()}
+        ></div>,
+      )
     }
 
     return days

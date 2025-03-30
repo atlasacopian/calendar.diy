@@ -1940,17 +1940,25 @@ button.nav-arrow:focus {
   }
 
   // Add a new event
-  const handleAddNewEvent = () => {
+  const handleAddNewEvent = (event?: Event) => {
     if (!selectedDate || eventsForSelectedDate.length >= 2) return
 
-    // Create a new empty event
-    const newEvent = {
-      id: Math.random().toString(36).substring(2, 11),
-      date: selectedDate,
-      content: "",
-      color: "text-black",
-      projectId: "default",
-    }
+    // Create a new empty event or use the provided event
+    const newEvent: CalendarEvent = event
+      ? {
+          id: event.id,
+          date: event.date,
+          content: event.title,
+          color: event.tag?.color || "text-black",
+          projectId: event.tag?.id || "default",
+        }
+      : {
+          id: Math.random().toString(36).substring(2, 11),
+          date: selectedDate,
+          content: "",
+          color: "text-black",
+          projectId: "default",
+        }
 
     // Add to the events for this day
     const updatedEvents = [...eventsForSelectedDate, newEvent]
@@ -2282,10 +2290,22 @@ button.nav-arrow:focus {
             title: e.content,
             description: "",
             date: e.date,
-            tag: null,
+            tag: projectGroups.find((g) => g.id === e.projectId) || null,
           }))}
-          onAddEvent={handleAddNewEvent}
-          onDeleteEvent={handleDeleteEvent}
+          onAddEvent={(event) => {
+            // Convert Event back to CalendarEvent
+            const newCalendarEvent: CalendarEvent = {
+              id: event.id,
+              date: event.date,
+              content: event.title,
+              color: event.tag?.color || "text-black",
+              projectId: event.tag?.id || "default",
+            }
+            handleAddNewEvent()
+          }}
+          onDeleteEvent={(event) => {
+            handleDeleteEvent(event.id)
+          }}
           onSwapEvents={handleSwapEvents}
           tags={projectGroups}
         />

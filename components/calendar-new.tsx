@@ -70,6 +70,10 @@ export default function Calendar() {
   // Add a new state for text selection
   const [selectedText, setSelectedText] = useState<{ start: number; end: number } | null>(null)
 
+  const [showExportTagsModal, setShowExportTagsModal] = useState(false)
+  const [exportTarget, setExportTarget] = useState<"ical" | "google">("ical")
+  const [selectedExportTags, setSelectedExportTags] = useState<string[]>([])
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
   const resetModalRef = useRef<HTMLDivElement>(null)
@@ -1330,59 +1334,94 @@ button.nav-arrow:focus {
     return printableDiv
   }
 
-  // Export calendar to iCal format
+  // Replace the exportToIcal function with this improved version that filters by active tags
   const exportToIcal = () => {
-    let icalContent = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//Calendar.diy//Calendar//EN",
-      "CALSCALE:GREGORIAN",
-      "METHOD:PUBLISH",
-    ]
-
-    // Add only user events (no holidays)
-    events.forEach((event) => {
-      const dateString = format(event.date, "yyyyMMdd")
-      const uid = `${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`
-      icalContent = [
-        ...icalContent,
-        "BEGIN:VEVENT",
-        `UID:${uid}`,
-        `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
-        `DTSTART;VALUE=DATE:${dateString}`,
-        `DTEND;VALUE=DATE:${dateString}`,
-        `SUMMARY:${event.content}`,
-        "END:VEVENT",
-      ]
-    })
-
-    icalContent.push("END:VCALENDAR")
-
-    // Create and download the file
-    const blob = new Blob([icalContent.join("\r\n")], { type: "text/calendar" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = "calendar.diy.ics"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    // Show tag selection modal
+    setShowExportTagsModal(true)
   }
 
-  // Export to Google Calendar
+  // Replace the exportToGoogleCalendar function with this improved version
   const exportToGoogleCalendar = () => {
-    // Google Calendar can only handle one event at a time via URL
-    // So we'll just open a new event creation page
-    if (events.length === 0) {
-      alert("No events to export")
+    // Show tag selection modal with Google as the target
+    setExportTarget("google")
+    setShowExportTagsModal(true)
+  }
+
+  // Add this new function to handle the actual export after tag selection
+  const handleExportWithTags = () => {
+    // Filter events based on selected tags and only include user events (not holidays)
+    const filteredEvents = events.filter((event) =>
+      // Only include events whose projectId is in the selectedExportTags array
+      selectedExportTags.includes(event.projectId || "default"),
+    )
+
+    if (filteredEvents.length === 0) {
+      alert("No events to export with the selected tags")
+      setShowExportTagsModal(false)
       return
     }
 
-    // Just use the first event as an example
-    const event = events[0]
-    const dateString = format(event.date, "yyyyMMdd")
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.content)}&dates=${dateString}/${dateString}`
-    window.open(url, "_blank")
+    if (exportTarget === "ical") {
+      // Export to iCal
+      let icalContent = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Calendar.diy//Calendar//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+      ]
+
+      // Add only user events with selected tags
+      filteredEvents.forEach((event) => {
+        const dateString = format(event.date, "yyyyMMdd")
+        const uid = `${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`
+        icalContent = [
+          ...icalContent,
+          "BEGIN:VEVENT",
+          `UID:${uid}`,
+          `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
+          `DTSTART;VALUE=DATE:${dateString}`,
+          `DTEND;VALUE=DATE:${dateString}`,
+          `SUMMARY:${event.content}`,
+          "END:VEVENT",
+        ]
+      })
+
+      icalContent.push("END:VCALENDAR")
+
+      // Create and download the file
+      const blob = new Blob([icalContent.join("\r\n")], { type: "text/calendar" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = "calendar.diy.ics"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } else if (exportTarget === "google") {
+      // For Google Calendar, we need to open a new tab for each event
+      // But we'll limit to first 5 events to avoid overwhelming the user with tabs
+      const eventsToExport = filteredEvents.slice(0, 5)
+
+      // Show a message if we're limiting the number of events
+      if (filteredEvents.length > 5) {
+        alert(
+          `Exporting the first 5 of ${filteredEvents.length} events to Google Calendar. You may need to authorize each one.`,
+        )
+      }
+
+      // Open a new tab for each event
+      eventsToExport.forEach((event) => {
+        const dateString = format(event.date, "yyyyMMdd")
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+          event.content,
+        )}&dates=${dateString}/${dateString}`
+        window.open(url, "_blank")
+      })
+    }
+
+    // Close the modal
+    setShowExportTagsModal(false)
   }
 
   // Generate calendar grid
@@ -1736,6 +1775,7 @@ button.nav-arrow:focus {
     }
   }, [showModal, eventsForSelectedDate, activeEventIndex])
 
+  // Export Tags Selection Modal
   return (
     <div
       className="flex flex-col space-y-4 min-h-screen max-h-screen overflow-hidden calendar-wrapper"
@@ -2439,6 +2479,88 @@ button.nav-arrow:focus {
                   className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
                 >
                   CLOSE
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showExportTagsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
+                  SELECT TAGS TO EXPORT
+                </h3>
+                <button
+                  onClick={() => setShowExportTagsModal(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                Select which tags to include in your {exportTarget === "ical" ? "iCal" : "Google Calendar"} export. Only
+                user-created events (not holidays) will be exported. This is a one-time export and will not
+                automatically update.
+              </p>
+
+              <div className="space-y-2 mb-6">
+                {projectGroups.map((group) => (
+                  <div key={group.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`export-tag-${group.id}`}
+                      checked={selectedExportTags.includes(group.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedExportTags([...selectedExportTags, group.id])
+                        } else {
+                          setSelectedExportTags(selectedExportTags.filter((id) => id !== group.id))
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                    />
+                    <label
+                      htmlFor={`export-tag-${group.id}`}
+                      className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      {group.name}
+                    </label>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowExportTagsModal(false)}
+                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={handleExportWithTags}
+                  className="rounded-md border border-transparent bg-black dark:bg-white py-2 px-4 text-sm font-medium text-white dark:text-black shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none"
+                >
+                  EXPORT
                 </button>
               </div>
             </div>

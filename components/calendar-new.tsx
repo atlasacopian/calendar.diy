@@ -500,37 +500,6 @@ button.nav-arrow:focus {
 * {
   -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
 }
-
-/* Ensure consistent grid layout */
-.grid-cols-7 {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: repeat(7, minmax(0, 1fr));
-  width: 100%;
-}
-
-/* Make all cells the same height */
-.grid-cols-7 > div {
-  height: 5rem !important;
-  min-height: 5rem !important;
-  max-height: 5rem !important;
-}
-
-/* Make day header row shorter */
-.day-header {
-  height: 2rem !important;
-  min-height: 2rem !important;
-  max-height: 2rem !important;
-}
-
-/* Ensure consistent cell sizing on mobile */
-@media (max-width: 768px) {
-  .grid-cols-7 > div {
-    height: 4rem !important;
-    min-height: 4rem !important;
-    max-height: 4rem !important;
-  }
-}
 `
     document.head.appendChild(style)
 
@@ -1526,23 +1495,21 @@ button.nav-arrow:focus {
       )
     }
 
-    // Calculate how many cells we've added so far
-    const cellsAdded = startingDayOfWeek + daysInMonth
-
-    // Calculate how many more cells we need to add to complete the last row
-    const remainingCells = 7 - (cellsAdded % 7)
-    // Only add cells if we need to complete the last row (if cellsAdded is already a multiple of 7, remainingCells will be 7)
-    const cellsToAdd = remainingCells === 7 ? 0 : remainingCells
-
     // Add empty cells to complete the last row
-    for (let i = 0; i < cellsToAdd; i++) {
-      days.push(
-        <div
-          key={`empty-end-${i}`}
-          className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
-          onDragOver={(e) => e.preventDefault()}
-        ></div>,
-      )
+    const totalCellsAdded = startingDayOfWeek + daysInMonth
+    const remainingCells = 7 - (totalCellsAdded % 7)
+
+    // Only add cells if we need to complete the row (and not a full 7)
+    if (remainingCells < 7) {
+      for (let i = 0; i < remainingCells; i++) {
+        days.push(
+          <div
+            key={`empty-end-${i}`}
+            className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
+            onDragOver={(e) => e.preventDefault()}
+          ></div>,
+        )
+      }
     }
 
     return days

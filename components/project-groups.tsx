@@ -225,7 +225,8 @@ export default function ProjectGroups({
           >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">NEW TAG</h3>
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">NEW TAG</h3>
                 <button
                   onClick={() => setShowAddDialog(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
@@ -306,7 +307,8 @@ export default function ProjectGroups({
           >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">EDIT TAG</h3>
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">EDIT TAG</h3>
                 <button
                   onClick={() => setShowEditDialog(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
@@ -412,7 +414,10 @@ export default function ProjectGroups({
           >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">CONFIRM DELETE</h3>
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
+                  CONFIRM DELETE
+                </h3>
                 <button
                   onClick={() => setShowDeleteConfirm(null)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"

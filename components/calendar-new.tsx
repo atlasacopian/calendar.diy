@@ -794,9 +794,8 @@ button.nav-arrow:focus {
       screenshotDiv.style.position = "fixed"
       screenshotDiv.style.left = "-9999px"
       screenshotDiv.style.top = "0"
-      screenshotDiv.style.width = "1000px"
+      screenshotDiv.style.width = "1200px" // Wider for better quality
       screenshotDiv.style.backgroundColor = "white"
-      screenshotDiv.style.padding = "20px"
       screenshotDiv.style.fontFamily = '"JetBrains Mono", monospace'
       document.body.appendChild(screenshotDiv)
 
@@ -807,6 +806,7 @@ button.nav-arrow:focus {
       header.style.fontWeight = "500"
       header.style.marginBottom = "20px"
       header.style.textTransform = "uppercase"
+      header.style.padding = "20px 0"
       header.textContent = format(currentDate, "MMMM yyyy")
       screenshotDiv.appendChild(header)
 
@@ -819,8 +819,9 @@ button.nav-arrow:focus {
       grid.style.borderRight = "none"
       screenshotDiv.appendChild(grid)
 
-      // Add day headers
-      weekDays.forEach((day) => {
+      // Add day headers - use full day names to match website
+      const fullWeekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+      fullWeekDays.forEach((day) => {
         const dayHeader = document.createElement("div")
         dayHeader.style.padding = "10px"
         dayHeader.style.textAlign = "center"
@@ -1031,13 +1032,15 @@ button.nav-arrow:focus {
       // Wait for the DOM to update
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      // Render with html2canvas
+      // Render with html2canvas with higher quality settings
       const canvas = await html2canvas.default(screenshotDiv, {
-        scale: 2,
+        scale: 3, // Increased from 2 to 3 for higher resolution
         useCORS: true,
         allowTaint: true,
         backgroundColor: "white",
         logging: false,
+        letterRendering: true, // Better text rendering
+        imageTimeout: 0, // No timeout for images
       })
 
       // Convert to image and download

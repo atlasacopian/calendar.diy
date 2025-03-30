@@ -7,8 +7,6 @@ import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToda
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ArrowUpDown, X } from "lucide-react"
 
 // import html2canvas from 'html2canvas'; // We'll dynamically import this
 
@@ -20,20 +18,6 @@ type CalendarEvent = {
   formattedContent?: string // To store HTML with formatting
   color?: string
   projectId?: string
-}
-
-type Tag = {
-  id: string
-  name: string
-  color: string
-}
-
-type Event = {
-  id: string
-  title: string
-  description: string
-  date: Date
-  tag: Tag | null
 }
 
 // Color options for color picker
@@ -56,277 +40,6 @@ const getBgFromTextColor = (textColor: string) => {
 const getTextForBg = (textColor: string) => {
   const color = colorOptions.find((c) => c.value === textColor)
   return "text-white"
-}
-
-const EventModal = ({
-  isOpen,
-  onClose,
-  date,
-  events,
-  onAddEvent,
-  onDeleteEvent,
-  onSwapEvents,
-  tags,
-}: {
-  isOpen: boolean
-  onClose: () => void
-  date: Date
-  events: Event[]
-  onAddEvent: (event: Event) => void
-  onDeleteEvent: (event: Event) => void
-  onSwapEvents: () => void
-  tags: Tag[]
-}) => {
-  const [localEvents, setLocalEvents] = useState<Event[]>([])
-  const [newEvent, setNewEvent] = useState<string>("")
-  const [newEventDescription, setNewEventDescription] = useState<string>("")
-  const [selectedTag, setSelectedTag] = useState<Tag | null>(null)
-
-  useEffect(() => {
-    if (isOpen) {
-      setLocalEvents(events)
-      setNewEvent("")
-      setNewEventDescription("")
-      setSelectedTag(tags.length > 0 ? tags[0] : null)
-    }
-  }, [isOpen, events, tags])
-
-  const handleAddEvent = () => {
-    if (newEvent.trim() !== "") {
-      const event: Event = {
-        id: Date.now().toString(),
-        title: newEvent,
-        description: newEventDescription,
-        date: date,
-        tag: selectedTag,
-      }
-      onAddEvent(event)
-      setNewEvent("")
-      setNewEventDescription("")
-    }
-  }
-
-  const handleDeleteEvent = (event: Event) => {
-    onDeleteEvent(event)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleAddEvent()
-    }
-  }
-
-  const formatDate = (date: Date) => {
-    return `${date.toLocaleString("default", { month: "long" }).toUpperCase()} ${date.getDate()}, ${date.getFullYear()}`
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-white p-0 overflow-hidden">
-        <DialogHeader className="border-b border-gray-200">
-          <DialogTitle className="text-center py-4 font-mono text-lg">EVENT DETAILS</DialogTitle>
-          <DialogClose className="absolute right-4 top-4 opacity-70 hover:opacity-100" />
-        </DialogHeader>
-
-        <div className="p-6">
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">DATE</div>
-            <div className="font-mono">{formatDate(date)}</div>
-          </div>
-
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">EVENT</div>
-            <div className="relative">
-              <input
-                type="text"
-                value={newEvent}
-                onChange={(e) => setNewEvent(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="w-full border border-blue-500 p-2 font-mono focus:outline-none"
-                placeholder="Add event title"
-              />
-              {newEvent && (
-                <button
-                  onClick={() => setNewEvent("")}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">DESCRIPTION (OPTIONAL)</div>
-            <div className="relative">
-              <textarea
-                value={newEventDescription}
-                onChange={(e) => setNewEventDescription(e.target.value)}
-                className="w-full border border-blue-500 p-2 font-mono focus:outline-none min-h-[100px]"
-                placeholder="Add event description"
-              />
-              {newEventDescription && (
-                <button
-                  onClick={() => setNewEventDescription("")}
-                  className="absolute right-2 top-4 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">TAG</div>
-            <div className="flex flex-wrap gap-4">
-              {tags.map((tag) => (
-                <button
-                  key={tag.id}
-                  onClick={() => setSelectedTag(tag)}
-                  className={`w-10 h-10 rounded-full ${selectedTag?.id === tag.id ? "ring-2 ring-offset-2 ring-black" : ""}`}
-                  style={{ backgroundColor: tag.color }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {localEvents.length > 0 && (
-            <div className="mb-6">
-              <div className="text-sm font-mono text-gray-600 mb-2">EXISTING EVENTS</div>
-              <div className="space-y-2">
-                {localEvents.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-2 border border-gray-200">
-                    <div className="flex items-center">
-                      {event.tag && (
-                        <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: event.tag.color }}></div>
-                      )}
-                      <span className="font-mono">{event.title}</span>
-                    </div>
-                    <button onClick={() => handleDeleteEvent(event)} className="text-gray-400 hover:text-gray-600">
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {localEvents.length > 1 && (
-            <button
-              onClick={onSwapEvents}
-              className="w-full border border-gray-200 py-3 font-mono text-gray-600 hover:bg-gray-50 mb-6 flex items-center justify-center"
-            >
-              <ArrowUpDown className="mr-2" size={16} />
-              SWAP EVENTS
-            </button>
-          )}
-        </div>
-
-        <div className="flex justify-end border-t border-gray-200 p-4">
-          <button
-            onClick={handleAddEvent}
-            disabled={!newEvent.trim()}
-            className="bg-black text-white font-mono py-2 px-6 disabled:opacity-50"
-          >
-            SAVE
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-const TagModal = ({
-  isOpen,
-  onClose,
-  tag,
-  onSave,
-}: {
-  isOpen: boolean
-  onClose: () => void
-  tag: Tag | null
-  onSave: (tag: Tag) => void
-}) => {
-  const [name, setName] = useState("")
-  const [color, setColor] = useState("#000000")
-
-  useEffect(() => {
-    if (isOpen && tag) {
-      setName(tag.name)
-      setColor(tag.color)
-    } else if (isOpen) {
-      setName("")
-      setColor("#000000")
-    }
-  }, [isOpen, tag])
-
-  const handleSave = () => {
-    if (name.trim() !== "") {
-      onSave({
-        id: tag?.id || Date.now().toString(),
-        name,
-        color,
-      })
-      onClose()
-    }
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-white p-0 overflow-hidden">
-        <DialogHeader className="border-b border-gray-200">
-          <DialogTitle className="text-center py-4 font-mono text-lg">{tag ? "EDIT TAG" : "NEW TAG"}</DialogTitle>
-          <DialogClose className="absolute right-4 top-4 opacity-70 hover:opacity-100" />
-        </DialogHeader>
-
-        <div className="p-6">
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">TAG NAME</div>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full border border-blue-500 p-2 font-mono focus:outline-none"
-              placeholder="Enter tag name"
-            />
-          </div>
-
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">COLOR</div>
-            <div className="flex flex-wrap gap-4">
-              {["#000000", "#FF3B30", "#FF9500", "#FFCC00", "#34C759", "#007AFF", "#AF52DE"].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className={`w-10 h-10 rounded-full ${color === c ? "ring-2 ring-offset-2 ring-black" : ""}`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end border-t border-gray-200 p-4">
-          <button
-            onClick={handleSave}
-            disabled={!name.trim()}
-            className="bg-black text-white font-mono py-2 px-6 disabled:opacity-50"
-          >
-            SAVE
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function getContrastColor(hexColor: string): string {
-  const r = Number.parseInt(hexColor.slice(1, 3), 16)
-  const g = Number.parseInt(hexColor.slice(3, 5), 16)
-  const b = Number.parseInt(hexColor.slice(5, 7), 16)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.5 ? "#000000" : "#FFFFFF"
 }
 
 export default function Calendar() {
@@ -361,9 +74,6 @@ export default function Calendar() {
   const [exportTarget, setExportTarget] = useState<"ical" | "google">("ical")
   const [selectedExportTags, setSelectedExportTags] = useState<string[]>([])
   const [showGoogleInstructionsModal, setShowGoogleInstructionsModal] = useState(false)
-  const [showEventModal, setShowEventModal] = useState(false)
-  const [selectedEventDate, setSelectedEventDate] = useState<Date | null>(null)
-  const [currentEvents, setCurrentEvents] = useState<Event[]>([])
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -524,201 +234,201 @@ export default function Calendar() {
   useEffect(() => {
     const style = document.createElement("style")
     style.textContent = `
-.calendar-day {
-  position: relative;
-}
-.calendar-day:hover {
-  background-color: rgba(249, 250, 251, 1) !important;
-}
-
-.dark .calendar-day:hover {
-  background-color: rgba(30, 30, 30, 1) !important;
-}
-
-/* Explicitly remove any styling for day 22 */
-.calendar-day:nth-child(29) .rounded-full {
-  background-color: transparent !important;
-  color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
-}
-
-/* Print styles */
-@media print {
-  body {
-    background: white !important;
-    color: black !important;
-  }
-  
-  .calendar-container {
-    border: 1px solid #eee !important;
-    box-shadow: none !important;
-  }
-  
   .calendar-day {
-    border: 1px solid #eee !important;
+    position: relative;
+  }
+  .calendar-day:hover {
+    background-color: rgba(249, 250, 251, 1) !important;
   }
   
-  .calendar-controls, .dark-mode-toggle {
-    display: none !important;
+  .dark .calendar-day:hover {
+    background-color: rgba(30, 30, 30, 1) !important;
   }
-}
 
+  /* Explicitly remove any styling for day 22 */
+  .calendar-day:nth-child(29) .rounded-full {
+    background-color: transparent !important;
+    color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
+  }
+  
+  /* Print styles */
+  @media print {
+    body {
+      background: white !important;
+      color: black !important;
+    }
+    
+    .calendar-container {
+      border: 1px solid #eee !important;
+      box-shadow: none !important;
+    }
+    
+    .calendar-day {
+      border: 1px solid #eee !important;
+    }
+    
+    .calendar-controls, .dark-mode-toggle {
+      display: none !important;
+    }
+  }
+  
 /* Ensure text doesn't overflow and is properly truncated */
 .calendar-day .truncate {
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .calendar-day .line-clamp-2 {
-display: -webkit-box;
--webkit-line-clamp: 2;
--webkit-box-orient: vertical;
-overflow: hidden;
-text-overflow: ellipsis;
-max-width: 100%;
-white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  white-space: normal;
 }
 
 .line-clamp-4 {
-display: -webkit-box;
--webkit-line-clamp: 4;
--webkit-box-orient: vertical;
-overflow: hidden;
-text-overflow: ellipsis;
-white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
 }
 
 /* Ensure calendar day cells have proper height for multi-line content */
 .calendar-day {
-min-height: 5rem;
+  min-height: 5rem;
 }
 
-/* Make most text uppercase except user input */
-.calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span:not(.preserve-case), div:not(.preserve-case), a, label {
-  text-transform: uppercase !important;
-}
+  /* Make most text uppercase except user input */
+  .calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span:not(.preserve-case), div:not(.preserve-case), a, label {
+    text-transform: uppercase !important;
+  }
 
-/* Add body class to prevent scrolling when modal is open */
-body.modal-open {
-  overflow: hidden;
-}
+  /* Add body class to prevent scrolling when modal is open */
+  body.modal-open {
+    overflow: hidden;
+  }
 
-/* Make sure text is preserved as lowercase in inputs */
-input, textarea {
-  text-transform: none !important;
-}
+  /* Make sure text is preserved as lowercase in inputs */
+  input, textarea {
+    text-transform: none !important;
+  }
 
-/* Ensure event text is not cut off */
-.preserve-case {
-  text-transform: none !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  word-break: break-word !important;
-}
+  /* Ensure event text is not cut off */
+  .preserve-case {
+    text-transform: none !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    word-break: break-word !important;
+  }
 
-/* Highlight active event */
-.event-input-active {
-  background-color: rgba(249, 250, 251, 0.8);
-  border-color: rgba(209, 213, 219, 1);
-}
-
-/* Make event items draggable with visual cue */
-.event-draggable {
-  cursor: grab;
-}
-
-.event-draggable:active {
-  cursor: grabbing;
-}
-
-/* Bold text styling */
-.calendar-day .bold-text {
-  font-weight: bold;
-}
+  /* Highlight active event */
+  .event-input-active {
+    background-color: rgba(249, 250, 251, 0.8);
+    border-color: rgba(209, 213, 219, 1);
+  }
+  
+  /* Make event items draggable with visual cue */
+  .event-draggable {
+    cursor: grab;
+  }
+  
+  .event-draggable:active {
+    cursor: grabbing;
+  }
+  
+  /* Bold text styling */
+  .calendar-day .bold-text {
+    font-weight: bold;
+  }
 
 /* Improve drag and drop visual feedback */
 .cursor-grab {
-cursor: grab;
+  cursor: grab;
 }
 .cursor-grab:active {
-cursor: grabbing;
+  cursor: grabbing;
 }
 .cursor-grab:hover {
-background-color: rgba(0, 0, 0, 0.05);
-border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
 }
 
 /* Fix mobile layout */
 @media (max-width: 640px) {
-.calendar-controls {
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.calendar-controls button {
-  font-size: 10px;
-  padding: 4px 6px;
-}
-
-.calendar-controls button svg {
-  width: 10px;
-  height: 10px;
-}
+  .calendar-controls {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  
+  .calendar-controls button {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+  
+  .calendar-controls button svg {
+    width: 10px;
+    height: 10px;
+  }
 }
 
 /* Ensure the grid is properly aligned */
 .grid-cols-7 {
-display: grid;
-grid-template-columns: repeat(7, minmax(0, 1fr));
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 /* Fix empty cells in last row */
 .calendar-day:last-child,
 .calendar-day:nth-last-child(-n+7) {
-border-bottom: 1px solid rgba(229, 231, 235, 1);
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
 }
 
 .dark .calendar-day:last-child,
 .dark .calendar-day:nth-last-child(-n+7) {
-border-bottom: 1px solid rgba(75, 85, 99, 1);
+  border-bottom: 1px solid rgba(75, 85, 99, 1);
 }
 
 /* Prevent vertical scrolling */
 body {
-overflow-y: hidden;
-height: 100vh;
-position: fixed;
-width: 100%;
+  overflow-y: hidden;
+  height: 100vh;
+  position: fixed;
+  width: 100%;
 }
 
 /* Make calendar fit in viewport */
 .calendar-full-container {
-max-height: calc(100vh - 150px);
+  max-height: calc(100vh - 150px);
 }
 
 /* Adjust cell heights to fit in viewport */
 @media (max-height: 700px) {
-.calendar-day {
-  height: 14vw !important;
-  min-height: 3.5rem !important;
-}
+  .calendar-day {
+    height: 14vw !important;
+    min-height: 3.5rem !important;
+  }
 }
 
 /* Ensure month title stays on one line */
 .date-selector-container button {
-white-space: nowrap;
-display: inline-block;
+  white-space: nowrap;
+  display: inline-block;
 }
 
 /* Fix navigation arrow highlight issue */
 .nav-arrow {
--webkit-tap-highlight-color: transparent !important;
--webkit-user-select: none !important;
-user-select: none !important;
--webkit-touch-callout: none !important;
-outline: none !important;
-touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  outline: none !important;
+  touch-action: manipulation;
 }
 
 button.nav-arrow:active,
@@ -730,162 +440,72 @@ button.nav-arrow:focus {
 
 /* Add more space at the top on mobile */
 @media (max-width: 768px) {
-.calendar-wrapper {
-  padding-top: 24px !important;
-}
+  .calendar-wrapper {
+    padding-top: 24px !important;
+  }
 }
 
 /* Fix grid alignment issues - ensure all cells have the same height */
 .grid-cols-7 {
-display: grid;
-grid-template-columns: repeat(7, 1fr);
-width: 100%;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  width: 100%;
 }
 
 .grid-cols-7 > div {
-min-height: 5rem;
-height: 5rem;
-border-right: 1px solid rgba(229, 231, 235, 1);
-border-bottom: 1px solid rgba(229, 231, 235, 1);
+  min-height: 5rem;
+  height: 5rem;
+  border-right: 1px solid rgba(229, 231, 235, 1);
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
 }
 
 .dark .grid-cols-7 > div {
-border-right: 1px solid rgba(75, 85, 99, 1);
-border-bottom: 1px solid rgba(75, 85, 99, 1);
+  border-right: 1px solid rgba(75, 85, 99, 1);
+  border-bottom: 1px solid rgba(75, 85, 99, 1);
 }
 
 /* Make the day header row more compact */
 .day-header {
-height: 2rem !important;
-min-height: 2rem !important;
-display: flex;
-align-items: center;
-justify-content: center;
-}
-
-/* Fix empty cells in last row */
-.grid-cols-7 > div:empty {
-border-right: 1px solid rgba(229, 231, 235, 1);
-border-bottom: 1px solid rgba(229, 231, 235, 1);
-min-height: 5rem;
-}
-
-.dark .grid-cols-7 > div:empty {
-border-right: 1px solid rgba(75, 85, 99, 1);
-border-bottom: 1px solid rgba(75, 85, 99, 1);
-}
-
-/* Fix the last row cells */
-.calendar-grid-row {
-display: grid;
-grid-template-columns: repeat(7, 1fr);
-width: 100%;
-}
-
-.calendar-grid-row > div {
-min-height: 5rem;
-border-right: 1px solid rgba(229, 231, 235, 1);
-border-bottom: 1px solid rgba(229, 231, 235, 1);
-}
-
-.dark .calendar-grid-row > div {
-border-right: 1px solid rgba(75, 85, 99, 1);
-border-bottom: 1px solid rgba(75, 85, 99, 1);
-}
-
-/* Completely disable tap highlight on mobile */
-* {
--webkit-tap-highlight-color: rgba(0,0,0,0) !important;
-}
-
-/* Fix for uneven grid rows - ensure all rows have the same height */
-.calendar-grid {
-  display: grid;
-  grid-template-rows: repeat(6, 1fr);
-}
-
-/* Fix for navigation arrow highlighting */
-.nav-arrow:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.nav-arrow:active {
-  background-color: transparent !important;
-}
-
-/* Fix for the days of the week header row */
-.days-header {
   height: 2rem !important;
   min-height: 2rem !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid rgba(229, 231, 235, 1);
 }
 
-/* Ensure consistent 6-row grid layout for all months */
-.calendar-grid-container {
-  display: grid;
-  grid-template-rows: auto repeat(6, 1fr);
-}
-
-/* Fix for mobile calendar grid to ensure consistent 6-row layout */
-.calendar-grid {
-  display: grid;
-  grid-template-rows: repeat(6, minmax(0, 1fr));
-  min-height: calc(6 * 5rem);
-}
-
-/* Ensure all cells in the grid have proper borders */
-.grid-cols-7 > div {
-  border-right: 1px solid rgba(229, 231, 235, 1);
-  border-bottom: 1px solid rgba(229, 231, 235, 1);
-  min-height: 5rem;
-}
-
-.dark .grid-cols-7 > div {
-  border-right: 1px solid rgba(75, 85, 99, 1);
-  border-bottom: 1px solid rgba(75, 85, 99, 1);
-}
-
-/* Force all months to have exactly 6 rows */
-.calendar-grid-container {
-  display: grid;
-  grid-template-rows: auto repeat(6, 1fr);
-}
-
-/* Ensure empty cells at the end of the grid have proper styling */
-.calendar-day:empty,
+/* Fix empty cells in last row */
 .grid-cols-7 > div:empty {
   border-right: 1px solid rgba(229, 231, 235, 1);
   border-bottom: 1px solid rgba(229, 231, 235, 1);
   min-height: 5rem;
-  height: 100%;
 }
 
-.dark .calendar-day:empty,
 .dark .grid-cols-7 > div:empty {
   border-right: 1px solid rgba(75, 85, 99, 1);
   border-bottom: 1px solid rgba(75, 85, 99, 1);
 }
 
-/* Fix for mobile view specifically */
-@media (max-width: 768px) {
-  .calendar-grid {
-    min-height: calc(6 * 4rem);
-  }
-  
-  .grid-cols-7 > div {
-    min-height: 4rem;
-    height: 4rem;
-  }
-  
-  .calendar-day:empty,
-  .grid-cols-7 > div:empty {
-    min-height: 4rem;
-    height: 4rem;
-  }
+/* Fix the last row cells */
+.calendar-grid-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  width: 100%;
+}
+
+.calendar-grid-row > div {
+  min-height: 5rem;
+  border-right: 1px solid rgba(229, 231, 235, 1);
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
+}
+
+.dark .calendar-grid-row > div {
+  border-right: 1px solid rgba(75, 85, 99, 1);
+  border-bottom: 1px solid rgba(75, 85, 99, 1);
+}
+
+/* Completely disable tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
 }
 `
     document.head.appendChild(style)
@@ -929,63 +549,6 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
         }
       }, 50)
     }
-  }
-
-  const handleOpenEventModal = (day: Date) => {
-    setSelectedEventDate(day)
-
-    // Convert CalendarEvents to Events for the EventModal
-    const dayEvents = events
-      .filter((event) => isSameDay(event.date, day))
-      .map((event) => ({
-        id: event.id,
-        title: event.content,
-        description: "",
-        date: event.date,
-        tag: projectGroups.find((group) => group.id === event.projectId) || null,
-      }))
-
-    setCurrentEvents(dayEvents)
-    setShowEventModal(true)
-  }
-
-  const handleAddNewEventToModal = (event: Event) => {
-    if (!selectedEventDate) return
-
-    // Convert Event to CalendarEvent
-    const newCalendarEvent: CalendarEvent = {
-      id: event.id,
-      date: event.date,
-      content: event.title,
-      color: event.tag?.color || "text-black",
-      projectId: event.tag?.id || "default",
-    }
-
-    // Add to the global events array
-    const updatedEvents = [
-      ...events.filter((e) => !isSameDay(e.date, selectedEventDate)),
-      ...currentEvents.map((e) => ({
-        id: e.id,
-        date: e.date,
-        content: e.title,
-        color: e.tag?.color || "text-black",
-        projectId: e.tag?.id || "default",
-      })),
-      newCalendarEvent,
-    ]
-
-    setEvents(updatedEvents)
-
-    // Update current events
-    setCurrentEvents([...currentEvents, event])
-  }
-
-  const handleDeleteEventFromModal = (event: Event) => {
-    // Remove from current events
-    setCurrentEvents(currentEvents.filter((e) => e.id !== event.id))
-
-    // Remove from global events
-    setEvents(events.filter((e) => e.id !== event.id))
   }
 
   const handleCancelEdit = () => {
@@ -1305,7 +868,7 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
         emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "120px" // Increased height for more space
+        emptyCell.style.height = "100px"
         emptyCell.style.backgroundColor = "white"
         grid.appendChild(emptyCell)
       }
@@ -1313,45 +876,52 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
       // Add cells for each day of the month
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-        const dayEvents = events.filter((event) => isSameDay(event.date, date))
+        const dayEvents = events.filter(
+          (event) =>
+            isSameDay(event.date, date) &&
+            projectGroups.find(
+              (g) =>
+                g.active &&
+                ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
+            ),
+        )
+        const limitedEvents = dayEvents.slice(0, 2)
         const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
         const isWeekend = getDay(date) === 0 || getDay(date) === 6
-        const isMarch21 =
-          currentDate.getMonth() === 2 && // March is month 2 (0-indexed)
-          day === 21 &&
-          currentDate.getFullYear() === 2025
 
         const dayCell = document.createElement("div")
         dayCell.style.position = "relative"
         dayCell.style.padding = "10px"
         dayCell.style.borderBottom = "1px solid #eee"
         dayCell.style.borderRight = "1px solid #eee"
-        dayCell.style.height = "120px" // Increased height for more space
+        dayCell.style.height = "100px" // Slightly smaller cells
         dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
 
         // Add day number
         const dayNumber = document.createElement("div")
-        dayNumber.textContent = day.toString()
         dayNumber.style.position = "absolute"
         dayNumber.style.top = "5px"
         dayNumber.style.right = "10px"
         dayNumber.style.fontSize = "14px"
         dayNumber.style.color = "#999"
-
+        dayNumber.textContent = day.toString()
         dayCell.appendChild(dayNumber)
 
         // Add holidays
         const holidaysContainer = document.createElement("div")
         holidaysContainer.style.marginTop = "25px"
+        holidaysContainer.style.overflow = "visible"
 
         dayHolidays.forEach((holiday) => {
           const holidayDiv = document.createElement("div")
-          holidayDiv.textContent = holiday.name.toUpperCase()
-          holidayDiv.style.fontSize = "9px"
+          holidayDiv.style.fontSize = "10px"
           holidayDiv.style.textTransform = "uppercase"
           holidayDiv.style.letterSpacing = "0.05em"
           holidayDiv.style.color = "#666"
           holidayDiv.style.marginBottom = "3px"
+          holidayDiv.style.whiteSpace = "normal"
+          holidayDiv.style.wordBreak = "break-word"
+          holidayDiv.textContent = holiday.name.toUpperCase()
           holidaysContainer.appendChild(holidayDiv)
         })
 
@@ -1365,14 +935,11 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
         eventsContainer.style.height = "calc(100% - 25px)"
 
         // If there's only one event, center it vertically
-        if (dayEvents.length === 1) {
+        if (limitedEvents.length === 1) {
           eventsContainer.style.justifyContent = "center"
         } else {
           eventsContainer.style.justifyContent = "space-between"
         }
-
-        // Limit to 2 events
-        const limitedEvents = dayEvents.slice(0, 2)
 
         if (limitedEvents.length === 1) {
           // Single event - centered vertically
@@ -1382,20 +949,18 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
           eventDiv.style.fontSize = "11px"
           eventDiv.style.fontWeight = "500"
           eventDiv.style.wordBreak = "break-word"
-          eventDiv.style.overflow = "hidden"
+          eventDiv.style.overflow = "visible"
           eventDiv.style.maxWidth = "100%"
-          eventDiv.style.textOverflow = "ellipsis"
-          eventDiv.style.whiteSpace = "nowrap"
+          eventDiv.style.whiteSpace = "normal"
 
-          // Update the first instance of color mapping in the createPrintableCalendar function for single events
           // Convert Tailwind color classes to CSS colors
           let color = "#000"
-          if (event?.color?.includes("blue")) color = "#2563eb"
-          if (event?.color?.includes("red")) color = "#dc2626"
+          if (event?.color?.includes("blue")) color = "#0012ff"
+          if (event?.color?.includes("red")) color = "#ff0000"
           if (event?.color?.includes("yellow")) color = "#e3e600"
-          if (event?.color?.includes("orange")) color = "#f97316"
-          if (event?.color?.includes("green")) color = "#16a34a"
-          if (event?.color?.includes("purple")) color = "#9333ea"
+          if (event?.color?.includes("orange")) color = "#ff7200"
+          if (event?.color?.includes("green")) color = "#1ae100"
+          if (event?.color?.includes("purple")) color = "#a800ff"
 
           eventDiv.style.color = color
           eventsContainer.appendChild(eventDiv)
@@ -1412,20 +977,18 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
           eventDiv1.style.fontSize = "11px"
           eventDiv1.style.fontWeight = "500"
           eventDiv1.style.wordBreak = "break-word"
-          eventDiv1.style.overflow = "hidden"
+          eventDiv1.style.overflow = "visible"
           eventDiv1.style.maxWidth = "100%"
-          eventDiv1.style.textOverflow = "ellipsis"
-          eventDiv1.style.whiteSpace = "nowrap"
+          eventDiv1.style.whiteSpace = "normal"
 
-          // Update the color mapping in the createPrintableCalendar function for yellow
           // Convert Tailwind color classes to CSS colors
           let color1 = "#000"
-          if (event1?.color?.includes("blue")) color1 = "#2563eb"
-          if (event1?.color?.includes("red")) color1 = "#dc2626"
+          if (event1?.color?.includes("blue")) color1 = "#0012ff"
+          if (event1?.color?.includes("red")) color1 = "#ff0000"
           if (event1?.color?.includes("yellow")) color1 = "#e3e600"
-          if (event1?.color?.includes("orange")) color1 = "#f97316"
-          if (event1?.color?.includes("green")) color1 = "#16a34a"
-          if (event1?.color?.includes("purple")) color1 = "#9333ea"
+          if (event1?.color?.includes("orange")) color1 = "#ff7200"
+          if (event1?.color?.includes("green")) color1 = "#1ae100"
+          if (event1?.color?.includes("purple")) color1 = "#a800ff"
 
           eventDiv1.style.color = color1
           topEventContainer.appendChild(eventDiv1)
@@ -1451,19 +1014,18 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
           eventDiv2.style.fontSize = "11px"
           eventDiv2.style.fontWeight = "500"
           eventDiv2.style.wordBreak = "break-word"
-          eventDiv2.style.overflow = "hidden"
+          eventDiv2.style.overflow = "visible"
           eventDiv2.style.maxWidth = "100%"
-          eventDiv2.style.textOverflow = "ellipsis"
-          eventDiv2.style.whiteSpace = "nowrap"
+          eventDiv2.style.whiteSpace = "normal"
 
           // Convert Tailwind color classes to CSS colors
           let color2 = "#000"
-          if (event2?.color?.includes("blue")) color2 = "#2563eb"
-          if (event2?.color?.includes("red")) color2 = "#dc2626"
+          if (event2?.color?.includes("blue")) color2 = "#0012ff"
+          if (event2?.color?.includes("red")) color2 = "#ff0000"
           if (event2?.color?.includes("yellow")) color2 = "#e3e600"
-          if (event2?.color?.includes("orange")) color2 = "#f97316"
-          if (event2?.color?.includes("green")) color2 = "#16a34a"
-          if (event2?.color?.includes("purple")) color2 = "#9333ea"
+          if (event2?.color?.includes("orange")) color2 = "#ff7200"
+          if (event2?.color?.includes("green")) color2 = "#1ae100"
+          if (event2?.color?.includes("purple")) color2 = "#a800ff"
 
           eventDiv2.style.color = color2
           bottomEventContainer.appendChild(eventDiv2)
@@ -1475,17 +1037,17 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
       }
 
       // Calculate how many cells we've added so far
-      const totalCellsAdded = startingDayOfWeek + daysInMonth
+      const cellsAdded = startingDayOfWeek + daysInMonth
 
       // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
-      const cellsNeeded = 42 - totalCellsAdded
+      const cellsNeeded = 42 - cellsAdded
 
-      // Always add empty cells to complete the grid to exactly 6 rows
+      // Add empty cells to fill out the grid to exactly 6 rows
       for (let i = 0; i < cellsNeeded; i++) {
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
         emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "120px"
+        emptyCell.style.height = "100px" // Slightly smaller cells
         emptyCell.style.backgroundColor = "white"
         grid.appendChild(emptyCell)
       }
@@ -1747,6 +1309,22 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
       grid.appendChild(dayCell)
     }
 
+    // Calculate how many cells we've added so far
+    const cellsAdded = startingDayOfWeek + daysInMonth
+
+    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
+    const cellsNeeded = 42 - cellsAdded
+
+    // Add empty cells to fill out the grid to exactly 6 rows
+    for (let i = 0; i < cellsNeeded; i++) {
+      const emptyCell = document.createElement("div")
+      emptyCell.style.borderBottom = "1px solid #eee"
+      emptyCell.style.borderRight = "1px solid #eee"
+      emptyCell.style.height = "120px"
+      emptyCell.style.backgroundColor = "white"
+      grid.appendChild(emptyCell)
+    }
+
     printableDiv.appendChild(grid)
 
     // Add more bottom padding
@@ -1887,7 +1465,7 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
       days.push(
         <div
           key={day}
-          onClick={() => handleOpenEventModal(date)}
+          onClick={() => handleDayClick(date)}
           onDragOver={(e) => handleDragOver(date, e)}
           onDrop={(e) => handleDrop(date, e)}
           className={cn(
@@ -2462,7 +2040,7 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
 
         <div className="flex">
           <div className="flex-1">
-            <div className="w-full calendar-grid-container">
+            <div className="w-full">
               <div ref={calendarContentRef} className="grid grid-cols-7">
                 {(isMobile ? weekDaysMobile : weekDaysMobile).map((day) => (
                   <div
@@ -2473,7 +2051,7 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 calendar-grid">{renderCalendar()}</div>
+              <div className="grid grid-cols-7">{renderCalendar()}</div>
             </div>
           </div>
         </div>
@@ -2489,41 +2067,7 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
         className="mt-4 flex justify-center" // Changed from mt-12 to mt-auto and added pt-8
       />
 
-      {/* Event Modal - Using the new EventModal component */}
-      {showEventModal && (
-        <EventModal
-          isOpen={showEventModal}
-          onClose={() => setShowEventModal(false)}
-          date={selectedEventDate || new Date()}
-          events={currentEvents}
-          onAddEvent={handleAddNewEventToModal}
-          onDeleteEvent={handleDeleteEventFromModal}
-          onSwapEvents={() => {
-            if (currentEvents.length === 2) {
-              // Swap the events
-              const swappedEvents = [currentEvents[1], currentEvents[0]]
-              setCurrentEvents(swappedEvents)
-
-              // Update the global events array
-              if (selectedEventDate) {
-                const otherEvents = events.filter((e) => !isSameDay(e.date, selectedEventDate))
-                const newCalendarEvents = swappedEvents.map((event) => ({
-                  id: event.id,
-                  date: event.date,
-                  content: event.title,
-                  color: event.tag?.color || "text-black",
-                  projectId: event.tag?.id || "default",
-                }))
-
-                setEvents([...otherEvents, ...newCalendarEvents])
-              }
-            }
-          }}
-          tags={projectGroups}
-        />
-      )}
-
-      {/* Old Event Modal */}
+      {/* Event Modal - Updated to match the group dialog style */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div
@@ -3091,4 +2635,3 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
     </div>
   )
 }
-

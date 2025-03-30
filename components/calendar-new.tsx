@@ -799,16 +799,22 @@ button.nav-arrow:focus {
       screenshotDiv.style.fontFamily = '"JetBrains Mono", monospace'
       document.body.appendChild(screenshotDiv)
 
-      // Create header
+      // Create header with gray background
+      const headerContainer = document.createElement("div")
+      headerContainer.style.backgroundColor = "#f9fafb" // Light gray background matching website
+      headerContainer.style.borderBottom = "1px solid #e5e7eb" // Border at bottom
+      headerContainer.style.padding = "16px"
+
+      // Month/year title
       const header = document.createElement("div")
       header.style.textAlign = "center"
       header.style.fontSize = "24px"
       header.style.fontWeight = "500"
-      header.style.marginBottom = "20px"
       header.style.textTransform = "uppercase"
-      header.style.padding = "20px 0"
       header.textContent = format(currentDate, "MMMM yyyy")
-      screenshotDiv.appendChild(header)
+      headerContainer.appendChild(header)
+
+      screenshotDiv.appendChild(headerContainer)
 
       // Create calendar grid
       const grid = document.createElement("div")
@@ -819,9 +825,9 @@ button.nav-arrow:focus {
       grid.style.borderRight = "none"
       screenshotDiv.appendChild(grid)
 
-      // Add day headers - use full day names to match website
-      const fullWeekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
-      fullWeekDays.forEach((day) => {
+      // Add day headers - use single letters to match website
+      const singleLetterDays = ["S", "M", "T", "W", "T", "F", "S"]
+      singleLetterDays.forEach((day) => {
         const dayHeader = document.createElement("div")
         dayHeader.style.padding = "10px"
         dayHeader.style.textAlign = "center"
@@ -1034,7 +1040,7 @@ button.nav-arrow:focus {
 
       // Render with html2canvas with higher quality settings
       const canvas = await html2canvas.default(screenshotDiv, {
-        scale: 3, // Increased from 2 to 3 for higher resolution
+        scale: 3, // Higher resolution
         useCORS: true,
         allowTaint: true,
         backgroundColor: "white",

@@ -192,11 +192,9 @@ export default function ProjectGroups({
           <div
             key={group.id}
             className={cn(
-              "flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-xs",
-              // Always use full color with white text
-              getBgFromTextColor(group.color) + " text-white",
-              // Just adjust opacity for inactive groups, no ring
-              !group.active ? "opacity-60" : "",
+              "flex items-center rounded-none border px-2 py-1 text-xs",
+              // Always use full color with white text for active groups
+              group.active ? getBgFromTextColor(group.color) + " text-white" : "bg-white border-gray-200 text-gray-400", // Gray text for inactive groups
             )}
           >
             <button

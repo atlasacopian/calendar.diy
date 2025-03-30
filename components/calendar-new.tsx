@@ -335,7 +335,7 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [holidays, setHolidays] = useState<Holiday[]>([])
-  const [isDownloading, setIsDownloading] = useState(isDownloading)
+  const [isDownloading, setIsDownloading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)

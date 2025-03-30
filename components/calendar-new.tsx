@@ -794,16 +794,27 @@ button.nav-arrow:focus {
       screenshotDiv.style.position = "fixed"
       screenshotDiv.style.left = "-9999px"
       screenshotDiv.style.top = "0"
-      screenshotDiv.style.width = "1200px" // Wider for better quality
+      screenshotDiv.style.width = "1000px" // Width of the entire screenshot container
       screenshotDiv.style.backgroundColor = "white"
       screenshotDiv.style.fontFamily = '"JetBrains Mono", monospace'
+      screenshotDiv.style.padding = "40px" // Add padding around the entire calendar
       document.body.appendChild(screenshotDiv)
+
+      // Create a container for the calendar with border
+      const calendarContainer = document.createElement("div")
+      calendarContainer.style.border = "1px solid #e5e7eb"
+      calendarContainer.style.borderRadius = "8px"
+      calendarContainer.style.overflow = "hidden"
+      calendarContainer.style.width = "100%"
+      calendarContainer.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)"
+      screenshotDiv.appendChild(calendarContainer)
 
       // Create header with gray background
       const headerContainer = document.createElement("div")
       headerContainer.style.backgroundColor = "#f9fafb" // Light gray background matching website
       headerContainer.style.borderBottom = "1px solid #e5e7eb" // Border at bottom
       headerContainer.style.padding = "16px"
+      headerContainer.style.position = "relative" // For positioning the title
 
       // Month/year title
       const header = document.createElement("div")
@@ -814,16 +825,15 @@ button.nav-arrow:focus {
       header.textContent = format(currentDate, "MMMM yyyy")
       headerContainer.appendChild(header)
 
-      screenshotDiv.appendChild(headerContainer)
+      calendarContainer.appendChild(headerContainer)
 
       // Create calendar grid
       const grid = document.createElement("div")
       grid.style.display = "grid"
       grid.style.gridTemplateColumns = "repeat(7, 1fr)"
-      grid.style.border = "1px solid #eee"
       grid.style.borderBottom = "none"
       grid.style.borderRight = "none"
-      screenshotDiv.appendChild(grid)
+      calendarContainer.appendChild(grid)
 
       // Add day headers - use single letters to match website
       const singleLetterDays = ["S", "M", "T", "W", "T", "F", "S"]
@@ -851,7 +861,7 @@ button.nav-arrow:focus {
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
         emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "120px"
+        emptyCell.style.height = "100px" // Slightly smaller cells
         emptyCell.style.backgroundColor = "white"
         grid.appendChild(emptyCell)
       }
@@ -877,7 +887,7 @@ button.nav-arrow:focus {
         dayCell.style.padding = "10px"
         dayCell.style.borderBottom = "1px solid #eee"
         dayCell.style.borderRight = "1px solid #eee"
-        dayCell.style.height = "120px"
+        dayCell.style.height = "100px" // Slightly smaller cells
         dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
 
         // Add day number
@@ -1030,7 +1040,7 @@ button.nav-arrow:focus {
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
         emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "120px"
+        emptyCell.style.height = "100px" // Slightly smaller cells
         emptyCell.style.backgroundColor = "white"
         grid.appendChild(emptyCell)
       }

@@ -2045,212 +2045,164 @@ button.nav-arrow:focus {
 
                 {/* First Event */}
                 {eventsForSelectedDate.length > 0 && (
-                  <div
-                    className={`flex gap-1 mb-2 items-center rounded-md ${
-                      activeEventIndex === 0 ? "event-input-active" : ""
-                    }`}
-                  >
-                    <div
-                      className="cursor-grab text-gray-300 flex items-center h-full"
-                      draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData("text/plain", "drag-0")
-                        e.dataTransfer.effectAllowed = "move"
-                        // Add a ghost image
-                        const ghost = document.createElement("div")
-                        ghost.style.width = "1px"
-                        ghost.style.height = "1px"
-                        document.body.appendChild(ghost)
-                        e.dataTransfer.setDragImage(ghost, 0, 0)
-                        setTimeout(() => document.body.removeChild(ghost), 0)
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        e.dataTransfer.dropEffect = "move"
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault()
-                        if (eventsForSelectedDate.length > 1) {
-                          // Swap the events
-                          const swappedEvents = [...eventsForSelectedDate]
-                          ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
-                          setEventsForSelectedDate(swappedEvents)
-                        }
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3"
-                      >
-                        <circle cx="9" cy="12" r="1" />
-                        <circle cx="15" cy="12" r="1" />
-                      </svg>
+                  <div className="mb-4">
+                    <div className="flex flex-col md:flex-row gap-2">
+                      <div className="flex-1">
+                        <textarea
+                          id="event-content-1"
+                          value={eventsForSelectedDate[0]?.content || ""}
+                          onChange={(e) => {
+                            handleUpdateEventContent(0, e.target.value)
+                            setActiveEventIndex(0)
+                          }}
+                          onFocus={() => setActiveEventIndex(0)}
+                          onKeyDown={(e) => {
+                            setActiveEventIndex(0)
+                            handleTextareaKeyDown(e)
+                          }}
+                          onMouseUp={(e) => {
+                            setActiveEventIndex(0)
+                            handleTextSelect(e)
+                          }}
+                          onTouchEnd={(e) => {
+                            setActiveEventIndex(0)
+                            handleTextSelect(e)
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveEventIndex(0)
+                          }}
+                          ref={firstEventInputRef}
+                          className={`w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 0 ? "border-black dark:border-white" : ""}`}
+                          placeholder="ENTER EVENT NAME"
+                          rows={2}
+                        />
+                        <div className="flex justify-between items-center mt-1">
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {projectGroups.map((group) => {
+                              const bgColor = getBgFromTextColor(group.color)
+                              const isSelected = eventsForSelectedDate[0]?.color === group.color
+
+                              return (
+                                <button
+                                  key={`event0-${group.id}`}
+                                  onClick={() => handleUpdateEventColor(0, group.color, group.id)}
+                                  className={`px-2 py-0.5 text-[10px] rounded-full transition-all ${
+                                    isSelected ? `${bgColor} text-white` : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                  }`}
+                                >
+                                  {group.name}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteEvent(eventsForSelectedDate[0].id)
+                            }}
+                            className="text-gray-300 hover:text-gray-500 self-center ml-1"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-4 w-4"
+                            >
+                              <path d="M18 6L6 18"></path>
+                              <path d="M6 6l12 12"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <textarea
-                      id="event-content-1"
-                      value={eventsForSelectedDate[0]?.content || ""}
-                      onChange={(e) => {
-                        handleUpdateEventContent(0, e.target.value)
-                        setActiveEventIndex(0)
-                      }}
-                      onFocus={() => setActiveEventIndex(0)}
-                      onKeyDown={(e) => {
-                        setActiveEventIndex(0)
-                        handleTextareaKeyDown(e)
-                      }}
-                      onMouseUp={(e) => {
-                        setActiveEventIndex(0)
-                        handleTextSelect(e)
-                      }}
-                      onTouchEnd={(e) => {
-                        setActiveEventIndex(0)
-                        handleTextSelect(e)
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setActiveEventIndex(0)
-                      }}
-                      ref={firstEventInputRef}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case"
-                      placeholder="ENTER EVENT NAME"
-                      rows={2}
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteEvent(eventsForSelectedDate[0].id)
-                      }}
-                      className="text-gray-300 hover:text-gray-500 self-center"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4"
-                      >
-                        <path d="M18 6L6 18"></path>
-                        <path d="M6 6l12 12"></path>
-                      </svg>
-                    </button>
                   </div>
                 )}
 
                 {/* Second Event - Completely isolated from the first */}
                 {eventsForSelectedDate.length > 1 && (
-                  <div
-                    className={`flex gap-1 mb-2 items-center rounded-md ${
-                      activeEventIndex === 1 ? "event-input-active" : ""
-                    }`}
-                  >
-                    <div
-                      className="cursor-grab text-gray-300 flex items-center h-full"
-                      draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData("text/plain", "drag-1")
-                        e.dataTransfer.effectAllowed = "move"
-                        // Add a ghost image
-                        const ghost = document.createElement("div")
-                        ghost.style.width = "1px"
-                        ghost.style.height = "1px"
-                        document.body.appendChild(ghost)
-                        e.dataTransfer.setDragImage(ghost, 0, 0)
-                        setTimeout(() => document.body.removeChild(ghost), 0)
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        e.dataTransfer.dropEffect = "move"
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault()
-                        if (eventsForSelectedDate.length > 1) {
-                          // Swap the events
-                          const swappedEvents = [...eventsForSelectedDate]
-                          ;[swappedEvents[0], swappedEvents[1]] = [swappedEvents[1], swappedEvents[0]]
-                          setEventsForSelectedDate(swappedEvents)
-                        }
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-3 w-3"
-                      >
-                        <circle cx="9" cy="12" r="1" />
-                        <circle cx="15" cy="12" r="1" />
-                      </svg>
+                  <div className="mb-4">
+                    <div className="flex flex-col md:flex-row gap-2">
+                      <div className="flex-1">
+                        <textarea
+                          id="event-content-2"
+                          value={eventsForSelectedDate[1]?.content || ""}
+                          onChange={(e) => {
+                            handleUpdateEventContent(1, e.target.value)
+                            setActiveEventIndex(1)
+                          }}
+                          onFocus={() => setActiveEventIndex(1)}
+                          onKeyDown={(e) => {
+                            setActiveEventIndex(1)
+                            handleTextareaKeyDown(e)
+                          }}
+                          onMouseUp={(e) => {
+                            setActiveEventIndex(1)
+                            handleTextSelect(e)
+                          }}
+                          onTouchEnd={(e) => {
+                            setActiveEventIndex(1)
+                            handleTextSelect(e)
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveEventIndex(1)
+                          }}
+                          className={`w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 1 ? "border-black dark:border-white" : ""}`}
+                          placeholder="ENTER EVENT NAME"
+                          rows={2}
+                        />
+                        <div className="flex justify-between items-center mt-1">
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {projectGroups.map((group) => {
+                              const bgColor = getBgFromTextColor(group.color)
+                              const isSelected = eventsForSelectedDate[1]?.color === group.color
+
+                              return (
+                                <button
+                                  key={`event1-${group.id}`}
+                                  onClick={() => handleUpdateEventColor(1, group.color, group.id)}
+                                  className={`px-2 py-0.5 text-[10px] rounded-full transition-all ${
+                                    isSelected ? `${bgColor} text-white` : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                  }`}
+                                >
+                                  {group.name}
+                                </button>
+                              )
+                            })}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteEvent(eventsForSelectedDate[1].id)
+                            }}
+                            className="text-gray-300 hover:text-gray-500 self-center ml-1"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-4 w-4"
+                            >
+                              <path d="M18 6L6 18"></path>
+                              <path d="M6 6l12 12"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <textarea
-                      id="event-content-2"
-                      value={eventsForSelectedDate[1]?.content || ""}
-                      onChange={(e) => {
-                        handleUpdateEventContent(1, e.target.value)
-                        setActiveEventIndex(1)
-                      }}
-                      onFocus={() => setActiveEventIndex(1)}
-                      onKeyDown={(e) => {
-                        setActiveEventIndex(1)
-                        handleTextareaKeyDown(e)
-                      }}
-                      onMouseUp={(e) => {
-                        setActiveEventIndex(1)
-                        handleTextSelect(e)
-                      }}
-                      onTouchEnd={(e) => {
-                        setActiveEventIndex(1)
-                        handleTextSelect(e)
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setActiveEventIndex(1)
-                      }}
-                      className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case"
-                      placeholder="ENTER EVENT NAME"
-                      rows={2}
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteEvent(eventsForSelectedDate[1].id)
-                      }}
-                      className="text-gray-300 hover:text-gray-500 self-center"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-4 w-4"
-                      >
-                        <path d="M18 6L6 18"></path>
-                        <path d="M6 6l12 12"></path>
-                      </svg>
-                    </button>
                   </div>
                 )}
               </div>
@@ -2303,40 +2255,6 @@ button.nav-arrow:focus {
                   ADD NEW EVENT
                 </button>
               )}
-
-              {/* Tag Selection - Now appears below both events */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">TAG</label>
-                <div className="flex flex-wrap gap-2">
-                  {projectGroups.map((group) => {
-                    const bgColor = getBgFromTextColor(group.color)
-
-                    // Determine if this tag is selected based on the active event
-                    const isSelected =
-                      eventsForSelectedDate.length > activeEventIndex &&
-                      eventsForSelectedDate[activeEventIndex]?.color === group.color
-
-                    return (
-                      <button
-                        key={group.id}
-                        onClick={() => {
-                          if (eventsForSelectedDate.length > activeEventIndex) {
-                            handleUpdateEventColor(activeEventIndex, group.color, group.id)
-                          }
-                        }}
-                        className={cn(
-                          "flex items-center gap-1 px-2 py-1 rounded-md text-xs border",
-                          bgColor,
-                          "text-white",
-                          isSelected ? "ring-2 ring-black ring-offset-2" : "",
-                        )}
-                      >
-                        {group.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-2">

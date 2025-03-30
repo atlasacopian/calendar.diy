@@ -73,6 +73,7 @@ export default function Calendar() {
   const [showExportTagsModal, setShowExportTagsModal] = useState(false)
   const [exportTarget, setExportTarget] = useState<"ical" | "google">("ical")
   const [selectedExportTags, setSelectedExportTags] = useState<string[]>([])
+  const [showGoogleInstructionsModal, setShowGoogleInstructionsModal] = useState(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -182,6 +183,8 @@ export default function Calendar() {
     } catch (error) {
       console.error("Error in initialization:", error)
     }
+    // Initialize selectedExportTags with all project group IDs by default
+    setSelectedExportTags(projectGroups.map((group) => group.id))
   }, [])
 
   // Check if device is mobile
@@ -865,7 +868,7 @@ button.nav-arrow:focus {
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
         emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "100px" // Slightly smaller cells
+        emptyCell.style.height = "100px"
         emptyCell.style.backgroundColor = "white"
         grid.appendChild(emptyCell)
       }
@@ -1361,67 +1364,58 @@ button.nav-arrow:focus {
       return
     }
 
-    if (exportTarget === "ical") {
-      // Export to iCal
-      let icalContent = [
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        "PRODID:-//Calendar.diy//Calendar//EN",
-        "CALSCALE:GREGORIAN",
-        "METHOD:PUBLISH",
+    // Generate iCal content for both export types
+    let icalContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Calendar.diy//Calendar//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+    ]
+
+    // Add only user events with selected tags
+    filteredEvents.forEach((event) => {
+      const dateString = format(event.date, "yyyyMMdd")
+      const uid = `${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`
+      icalContent = [
+        ...icalContent,
+        "BEGIN:VEVENT",
+        `UID:${uid}`,
+        `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
+        `DTSTART;VALUE=DATE:${dateString}`,
+        `DTEND;VALUE=DATE:${dateString}`,
+        `SUMMARY:${event.content}`,
+        "END:VEVENT",
       ]
+    })
 
-      // Add only user events with selected tags
-      filteredEvents.forEach((event) => {
-        const dateString = format(event.date, "yyyyMMdd")
-        const uid = `${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`
-        icalContent = [
-          ...icalContent,
-          "BEGIN:VEVENT",
-          `UID:${uid}`,
-          `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
-          `DTSTART;VALUE=DATE:${dateString}`,
-          `DTEND;VALUE=DATE:${dateString}`,
-          `SUMMARY:${event.content}`,
-          "END:VEVENT",
-        ]
-      })
+    icalContent.push("END:VCALENDAR")
 
-      icalContent.push("END:VCALENDAR")
+    // Create and download the file
+    const blob = new Blob([icalContent.join("\r\n")], { type: "text/calendar" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
 
-      // Create and download the file
-      const blob = new Blob([icalContent.join("\r\n")], { type: "text/calendar" })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = "calendar.diy.ics"
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    } else if (exportTarget === "google") {
-      // For Google Calendar, we need to open a new tab for each event
-      // But we'll limit to first 5 events to avoid overwhelming the user with tabs
-      const eventsToExport = filteredEvents.slice(0, 5)
-
-      // Show a message if we're limiting the number of events
-      if (filteredEvents.length > 5) {
-        alert(
-          `Exporting the first 5 of ${filteredEvents.length} events to Google Calendar. You may need to authorize each one.`,
-        )
-      }
-
-      // Open a new tab for each event
-      eventsToExport.forEach((event) => {
-        const dateString = format(event.date, "yyyyMMdd")
-        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-          event.content,
-        )}&dates=${dateString}/${dateString}`
-        window.open(url, "_blank")
-      })
+    // Set different filenames based on export target
+    if (exportTarget === "ical") {
+      link.download = "calendar_export.ics"
+    } else {
+      link.download = "google_calendar_import.ics"
     }
 
-    // Close the modal
-    setShowExportTagsModal(false)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    // If this was a Google Calendar export, show instructions after download
+    if (exportTarget === "google") {
+      setShowExportTagsModal(false)
+      setShowGoogleInstructionsModal(true)
+    } else {
+      // Close the modal for iCal export
+      setShowExportTagsModal(false)
+    }
   }
 
   // Generate calendar grid
@@ -2519,8 +2513,7 @@ button.nav-arrow:focus {
             <div className="p-4 sm:p-6">
               <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
                 Select which tags to include in your {exportTarget === "ical" ? "iCal" : "Google Calendar"} export. Only
-                user-created events (not holidays) will be exported. This is a one-time export and will not
-                automatically update.
+                user-created events (not holidays) will be exported.
               </p>
 
               <div className="space-y-2 mb-6">
@@ -2561,6 +2554,78 @@ button.nav-arrow:focus {
                   className="rounded-md border border-transparent bg-black dark:bg-white py-2 px-4 text-sm font-medium text-white dark:text-black shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none"
                 >
                   EXPORT
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showGoogleInstructionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
+                  IMPORT TO GOOGLE CALENDAR
+                </h3>
+                <button
+                  onClick={() => setShowGoogleInstructionsModal(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                Your calendar file has been downloaded. To import it into Google Calendar:
+              </p>
+
+              <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
+                <li>
+                  Go to{" "}
+                  <a
+                    href="https://calendar.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 underline"
+                  >
+                    Google Calendar
+                  </a>
+                </li>
+                <li>Click the gear icon (⚙️) in the top right and select "Settings"</li>
+                <li>Click "Import & export" on the left sidebar</li>
+                <li>Click "Select file from your computer" and choose the downloaded .ics file</li>
+                <li>Select which calendar to add the events to</li>
+                <li>Click "Import"</li>
+              </ol>
+
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                Note: This is a one-time import. If you make changes to your calendar, you'll need to export and import
+                again.
+              </p>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowGoogleInstructionsModal(false)}
+                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
+                >
+                  CLOSE
                 </button>
               </div>
             </div>

@@ -7,6 +7,8 @@ import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToda
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ArrowUpDown, X } from "lucide-react"
 
 // import html2canvas from 'html2canvas'; // We'll dynamically import this
 
@@ -18,6 +20,20 @@ type CalendarEvent = {
   formattedContent?: string // To store HTML with formatting
   color?: string
   projectId?: string
+}
+
+type Tag = {
+  id: string
+  name: string
+  color: string
+}
+
+type Event = {
+  id: string
+  title: string
+  description: string
+  date: Date
+  tag: Tag | null
 }
 
 // Color options for color picker
@@ -40,6 +56,284 @@ const getBgFromTextColor = (textColor: string) => {
 const getTextForBg = (textColor: string) => {
   const color = colorOptions.find((c) => c.value === textColor)
   return "text-white"
+}
+
+const EventModal = ({
+  isOpen,
+  onClose,
+  date,
+  events,
+  onAddEvent,
+  onDeleteEvent,
+  onSwapEvents,
+  tags,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  date: Date
+  events: Event[]
+  onAddEvent: (event: Event) => void
+  onDeleteEvent: (event: Event) => void
+  onSwapEvents: () => void
+  tags: Tag[]
+}) => {
+  const [localEvents, setLocalEvents] = useState<Event[]>([])
+  const [newEvent, setNewEvent] = useState<string>("")
+  const [newEventDescription, setNewEventDescription] = useState<string>("")
+  const [selectedTag, setSelectedTag] = useState<Tag | null>(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      setLocalEvents(events)
+      setNewEvent("")
+      setNewEventDescription("")
+      setSelectedTag(tags.length > 0 ? tags[0] : null)
+    }
+  }, [isOpen, events, tags])
+
+  const handleAddEvent = () => {
+    if (newEvent.trim() !== "") {
+      const event: Event = {
+        id: Date.now().toString(),
+        title: newEvent,
+        description: newEventDescription,
+        date: date,
+        tag: selectedTag,
+      }
+      onAddEvent(event)
+      setNewEvent("")
+      setNewEventDescription("")
+    }
+  }
+
+  const handleDeleteEvent = (event: Event) => {
+    onDeleteEvent(event)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleAddEvent()
+    }
+  }
+
+  const formatDate = (date: Date) => {
+    return `${date.toLocaleString("default", { month: "long" }).toUpperCase()} ${date.getDate()}, ${date.getFullYear()}`
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md bg-white p-0 overflow-hidden">
+        <DialogHeader className="border-b border-gray-200">
+          <DialogTitle className="text-center py-4 font-mono text-lg">EVENT DETAILS</DialogTitle>
+          <DialogClose className="absolute right-4 top-4 opacity-70 hover:opacity-100" />
+        </DialogHeader>
+
+        <div className="p-6">
+          <div className="mb-6">
+            <div className="text-sm font-mono text-gray-600 mb-2">DATE</div>
+            <div className="font-mono">{formatDate(date)}</div>
+          </div>
+
+          <div className="mb-6">
+            <div className="text-sm font-mono text-gray-600 mb-2">EVENT</div>
+            <div className="relative">
+              <input
+                type="text"
+                value={newEvent}
+                onChange={(e) => setNewEvent(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full border border-blue-500 p-2 font-mono focus:outline-none"
+                placeholder="Add event title"
+              />
+              {newEvent && (
+                <button
+                  onClick={() => setNewEvent("")}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <div className="text-sm font-mono text-gray-600 mb-2">DESCRIPTION (OPTIONAL)</div>
+            <div className="relative">
+              <textarea
+                value={newEventDescription}
+                onChange={(e) => setNewEventDescription(e.target.value)}
+                className="w-full border border-blue-500 p-2 font-mono focus:outline-none min-h-[100px]"
+                placeholder="Add event description"
+              />
+              {newEventDescription && (
+                <button
+                  onClick={() => setNewEventDescription("")}
+                  className="absolute right-2 top-4 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <div className="text-sm font-mono text-gray-600 mb-2">TAG</div>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <button
+                  key={tag.id}
+                  onClick={() => setSelectedTag(tag)}
+                  className={`px-4 py-2 font-mono text-sm ${
+                    selectedTag?.id === tag.id ? "ring-2 ring-offset-2 ring-black" : ""
+                  }`}
+                  style={{
+                    backgroundColor: tag.color,
+                    color: getContrastColor(tag.color),
+                  }}
+                >
+                  {tag.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {localEvents.length > 0 && (
+            <div className="mb-6">
+              <div className="text-sm font-mono text-gray-600 mb-2">EXISTING EVENTS</div>
+              <div className="space-y-2">
+                {localEvents.map((event) => (
+                  <div key={event.id} className="flex items-center justify-between p-2 border border-gray-200">
+                    <div className="flex items-center">
+                      {event.tag && (
+                        <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: event.tag.color }}></div>
+                      )}
+                      <span className="font-mono">{event.title}</span>
+                    </div>
+                    <button onClick={() => handleDeleteEvent(event)} className="text-gray-400 hover:text-gray-600">
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {localEvents.length > 1 && (
+            <button
+              onClick={onSwapEvents}
+              className="w-full border border-gray-200 py-3 font-mono text-gray-600 hover:bg-gray-50 mb-6 flex items-center justify-center"
+            >
+              <ArrowUpDown className="mr-2" size={16} />
+              SWAP EVENTS
+            </button>
+          )}
+        </div>
+
+        <div className="flex justify-end border-t border-gray-200 p-4">
+          <button
+            onClick={handleAddEvent}
+            disabled={!newEvent.trim()}
+            className="bg-black text-white font-mono py-2 px-6 disabled:opacity-50"
+          >
+            SAVE
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+const TagModal = ({
+  isOpen,
+  onClose,
+  tag,
+  onSave,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  tag: Tag | null
+  onSave: (tag: Tag) => void
+}) => {
+  const [name, setName] = useState("")
+  const [color, setColor] = useState("#000000")
+
+  useEffect(() => {
+    if (isOpen && tag) {
+      setName(tag.name)
+      setColor(tag.color)
+    } else if (isOpen) {
+      setName("")
+      setColor("#000000")
+    }
+  }, [isOpen, tag])
+
+  const handleSave = () => {
+    if (name.trim() !== "") {
+      onSave({
+        id: tag?.id || Date.now().toString(),
+        name,
+        color,
+      })
+      onClose()
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md bg-white p-0 overflow-hidden">
+        <DialogHeader className="border-b border-gray-200">
+          <DialogTitle className="text-center py-4 font-mono text-lg">{tag ? "EDIT TAG" : "NEW TAG"}</DialogTitle>
+          <DialogClose className="absolute right-4 top-4 opacity-70 hover:opacity-100" />
+        </DialogHeader>
+
+        <div className="p-6">
+          <div className="mb-6">
+            <div className="text-sm font-mono text-gray-600 mb-2">TAG NAME</div>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full border border-blue-500 p-2 font-mono focus:outline-none"
+              placeholder="Enter tag name"
+            />
+          </div>
+
+          <div className="mb-6">
+            <div className="text-sm font-mono text-gray-600 mb-2">COLOR</div>
+            <div className="flex flex-wrap gap-4">
+              {["#000000", "#FF3B30", "#FF9500", "#FFCC00", "#34C759", "#007AFF", "#AF52DE"].map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setColor(c)}
+                  className={`w-10 h-10 rounded-full ${color === c ? "ring-2 ring-offset-2 ring-black" : ""}`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end border-t border-gray-200 p-4">
+          <button
+            onClick={handleSave}
+            disabled={!name.trim()}
+            className="bg-black text-white font-mono py-2 px-6 disabled:opacity-50"
+          >
+            SAVE
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function getContrastColor(hexColor: string): string {
+  const r = Number.parseInt(hexColor.slice(1, 3), 16)
+  const g = Number.parseInt(hexColor.slice(3, 5), 16)
+  const b = Number.parseInt(hexColor.slice(5, 7), 16)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance > 0.5 ? "#000000" : "#FFFFFF"
 }
 
 export default function Calendar() {
@@ -868,7 +1162,7 @@ button.nav-arrow:focus {
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
         emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "100px"
+        emptyCell.style.height = "100px" // Slightly smaller cells
         emptyCell.style.backgroundColor = "white"
         grid.appendChild(emptyCell)
       }
@@ -1042,7 +1336,7 @@ button.nav-arrow:focus {
       // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
       const cellsNeeded = 42 - cellsAdded
 
-      // Add empty cells to fill out the grid to exactly 6 rows
+      // Always add empty cells to complete the grid to exactly 6 rows
       for (let i = 0; i < cellsNeeded; i++) {
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
@@ -1315,7 +1609,7 @@ button.nav-arrow:focus {
     // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
     const cellsNeeded = 42 - cellsAdded
 
-    // Add empty cells to fill out the grid to exactly 6 rows
+    // Always add empty cells to complete the grid to exactly 6 rows
     for (let i = 0; i < cellsNeeded; i++) {
       const emptyCell = document.createElement("div")
       emptyCell.style.borderBottom = "1px solid #eee"
@@ -1686,89 +1980,6 @@ button.nav-arrow:focus {
     }, 100)
   }
 
-  // Add keyboard event handlers for left and right arrow keys
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle keyboard events when no modal is open
-      if (showModal || showResetConfirm || showShareModal || showDateSelector) {
-        return
-      }
-
-      // Left arrow key - previous month
-      if (e.key === "ArrowLeft") {
-        setCurrentDate(subMonths(currentDate, 1))
-      }
-
-      // Right arrow key - next month
-      if (e.key === "ArrowRight") {
-        setCurrentDate(addMonths(currentDate, 1))
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-    }
-  }, [showModal, showResetConfirm, showShareModal, showDateSelector, currentDate])
-
-  // Update the event modal to close when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showModal && eventModalRef.current && !eventModalRef.current.contains(event.target as Node)) {
-        handleSaveAndClose() // Save changes before closing
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [showModal, eventsForSelectedDate])
-
-  // Update the reset confirmation modal to close when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showResetConfirm && resetModalRef.current && !resetModalRef.current.contains(event.target as Node)) {
-        setShowResetConfirm(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [showResetConfirm])
-
-  // Update the share modal to close when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showShareModal && shareModalRef.current && !shareModalRef.current.contains(event.target as Node)) {
-        setShowShareModal(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [showShareModal])
-
-  // Focus the appropriate event input when modal opens
-  useEffect(() => {
-    if (showModal && eventsForSelectedDate.length > 0) {
-      setTimeout(() => {
-        if (activeEventIndex === 0 && firstEventInputRef.current) {
-          firstEventInputRef.current.focus()
-        } else {
-          const textareas = document.querySelectorAll("textarea")
-          if (textareas.length > activeEventIndex) {
-            textareas[activeEventIndex].focus()
-          }
-        }
-      }, 100)
-    }
-  }, [showModal, eventsForSelectedDate, activeEventIndex])
-
   // Export Tags Selection Modal
   return (
     <div
@@ -2069,282 +2280,16 @@ button.nav-arrow:focus {
 
       {/* Event Modal - Updated to match the group dialog style */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={eventModalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
-          >
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <div className="w-4"></div> {/* Spacer for centering */}
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
-                  {formatDate(selectedDate)}
-                </h3>
-                <button
-                  onClick={handleSaveAndClose}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              {/* Event Inputs - Stacked directly one under the other */}
-              <div className="mb-4">
-                <label
-                  htmlFor="event-content-1"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  EVENT
-                </label>
-
-                {/* First Event */}
-                {eventsForSelectedDate.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-start">
-                        <textarea
-                          id="event-content-1"
-                          value={eventsForSelectedDate[0]?.content || ""}
-                          onChange={(e) => {
-                            handleUpdateEventContent(0, e.target.value)
-                            setActiveEventIndex(0)
-                          }}
-                          onFocus={() => setActiveEventIndex(0)}
-                          onKeyDown={(e) => {
-                            setActiveEventIndex(0)
-                            handleTextareaKeyDown(e)
-                          }}
-                          onMouseUp={(e) => {
-                            setActiveEventIndex(0)
-                            handleTextSelect(e)
-                          }}
-                          onTouchEnd={(e) => {
-                            setActiveEventIndex(0)
-                            handleTextSelect(e)
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setActiveEventIndex(0)
-                          }}
-                          ref={firstEventInputRef}
-                          className={`flex-1 w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 0 ? "border-black dark:border-white" : ""}`}
-                          placeholder="ENTER EVENT NAME"
-                          rows={2}
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteEvent(eventsForSelectedDate[0].id)
-                          }}
-                          className="text-gray-300 hover:text-gray-500 self-start mt-2 ml-2"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-4 w-4"
-                          >
-                            <path d="M18 6L6 18"></path>
-                            <path d="M6 6l12 12"></path>
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {projectGroups.map((group) => {
-                          const bgColor = getBgFromTextColor(group.color)
-                          const isSelected = eventsForSelectedDate[0]?.color === group.color
-
-                          return (
-                            <button
-                              key={`event0-${group.id}`}
-                              onClick={() => handleUpdateEventColor(0, group.color, group.id)}
-                              className={cn(
-                                "flex items-center rounded-none border px-2 py-1 text-xs",
-                                isSelected
-                                  ? `${bgColor} text-white border-gray-700`
-                                  : "bg-white border-gray-200 text-gray-400",
-                              )}
-                            >
-                              {group.name}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Second Event */}
-                {eventsForSelectedDate.length > 1 && (
-                  <div className="mb-4">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-start">
-                        <textarea
-                          id="event-content-2"
-                          value={eventsForSelectedDate[1]?.content || ""}
-                          onChange={(e) => {
-                            handleUpdateEventContent(1, e.target.value)
-                            setActiveEventIndex(1)
-                          }}
-                          onFocus={() => setActiveEventIndex(1)}
-                          onKeyDown={(e) => {
-                            setActiveEventIndex(1)
-                            handleTextareaKeyDown(e)
-                          }}
-                          onMouseUp={(e) => {
-                            setActiveEventIndex(1)
-                            handleTextSelect(e)
-                          }}
-                          onTouchEnd={(e) => {
-                            setActiveEventIndex(1)
-                            handleTextSelect(e)
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setActiveEventIndex(1)
-                          }}
-                          className={`flex-1 w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 1 ? "border-black dark:border-white" : ""}`}
-                          placeholder="ENTER EVENT NAME"
-                          rows={2}
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteEvent(eventsForSelectedDate[1].id)
-                          }}
-                          className="text-gray-300 hover:text-gray-500 self-start mt-2 ml-2"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-4 w-4"
-                          >
-                            <path d="M18 6L6 18"></path>
-                            <path d="M6 6l12 12"></path>
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {projectGroups.map((group) => {
-                          const bgColor = getBgFromTextColor(group.color)
-                          const isSelected = eventsForSelectedDate[1]?.color === group.color
-
-                          return (
-                            <button
-                              key={`event1-${group.id}`}
-                              onClick={() => handleUpdateEventColor(1, group.color, group.id)}
-                              className={cn(
-                                "flex items-center rounded-none border px-2 py-1 text-xs",
-                                isSelected
-                                  ? `${bgColor} text-white border-gray-700`
-                                  : "bg-white border-gray-200 text-gray-400",
-                              )}
-                            >
-                              {group.name}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Add a swap button between the events and the Add New Event button */}
-              {eventsForSelectedDate.length === 2 && (
-                <button
-                  onClick={handleSwapEvents}
-                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 mr-2"
-                  >
-                    <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                  SWAP EVENTS
-                </button>
-              )}
-
-              {/* Add New Event button - Show when there are fewer than 2 events */}
-              {eventsForSelectedDate.length < 2 && (
-                <button
-                  onClick={handleAddNewEvent}
-                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 mr-2"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  ADD NEW EVENT
-                </button>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={handleCancelEdit}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleSaveAndClose}
-                  className="rounded-md border border-transparent bg-black dark:bg-white py-2 px-4 text-sm font-medium text-white dark:text-black shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none"
-                >
-                  SAVE
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <EventModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          date={selectedDate || new Date()}
+          events={[]}
+          onAddEvent={() => {}}
+          onDeleteEvent={() => {}}
+          onSwapEvents={() => {}}
+          tags={[]}
+        />
       )}
 
       {/* Reset Confirmation Modal */}

@@ -179,21 +179,14 @@ const EventModal = ({
 
           <div className="mb-6">
             <div className="text-sm font-mono text-gray-600 mb-2">TAG</div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-4">
               {tags.map((tag) => (
                 <button
                   key={tag.id}
                   onClick={() => setSelectedTag(tag)}
-                  className={`px-4 py-2 font-mono text-sm ${
-                    selectedTag?.id === tag.id ? "ring-2 ring-offset-2 ring-black" : ""
-                  }`}
-                  style={{
-                    backgroundColor: tag.color,
-                    color: getContrastColor(tag.color),
-                  }}
-                >
-                  {tag.name}
-                </button>
+                  className={`w-10 h-10 rounded-full ${selectedTag?.id === tag.id ? "ring-2 ring-offset-2 ring-black" : ""}`}
+                  style={{ backgroundColor: tag.color }}
+                />
               ))}
             </div>
           </div>
@@ -342,7 +335,7 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [holidays, setHolidays] = useState<Holiday[]>([])
-  const [isDownloading, setIsDownloading] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(isDownloading)
   const [isMobile, setIsMobile] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
@@ -1935,29 +1928,45 @@ button.nav-arrow:focus {
   const handleAddNewEvent = (event?: Event) => {
     if (!selectedDate || eventsForSelectedDate.length >= 2) return
 
-    // Create a new empty event or use the provided event
-    const newEvent: CalendarEvent = event
-      ? {
-          id: event.id,
-          date: event.date,
-          content: event.title,
-          color: event.tag?.color || "text-black",
-          projectId: event.tag?.id || "default",
-        }
-      : {
-          id: Math.random().toString(36).substring(2, 11),
-          date: selectedDate,
-          content: "",
-          color: "text-black",
-          projectId: "default",
-        }
+    if (event) {
+      // Convert Event to CalendarEvent
+      const newCalendarEvent: CalendarEvent = {
+        id: event.id,
+        date: event.date,
+        content: event.title,
+        color: event.tag?.color || "text-black",
+        projectId: event.tag?.id || "default",
+      }
 
-    // Add to the events for this day
-    const updatedEvents = [...eventsForSelectedDate, newEvent]
-    setEventsForSelectedDate(updatedEvents)
+      // Add to the events for this day
+      const updatedEvents = [...eventsForSelectedDate, newCalendarEvent]
+      setEventsForSelectedDate(updatedEvents)
+
+      // Add to the global events array
+      setEvents([...events.filter((e) => !isSameDay(e.date, selectedDate)), ...updatedEvents])
+
+      // Save to localStorage
+      localStorage.setItem(
+        "calendarEvents",
+        JSON.stringify([...events.filter((e) => !isSameDay(e.date, selectedDate)), ...updatedEvents]),
+      )
+    } else {
+      // Create a new empty event
+      const newEvent: CalendarEvent = {
+        id: Math.random().toString(36).substring(2, 11),
+        date: selectedDate,
+        content: "",
+        color: "text-black",
+        projectId: "default",
+      }
+
+      // Add to the events for this day
+      const updatedEvents = [...eventsForSelectedDate, newEvent]
+      setEventsForSelectedDate(updatedEvents)
+    }
 
     // Set the active index to the new event
-    const newIndex = updatedEvents.length - 1
+    const newIndex = eventsForSelectedDate.length
     setActiveEventIndex(newIndex)
 
     // Focus the new event input after a short delay
@@ -2293,7 +2302,18 @@ button.nav-arrow:focus {
               color: event.tag?.color || "text-black",
               projectId: event.tag?.id || "default",
             }
-            handleAddNewEvent()
+
+            // Add to the events for this day
+            const updatedEvents = [...eventsForSelectedDate, newCalendarEvent]
+            setEventsForSelectedDate(updatedEvents)
+
+            // Add to the global events array
+            const otherEvents = events.filter((e) => !isSameDay(e.date, selectedDate as Date))
+            const newEvents = [...otherEvents, ...updatedEvents]
+            setEvents(newEvents)
+
+            // Save to localStorage
+            localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
           }}
           onDeleteEvent={(event) => {
             handleDeleteEvent(event.id)

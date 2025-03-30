@@ -84,7 +84,15 @@ const EventModal = ({
 
   useEffect(() => {
     if (isOpen) {
-      setLocalEvents(events)
+      // Convert CalendarEvent[] to Event[]
+      const mappedEvents = events.map((event) => ({
+        id: event.id,
+        title: event.content,
+        description: "",
+        date: event.date,
+        tag: null,
+      }))
+      setLocalEvents(mappedEvents)
       setNewEvent("")
       setNewEventDescription("")
       setSelectedTag(tags.length > 0 ? tags[0] : null)

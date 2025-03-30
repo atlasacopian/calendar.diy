@@ -2008,7 +2008,8 @@ button.nav-arrow:focus {
           >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
                   {formatDate(selectedDate)}
                 </h3>
                 <button
@@ -2087,9 +2088,12 @@ button.nav-arrow:focus {
                                 <button
                                   key={`event0-${group.id}`}
                                   onClick={() => handleUpdateEventColor(0, group.color, group.id)}
-                                  className={`px-2 py-0.5 text-[10px] rounded-full transition-all ${
-                                    isSelected ? `${bgColor} text-white` : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                  }`}
+                                  className={cn(
+                                    "flex items-center rounded-md border px-2 py-1 text-xs",
+                                    isSelected
+                                      ? `${bgColor} text-white border-gray-700`
+                                      : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50",
+                                  )}
                                 >
                                   {group.name}
                                 </button>
@@ -2168,9 +2172,12 @@ button.nav-arrow:focus {
                                 <button
                                   key={`event1-${group.id}`}
                                   onClick={() => handleUpdateEventColor(1, group.color, group.id)}
-                                  className={`px-2 py-0.5 text-[10px] rounded-full transition-all ${
-                                    isSelected ? `${bgColor} text-white` : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                  }`}
+                                  className={cn(
+                                    "flex items-center rounded-md border px-2 py-1 text-xs",
+                                    isSelected
+                                      ? `${bgColor} text-white border-gray-700`
+                                      : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50",
+                                  )}
                                 >
                                   {group.name}
                                 </button>
@@ -2285,7 +2292,10 @@ button.nav-arrow:focus {
           >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">RESET CALENDAR DATA</h3>
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
+                  RESET CALENDAR DATA
+                </h3>
                 <button
                   onClick={() => setShowResetConfirm(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
@@ -2340,7 +2350,10 @@ button.nav-arrow:focus {
           >
             <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white">SHARE CALENDAR</h3>
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
+                  SHARE CALENDAR
+                </h3>
                 <button
                   onClick={() => setShowShareModal(false)}
                   className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"

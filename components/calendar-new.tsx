@@ -794,10 +794,10 @@ button.nav-arrow:focus {
       screenshotDiv.style.position = "fixed"
       screenshotDiv.style.left = "-9999px"
       screenshotDiv.style.top = "0"
-      screenshotDiv.style.width = "1000px" // Width of the entire screenshot container
+      screenshotDiv.style.width = "900px" // Slightly smaller width for more proportional white space
       screenshotDiv.style.backgroundColor = "white"
       screenshotDiv.style.fontFamily = '"JetBrains Mono", monospace'
-      screenshotDiv.style.padding = "40px" // Add padding around the entire calendar
+      screenshotDiv.style.padding = "80px" // Increased padding for more white space
       document.body.appendChild(screenshotDiv)
 
       // Create a container for the calendar with border

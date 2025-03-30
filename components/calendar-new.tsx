@@ -2047,8 +2047,8 @@ button.nav-arrow:focus {
                 {/* First Event */}
                 {eventsForSelectedDate.length > 0 && (
                   <div className="mb-4">
-                    <div className="flex flex-col md:flex-row gap-2">
-                      <div className="flex-1">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-start">
                         <textarea
                           id="event-content-1"
                           value={eventsForSelectedDate[0]?.content || ""}
@@ -2074,66 +2074,64 @@ button.nav-arrow:focus {
                             setActiveEventIndex(0)
                           }}
                           ref={firstEventInputRef}
-                          className={`w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 0 ? "border-black dark:border-white" : ""}`}
+                          className={`flex-1 w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 0 ? "border-black dark:border-white" : ""}`}
                           placeholder="ENTER EVENT NAME"
                           rows={2}
                         />
-                        <div className="flex justify-between items-center mt-1">
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {projectGroups.map((group) => {
-                              const bgColor = getBgFromTextColor(group.color)
-                              const isSelected = eventsForSelectedDate[0]?.color === group.color
-
-                              return (
-                                <button
-                                  key={`event0-${group.id}`}
-                                  onClick={() => handleUpdateEventColor(0, group.color, group.id)}
-                                  className={cn(
-                                    "flex items-center rounded-md border px-2 py-1 text-xs",
-                                    isSelected
-                                      ? `${bgColor} text-white border-gray-700`
-                                      : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50",
-                                  )}
-                                >
-                                  {group.name}
-                                </button>
-                              )
-                            })}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteEvent(eventsForSelectedDate[0].id)
-                            }}
-                            className="text-gray-300 hover:text-gray-500 self-center ml-1"
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteEvent(eventsForSelectedDate[0].id)
+                          }}
+                          className="text-gray-300 hover:text-gray-500 self-start mt-2 ml-2"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-4 w-4"
+                            <path d="M18 6L6 18"></path>
+                            <path d="M6 6l12 12"></path>
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {projectGroups.map((group) => {
+                          const bgColor = getBgFromTextColor(group.color)
+                          const isSelected = eventsForSelectedDate[0]?.color === group.color
+
+                          return (
+                            <button
+                              key={`event0-${group.id}`}
+                              onClick={() => handleUpdateEventColor(0, group.color, group.id)}
+                              className={cn(
+                                "flex items-center rounded-none border px-2 py-1 text-xs",
+                                isSelected
+                                  ? `${bgColor} text-white border-gray-700`
+                                  : "bg-white border-gray-200 text-gray-400",
+                              )}
                             >
-                              <path d="M18 6L6 18"></path>
-                              <path d="M6 6l12 12"></path>
-                            </svg>
-                          </button>
-                        </div>
+                              {group.name}
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Second Event - Completely isolated from the first */}
+                {/* Second Event */}
                 {eventsForSelectedDate.length > 1 && (
                   <div className="mb-4">
-                    <div className="flex flex-col md:flex-row gap-2">
-                      <div className="flex-1">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-start">
                         <textarea
                           id="event-content-2"
                           value={eventsForSelectedDate[1]?.content || ""}
@@ -2158,56 +2156,54 @@ button.nav-arrow:focus {
                             e.stopPropagation()
                             setActiveEventIndex(1)
                           }}
-                          className={`w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 1 ? "border-black dark:border-white" : ""}`}
+                          className={`flex-1 w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 1 ? "border-black dark:border-white" : ""}`}
                           placeholder="ENTER EVENT NAME"
                           rows={2}
                         />
-                        <div className="flex justify-between items-center mt-1">
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {projectGroups.map((group) => {
-                              const bgColor = getBgFromTextColor(group.color)
-                              const isSelected = eventsForSelectedDate[1]?.color === group.color
-
-                              return (
-                                <button
-                                  key={`event1-${group.id}`}
-                                  onClick={() => handleUpdateEventColor(1, group.color, group.id)}
-                                  className={cn(
-                                    "flex items-center rounded-md border px-2 py-1 text-xs",
-                                    isSelected
-                                      ? `${bgColor} text-white border-gray-700`
-                                      : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50",
-                                  )}
-                                >
-                                  {group.name}
-                                </button>
-                              )
-                            })}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteEvent(eventsForSelectedDate[1].id)
-                            }}
-                            className="text-gray-300 hover:text-gray-500 self-center ml-1"
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteEvent(eventsForSelectedDate[1].id)
+                          }}
+                          className="text-gray-300 hover:text-gray-500 self-start mt-2 ml-2"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-4 w-4"
+                            <path d="M18 6L6 18"></path>
+                            <path d="M6 6l12 12"></path>
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {projectGroups.map((group) => {
+                          const bgColor = getBgFromTextColor(group.color)
+                          const isSelected = eventsForSelectedDate[1]?.color === group.color
+
+                          return (
+                            <button
+                              key={`event1-${group.id}`}
+                              onClick={() => handleUpdateEventColor(1, group.color, group.id)}
+                              className={cn(
+                                "flex items-center rounded-none border px-2 py-1 text-xs",
+                                isSelected
+                                  ? `${bgColor} text-white border-gray-700`
+                                  : "bg-white border-gray-200 text-gray-400",
+                              )}
                             >
-                              <path d="M18 6L6 18"></path>
-                              <path d="M6 6l12 12"></path>
-                            </svg>
-                          </button>
-                        </div>
+                              {group.name}
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
                   </div>

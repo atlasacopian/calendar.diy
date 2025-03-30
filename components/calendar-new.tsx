@@ -71,7 +71,7 @@ const EventModal = ({
   isOpen: boolean
   onClose: () => void
   date: Date
-  events: Event[]
+  events: CalendarEvent[]
   onAddEvent: (event: Event) => void
   onDeleteEvent: (event: Event) => void
   onSwapEvents: () => void
@@ -180,18 +180,19 @@ const EventModal = ({
           <div className="mb-6">
             <div className="text-sm font-mono text-gray-600 mb-2">TAG</div>
             <div className="flex flex-wrap gap-2">
-              {tags.map((group) => (
+              {tags.map((tag) => (
                 <button
-                  key={group.id}
-                  onClick={() => {}}
-                  className={cn(
-                    "flex items-center rounded-none border px-2 py-1 text-xs",
-                    false
-                      ? getBgFromTextColor(group.color) + " text-white border-gray-700"
-                      : "bg-white border-gray-200 text-gray-400",
-                  )}
+                  key={tag.id}
+                  onClick={() => setSelectedTag(tag)}
+                  className={`px-4 py-2 font-mono text-sm ${
+                    selectedTag?.id === tag.id ? "ring-2 ring-offset-2 ring-black" : ""
+                  }`}
+                  style={{
+                    backgroundColor: tag.color,
+                    color: getContrastColor(tag.color),
+                  }}
                 >
-                  {group.name}
+                  {tag.name}
                 </button>
               ))}
             </div>
@@ -1161,7 +1162,7 @@ button.nav-arrow:focus {
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
         emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "100px" // Slightly smaller cells
+        emptyCell.style.height = "120px" // Increased height for more space
         emptyCell.style.backgroundColor = "white"
         grid.appendChild(emptyCell)
       }
@@ -1169,52 +1170,45 @@ button.nav-arrow:focus {
       // Add cells for each day of the month
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-        const dayEvents = events.filter(
-          (event) =>
-            isSameDay(event.date, date) &&
-            projectGroups.find(
-              (g) =>
-                g.active &&
-                ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
-            ),
-        )
-        const limitedEvents = dayEvents.slice(0, 2)
+        const dayEvents = events.filter((event) => isSameDay(event.date, date))
         const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
         const isWeekend = getDay(date) === 0 || getDay(date) === 6
+        const isMarch21 =
+          currentDate.getMonth() === 2 && // March is month 2 (0-indexed)
+          day === 21 &&
+          currentDate.getFullYear() === 2025
 
         const dayCell = document.createElement("div")
         dayCell.style.position = "relative"
         dayCell.style.padding = "10px"
         dayCell.style.borderBottom = "1px solid #eee"
         dayCell.style.borderRight = "1px solid #eee"
-        dayCell.style.height = "100px" // Slightly smaller cells
+        dayCell.style.height = "120px" // Increased height for more space
         dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
 
         // Add day number
         const dayNumber = document.createElement("div")
+        dayNumber.textContent = day.toString()
         dayNumber.style.position = "absolute"
         dayNumber.style.top = "5px"
         dayNumber.style.right = "10px"
         dayNumber.style.fontSize = "14px"
         dayNumber.style.color = "#999"
-        dayNumber.textContent = day.toString()
+
         dayCell.appendChild(dayNumber)
 
         // Add holidays
         const holidaysContainer = document.createElement("div")
         holidaysContainer.style.marginTop = "25px"
-        holidaysContainer.style.overflow = "visible"
 
         dayHolidays.forEach((holiday) => {
           const holidayDiv = document.createElement("div")
-          holidayDiv.style.fontSize = "10px"
+          holidayDiv.textContent = holiday.name.toUpperCase()
+          holidayDiv.style.fontSize = "9px"
           holidayDiv.style.textTransform = "uppercase"
           holidayDiv.style.letterSpacing = "0.05em"
           holidayDiv.style.color = "#666"
           holidayDiv.style.marginBottom = "3px"
-          holidayDiv.style.whiteSpace = "normal"
-          holidayDiv.style.wordBreak = "break-word"
-          holidayDiv.textContent = holiday.name.toUpperCase()
           holidaysContainer.appendChild(holidayDiv)
         })
 
@@ -1228,11 +1222,14 @@ button.nav-arrow:focus {
         eventsContainer.style.height = "calc(100% - 25px)"
 
         // If there's only one event, center it vertically
-        if (limitedEvents.length === 1) {
+        if (dayEvents.length === 1) {
           eventsContainer.style.justifyContent = "center"
         } else {
           eventsContainer.style.justifyContent = "space-between"
         }
+
+        // Limit to 2 events
+        const limitedEvents = dayEvents.slice(0, 2)
 
         if (limitedEvents.length === 1) {
           // Single event - centered vertically
@@ -1365,7 +1362,6 @@ button.nav-arrow:focus {
 
       // Convert to image and download
       const image = canvas.toDataURL("image/png", 1.0)
-
       const link = document.createElement("a")
       link.href = image
       link.download = `calendar_${format(currentDate, "MMMM_yyyy")}.png`
@@ -2273,7 +2269,13 @@ button.nav-arrow:focus {
           isOpen={showModal}
           onClose={() => setShowModal(false)}
           date={selectedDate || new Date()}
-          events={eventsForSelectedDate}
+          events={eventsForSelectedDate.map((e) => ({
+            id: e.id,
+            title: e.content,
+            description: "",
+            date: e.date,
+            tag: null,
+          }))}
           onAddEvent={handleAddNewEvent}
           onDeleteEvent={handleDeleteEvent}
           onSwapEvents={handleSwapEvents}
@@ -2313,234 +2315,6 @@ button.nav-arrow:focus {
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Share Modal */}
-      {showShareModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={shareModalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
-          >
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <div className="w-4"></div> {/* Spacer for centering */}
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
-                  SHARE CALENDAR
-                </h3>
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <label htmlFor="share-url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                SHAREABLE URL
-              </label>
-              <div className="flex rounded-md shadow-sm">
-                <div className="relative flex items-stretch flex-grow focus-within:z-10">
-                  <input
-                    type="text"
-                    id="share-url"
-                    className="block w-full rounded-none rounded-l-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
-                    value={shareUrl}
-                    readOnly
-                    ref={shareInputRef}
-                    onClick={(e) => {
-                      ;(e.target as HTMLInputElement).select()
-                    }}
-                  />
-                </div>
-                <button
-                  type="button"
-                  id="copy-button"
-                  onClick={copyShareUrl}
-                  className="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-100 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-                >
-                  <span>COPY</span>
-                </button>
-              </div>
-              <div className="mt-5 flex justify-end">
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CLOSE
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {showExportTagsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <div className="w-4"></div> {/* Spacer for centering */}
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
-                  SELECT TAGS TO EXPORT
-                </h3>
-                <button
-                  onClick={() => setShowExportTagsModal(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                Select which tags to include in your {exportTarget === "ical" ? "iCal" : "Google Calendar"} export. Only
-                user-created events (not holidays) will be exported.
-              </p>
-
-              <div className="space-y-2 mb-6">
-                {projectGroups.map((group) => (
-                  <div key={group.id} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={`export-tag-${group.id}`}
-                      checked={selectedExportTags.includes(group.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedExportTags([...selectedExportTags, group.id])
-                        } else {
-                          setSelectedExportTags(selectedExportTags.filter((id) => id !== group.id))
-                        }
-                      }}
-                      className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                    />
-                    <label
-                      htmlFor={`export-tag-${group.id}`}
-                      className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                    >
-                      {group.name}
-                    </label>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowExportTagsModal(false)}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleExportWithTags}
-                  className="rounded-md border border-transparent bg-black dark:bg-white py-2 px-4 text-sm font-medium text-white dark:text-black shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none"
-                >
-                  EXPORT
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {showGoogleInstructionsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <div className="w-4"></div> {/* Spacer for centering */}
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
-                  IMPORT TO GOOGLE CALENDAR
-                </h3>
-                <button
-                  onClick={() => setShowGoogleInstructionsModal(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                Your calendar file has been downloaded. To import it into Google Calendar:
-              </p>
-
-              <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
-                <li>
-                  Go to{" "}
-                  <a
-                    href="https://calendar.google.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 underline"
-                  >
-                    Google Calendar
-                  </a>
-                </li>
-                <li>Click the gear icon (⚙️) in the top right and select "Settings"</li>
-                <li>Click "Import & export" on the left sidebar</li>
-                <li>Click "Select file from your computer" and choose the downloaded .ics file</li>
-                <li>Select which calendar to add the events to</li>
-                <li>Click "Import"</li>
-              </ol>
-
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                Note: This is a one-time import. If you make changes to your calendar, you'll need to export and import
-                again.
-              </p>
-
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowGoogleInstructionsModal(false)}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CLOSE
                 </button>
               </div>
             </div>

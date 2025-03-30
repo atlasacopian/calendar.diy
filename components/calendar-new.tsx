@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ArrowUpDown, X } from "lucide-react"
 
 // import html2canvas from 'html2canvas'; // We'll dynamically import this
 
@@ -62,63 +61,40 @@ const EventModal = ({
   isOpen,
   onClose,
   date,
-  events,
+  eventsForDate,
+  activeEventIndex,
+  onUpdateEventContent,
+  onUpdateEventColor,
   onAddEvent,
   onDeleteEvent,
   onSwapEvents,
-  tags,
+  onSetActiveEvent,
+  projectGroups,
+  onSaveAndClose,
+  onTextSelect,
+  onTextareaKeyDown,
+  firstEventInputRef,
 }: {
   isOpen: boolean
   onClose: () => void
-  date: Date
-  events: Event[]
-  onAddEvent: (event: Event) => void
-  onDeleteEvent: (event: Event) => void
+  date: Date | null
+  eventsForDate: CalendarEvent[]
+  activeEventIndex: number
+  onUpdateEventContent: (index: number, content: string) => void
+  onUpdateEventColor: (index: number, color: string, projectId: string) => void
+  onAddEvent: () => void
+  onDeleteEvent: (eventId: string) => void
   onSwapEvents: () => void
-  tags: Tag[]
+  onSetActiveEvent: (index: number) => void
+  projectGroups: ProjectGroup[]
+  onSaveAndClose: () => void
+  onTextSelect: (e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => void
+  onTextareaKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
+  firstEventInputRef: React.RefObject<HTMLTextAreaElement>
 }) => {
-  const [localEvents, setLocalEvents] = useState<Event[]>([])
-  const [newEvent, setNewEvent] = useState<string>("")
-  const [newEventDescription, setNewEventDescription] = useState<string>("")
-  const [selectedTag, setSelectedTag] = useState<Tag | null>(null)
-
-  useEffect(() => {
-    if (isOpen) {
-      setLocalEvents(events)
-      setNewEvent("")
-      setNewEventDescription("")
-      setSelectedTag(tags.length > 0 ? tags[0] : null)
-    }
-  }, [isOpen, events, tags])
-
-  const handleAddEvent = () => {
-    if (newEvent.trim() !== "") {
-      const event: Event = {
-        id: Date.now().toString(),
-        title: newEvent,
-        description: newEventDescription,
-        date: date,
-        tag: selectedTag,
-      }
-      onAddEvent(event)
-      setNewEvent("")
-      setNewEventDescription("")
-    }
-  }
-
-  const handleDeleteEvent = (event: Event) => {
-    onDeleteEvent(event)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleAddEvent()
-    }
-  }
-
-  const formatDate = (date: Date) => {
-    return `${date.toLocaleString("default", { month: "long" }).toUpperCase()} ${date.getDate()}, ${date.getFullYear()}`
+  const formatDate = (date: Date | null) => {
+    if (!date) return ""
+    return format(date, "MMMM d, yyyy").toUpperCase()
   }
 
   return (
@@ -135,100 +111,126 @@ const EventModal = ({
             <div className="font-mono">{formatDate(date)}</div>
           </div>
 
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">EVENT</div>
-            <div className="relative">
-              <input
-                type="text"
-                value={newEvent}
-                onChange={(e) => setNewEvent(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="w-full border border-blue-500 p-2 font-mono focus:outline-none"
-                placeholder="Add event title"
-              />
-              {newEvent && (
-                <button
-                  onClick={() => setNewEvent("")}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">DESCRIPTION (OPTIONAL)</div>
-            <div className="relative">
-              <textarea
-                value={newEventDescription}
-                onChange={(e) => setNewEventDescription(e.target.value)}
-                className="w-full border border-blue-500 p-2 font-mono focus:outline-none min-h-[100px]"
-                placeholder="Add event description"
-              />
-              {newEventDescription && (
-                <button
-                  onClick={() => setNewEventDescription("")}
-                  className="absolute right-2 top-4 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">TAG</div>
-            <div className="flex flex-wrap gap-4">
-              {tags.map((tag) => (
-                <button
-                  key={tag.id}
-                  onClick={() => setSelectedTag(tag)}
-                  className={`w-10 h-10 rounded-full ${selectedTag?.id === tag.id ? "ring-2 ring-offset-2 ring-black" : ""}`}
-                  style={{ backgroundColor: tag.color }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {localEvents.length > 0 && (
+          {eventsForDate.length === 0 ? (
             <div className="mb-6">
-              <div className="text-sm font-mono text-gray-600 mb-2">EXISTING EVENTS</div>
-              <div className="space-y-2">
-                {localEvents.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-2 border border-gray-200">
-                    <div className="flex items-center">
-                      {event.tag && (
-                        <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: event.tag.color }}></div>
-                      )}
-                      <span className="font-mono">{event.title}</span>
-                    </div>
-                    <button onClick={() => handleDeleteEvent(event)} className="text-gray-400 hover:text-gray-600">
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
+              <div className="text-sm font-mono text-gray-600 mb-2">EVENT</div>
+              <div className="text-gray-400 font-mono">No events for this day</div>
             </div>
+          ) : (
+            eventsForDate.map((event, index) => (
+              <div key={event.id} className="mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="text-sm font-mono text-gray-600">
+                    EVENT {eventsForDate.length > 1 ? index + 1 : ""}
+                  </div>
+                  <button
+                    onClick={() => onDeleteEvent(event.id)}
+                    className="text-gray-400 hover:text-gray-600"
+                    title="Delete Event"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4"
+                    >
+                      <path d="M3 6h18"></path>
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+                <div className="relative">
+                  <textarea
+                    ref={index === 0 ? firstEventInputRef : null}
+                    value={event.content}
+                    onChange={(e) => onUpdateEventContent(index, e.target.value)}
+                    onFocus={() => onSetActiveEvent(index)}
+                    onSelect={onTextSelect}
+                    onKeyDown={onTextareaKeyDown}
+                    className={`w-full border p-2 font-mono focus:outline-none min-h-[100px] preserve-case ${
+                      activeEventIndex === index ? "border-blue-500 event-input-active" : "border-gray-200"
+                    }`}
+                    placeholder="Add event"
+                  />
+                </div>
+                <div className="mt-2">
+                  <div className="text-sm font-mono text-gray-600 mb-2">TAG</div>
+                  <div className="flex flex-wrap gap-2">
+                    {projectGroups.map((group) => (
+                      <button
+                        key={group.id}
+                        onClick={() => onUpdateEventColor(index, group.color, group.id)}
+                        className={`h-6 px-2 rounded-full text-xs font-mono ${
+                          event.projectId === group.id ? "ring-2 ring-offset-1 ring-black" : ""
+                        } ${getBgFromTextColor(group.color)} ${getTextForBg(group.color)}`}
+                      >
+                        {group.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))
           )}
 
-          {localEvents.length > 1 && (
+          {eventsForDate.length > 1 && (
             <button
               onClick={onSwapEvents}
               className="w-full border border-gray-200 py-3 font-mono text-gray-600 hover:bg-gray-50 mb-6 flex items-center justify-center"
             >
-              <ArrowUpDown className="mr-2" size={16} />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 mr-2"
+              >
+                <path d="M7 16V4m0 0L3 8m4-4l4 4"></path>
+                <path d="M17 8v12m0 0l4-4m-4 4l-4-4"></path>
+              </svg>
               SWAP EVENTS
+            </button>
+          )}
+
+          {eventsForDate.length < 2 && (
+            <button
+              onClick={onAddEvent}
+              className="w-full border border-gray-200 py-3 font-mono text-gray-600 hover:bg-gray-50 mb-6 flex items-center justify-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 mr-2"
+              >
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+              </svg>
+              ADD EVENT
             </button>
           )}
         </div>
 
         <div className="flex justify-end border-t border-gray-200 p-4">
-          <button
-            onClick={handleAddEvent}
-            disabled={!newEvent.trim()}
-            className="bg-black text-white font-mono py-2 px-6 disabled:opacity-50"
-          >
+          <button onClick={onSaveAndClose} className="bg-black text-white font-mono py-2 px-6">
             SAVE
           </button>
         </div>
@@ -2285,41 +2287,20 @@ button.nav-arrow:focus {
         <EventModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
-          date={selectedDate || new Date()}
-          events={eventsForSelectedDate.map((e) => ({
-            id: e.id,
-            title: e.content,
-            description: "",
-            date: e.date,
-            tag: projectGroups.find((g) => g.id === e.projectId) || null,
-          }))}
-          onAddEvent={(event) => {
-            // Convert Event back to CalendarEvent
-            const newCalendarEvent: CalendarEvent = {
-              id: event.id,
-              date: event.date,
-              content: event.title,
-              color: event.tag?.color || "text-black",
-              projectId: event.tag?.id || "default",
-            }
-
-            // Add to the events for this day
-            const updatedEvents = [...eventsForSelectedDate, newCalendarEvent]
-            setEventsForSelectedDate(updatedEvents)
-
-            // Add to the global events array
-            const otherEvents = events.filter((e) => !isSameDay(e.date, selectedDate as Date))
-            const newEvents = [...otherEvents, ...updatedEvents]
-            setEvents(newEvents)
-
-            // Save to localStorage
-            localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
-          }}
-          onDeleteEvent={(event) => {
-            handleDeleteEvent(event.id)
-          }}
+          date={selectedDate}
+          eventsForDate={eventsForSelectedDate}
+          activeEventIndex={activeEventIndex}
+          onUpdateEventContent={handleUpdateEventContent}
+          onUpdateEventColor={handleUpdateEventColor}
+          onAddEvent={handleAddNewEvent}
+          onDeleteEvent={handleDeleteEvent}
           onSwapEvents={handleSwapEvents}
-          tags={projectGroups}
+          onSetActiveEvent={setActiveEventIndex}
+          projectGroups={projectGroups}
+          onSaveAndClose={handleSaveAndClose}
+          onTextSelect={handleTextSelect}
+          onTextareaKeyDown={handleTextareaKeyDown}
+          firstEventInputRef={firstEventInputRef}
         />
       )}
 
@@ -2357,6 +2338,330 @@ button.nav-arrow:focus {
                   </svg>
                 </button>
               </div>
+            </div>
+            <div className="p-6">
+              <p className="font-mono text-sm text-gray-600 dark:text-gray-300">
+                Are you sure you want to reset all calendar data? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-end border-t border-gray-100 dark:border-gray-700 p-4">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="font-mono text-sm text-gray-600 dark:text-gray-300 px-4 py-2 mr-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleResetData}
+                className="bg-red-600 text-white font-mono text-sm px-4 py-2 hover:bg-red-700"
+              >
+                RESET
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div
+            ref={shareModalRef}
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
+          >
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
+                  SHARE CALENDAR
+                </h3>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="mb-4">
+                <label htmlFor="share-url" className="block font-mono text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  Shareable URL:
+                </label>
+                <div className="relative">
+                  <input
+                    ref={shareInputRef}
+                    type="text"
+                    id="share-url"
+                    value={shareUrl}
+                    readOnly
+                    className="w-full border border-gray-200 dark:border-gray-700 p-2 font-mono text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded focus:outline-none focus:border-blue-500"
+                  />
+                  <button
+                    id="copy-button"
+                    onClick={copyShareUrl}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black text-white font-mono text-xs px-3 py-1 rounded hover:bg-gray-800 focus:outline-none"
+                  >
+                    COPY
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Project Group Modal */}
+      {showAddDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">ADD NEW TAG</h3>
+                <button
+                  onClick={() => setShowAddDialog(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="mb-4">
+                <label
+                  htmlFor="new-project-name"
+                  className="block font-mono text-sm text-gray-600 dark:text-gray-300 mb-2"
+                >
+                  Tag Name:
+                </label>
+                <input
+                  type="text"
+                  id="new-project-name"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  className="w-full border border-gray-200 dark:border-gray-700 p-2 font-mono text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              <div className="mb-4">
+                <label
+                  htmlFor="new-project-color"
+                  className="block font-mono text-sm text-gray-600 dark:text-gray-300 mb-2"
+                >
+                  Tag Color:
+                </label>
+                <select
+                  id="new-project-color"
+                  value={newProjectColor}
+                  onChange={(e) => setNewProjectColor(e.target.value)}
+                  className="w-full border border-gray-200 dark:border-gray-700 p-2 font-mono text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded focus:outline-none focus:border-blue-500"
+                >
+                  {colorOptions.map((color) => (
+                    <option key={color.value} value={color.value}>
+                      {color.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-gray-100 dark:border-gray-700 p-4">
+              <button
+                onClick={() => setShowAddDialog(false)}
+                className="font-mono text-sm text-gray-600 dark:text-gray-300 px-4 py-2 mr-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={() => {
+                  handleAddProjectGroup(newProjectName, newProjectColor)
+                  setShowAddDialog(false)
+                  setNewProjectName("")
+                  setNewProjectColor("text-black")
+                }}
+                className="bg-black text-white font-mono text-sm px-4 py-2 hover:bg-gray-800 disabled:opacity-50"
+                disabled={!newProjectName.trim()}
+              >
+                ADD
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Tags Selection Modal */}
+      {showExportTagsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
+                  SELECT TAGS TO EXPORT
+                </h3>
+                <button
+                  onClick={() => setShowExportTagsModal(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="mb-4">
+                <label className="block font-mono text-sm text-gray-600 dark:text-gray-300 mb-2">Select Tags:</label>
+                <div className="flex flex-col space-y-2">
+                  {projectGroups.map((group) => (
+                    <label key={group.id} className="inline-flex items-center">
+                      <input
+                        type="checkbox"
+                        className="form-checkbox h-5 w-5 text-black rounded focus:ring-0 focus:ring-offset-0"
+                        value={group.id}
+                        checked={selectedExportTags.includes(group.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedExportTags([...selectedExportTags, group.id])
+                          } else {
+                            setSelectedExportTags(selectedExportTags.filter((id) => id !== group.id))
+                          }
+                        }}
+                      />
+                      <span className="ml-2 font-mono text-sm text-gray-700 dark:text-gray-300">{group.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-gray-100 dark:border-gray-700 p-4">
+              <button
+                onClick={() => setShowExportTagsModal(false)}
+                className="font-mono text-sm text-gray-600 dark:text-gray-300 px-4 py-2 mr-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleExportWithTags}
+                className="bg-black text-white font-mono text-sm px-4 py-2 hover:bg-gray-800 disabled:opacity-50"
+                disabled={selectedExportTags.length === 0}
+              >
+                EXPORT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Google Calendar Instructions Modal */}
+      {showGoogleInstructionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
+                  GOOGLE CALENDAR IMPORT INSTRUCTIONS
+                </h3>
+                <button
+                  onClick={() => setShowGoogleInstructionsModal(false)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <ol className="list-decimal font-mono text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                <li>
+                  Open{" "}
+                  <a
+                    href="https://calendar.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    Google Calendar
+                  </a>{" "}
+                  in your browser.
+                </li>
+                <li>
+                  Click the <span className="font-bold">+</span> button next to{" "}
+                  <span className="font-bold">Other calendars</span>.
+                </li>
+                <li>
+                  Select <span className="font-bold">Import</span>.
+                </li>
+                <li>
+                  Click <span className="font-bold">Select file from your computer</span> and choose the{" "}
+                  <span className="font-bold">google_calendar_import.ics</span> file you just downloaded.
+                </li>
+                <li>Choose the calendar where you want to import the events.</li>
+                <li>
+                  Click <span className="font-bold">Import</span>.
+                </li>
+              </ol>
+            </div>
+            <div className="flex justify-end border-t border-gray-100 dark:border-gray-700 p-4">
+              <button
+                onClick={() => setShowGoogleInstructionsModal(false)}
+                className="bg-black text-white font-mono text-sm px-4 py-2 hover:bg-gray-800"
+              >
+                CLOSE
+              </button>
             </div>
           </div>
         </div>

@@ -1045,7 +1045,6 @@ button.nav-arrow:focus {
         allowTaint: true,
         backgroundColor: "white",
         logging: false,
-        letterRendering: true, // Better text rendering
         imageTimeout: 0, // No timeout for images
       })
 

@@ -7,7 +7,6 @@ import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToda
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // import html2canvas from 'html2canvas'; // We'll dynamically import this
 
@@ -19,20 +18,6 @@ type CalendarEvent = {
   formattedContent?: string // To store HTML with formatting
   color?: string
   projectId?: string
-}
-
-type Tag = {
-  id: string
-  name: string
-  color: string
-}
-
-type Event = {
-  id: string
-  title: string
-  description: string
-  date: Date
-  tag: Tag | null
 }
 
 // Color options for color picker
@@ -55,280 +40,6 @@ const getBgFromTextColor = (textColor: string) => {
 const getTextForBg = (textColor: string) => {
   const color = colorOptions.find((c) => c.value === textColor)
   return "text-white"
-}
-
-const EventModal = ({
-  isOpen,
-  onClose,
-  date,
-  eventsForDate,
-  activeEventIndex,
-  onUpdateEventContent,
-  onUpdateEventColor,
-  onAddEvent,
-  onDeleteEvent,
-  onSwapEvents,
-  onSetActiveEvent,
-  projectGroups,
-  onSaveAndClose,
-  onTextSelect,
-  onTextareaKeyDown,
-  firstEventInputRef,
-}: {
-  isOpen: boolean
-  onClose: () => void
-  date: Date | null
-  eventsForDate: CalendarEvent[]
-  activeEventIndex: number
-  onUpdateEventContent: (index: number, content: string) => void
-  onUpdateEventColor: (index: number, color: string, projectId: string) => void
-  onAddEvent: () => void
-  onDeleteEvent: (eventId: string) => void
-  onSwapEvents: () => void
-  onSetActiveEvent: (index: number) => void
-  projectGroups: ProjectGroup[]
-  onSaveAndClose: () => void
-  onTextSelect: (e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => void
-  onTextareaKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
-  firstEventInputRef: React.RefObject<HTMLTextAreaElement>
-}) => {
-  const formatDate = (date: Date | null) => {
-    if (!date) return ""
-    return format(date, "MMMM d, yyyy").toUpperCase()
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-white p-0 overflow-hidden">
-        <DialogHeader className="border-b border-gray-200">
-          <DialogTitle className="text-center py-4 font-mono text-lg">EVENT DETAILS</DialogTitle>
-          <DialogClose className="absolute right-4 top-4 opacity-70 hover:opacity-100" />
-        </DialogHeader>
-
-        <div className="p-6">
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">DATE</div>
-            <div className="font-mono">{formatDate(date)}</div>
-          </div>
-
-          {eventsForDate.length === 0 ? (
-            <div className="mb-6">
-              <div className="text-sm font-mono text-gray-600 mb-2">EVENT</div>
-              <div className="text-gray-400 font-mono">No events for this day</div>
-            </div>
-          ) : (
-            eventsForDate.map((event, index) => (
-              <div key={event.id} className="mb-6">
-                <div className="flex justify-between items-center mb-2">
-                  <div className="text-sm font-mono text-gray-600">
-                    EVENT {eventsForDate.length > 1 ? index + 1 : ""}
-                  </div>
-                  <button
-                    onClick={() => onDeleteEvent(event.id)}
-                    className="text-gray-400 hover:text-gray-600"
-                    title="Delete Event"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4"
-                    >
-                      <path d="M3 6h18"></path>
-                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                    </svg>
-                  </button>
-                </div>
-                <div className="relative">
-                  <textarea
-                    ref={index === 0 ? firstEventInputRef : null}
-                    value={event.content}
-                    onChange={(e) => onUpdateEventContent(index, e.target.value)}
-                    onFocus={() => onSetActiveEvent(index)}
-                    onSelect={onTextSelect}
-                    onKeyDown={onTextareaKeyDown}
-                    className={`w-full border p-2 font-mono focus:outline-none min-h-[100px] preserve-case ${
-                      activeEventIndex === index ? "border-blue-500 event-input-active" : "border-gray-200"
-                    }`}
-                    placeholder="Add event"
-                  />
-                </div>
-                <div className="mt-2">
-                  <div className="text-sm font-mono text-gray-600 mb-2">TAG</div>
-                  <div className="flex flex-wrap gap-2">
-                    {projectGroups.map((group) => (
-                      <button
-                        key={group.id}
-                        onClick={() => onUpdateEventColor(index, group.color, group.id)}
-                        className={`h-6 px-2 rounded-full text-xs font-mono ${
-                          event.projectId === group.id ? "ring-2 ring-offset-1 ring-black" : ""
-                        } ${getBgFromTextColor(group.color)} ${getTextForBg(group.color)}`}
-                      >
-                        {group.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-
-          {eventsForDate.length > 1 && (
-            <button
-              onClick={onSwapEvents}
-              className="w-full border border-gray-200 py-3 font-mono text-gray-600 hover:bg-gray-50 mb-6 flex items-center justify-center"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4 mr-2"
-              >
-                <path d="M7 16V4m0 0L3 8m4-4l4 4"></path>
-                <path d="M17 8v12m0 0l4-4m-4 4l-4-4"></path>
-              </svg>
-              SWAP EVENTS
-            </button>
-          )}
-
-          {eventsForDate.length < 2 && (
-            <button
-              onClick={onAddEvent}
-              className="w-full border border-gray-200 py-3 font-mono text-gray-600 hover:bg-gray-50 mb-6 flex items-center justify-center"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4 mr-2"
-              >
-                <path d="M12 5v14"></path>
-                <path d="M5 12h14"></path>
-              </svg>
-              ADD EVENT
-            </button>
-          )}
-        </div>
-
-        <div className="flex justify-end border-t border-gray-200 p-4">
-          <button onClick={onSaveAndClose} className="bg-black text-white font-mono py-2 px-6">
-            SAVE
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-const TagModal = ({
-  isOpen,
-  onClose,
-  tag,
-  onSave,
-}: {
-  isOpen: boolean
-  onClose: () => void
-  tag: Tag | null
-  onSave: (tag: Tag) => void
-}) => {
-  const [name, setName] = useState("")
-  const [color, setColor] = useState("#000000")
-
-  useEffect(() => {
-    if (isOpen && tag) {
-      setName(tag.name)
-      setColor(tag.color)
-    } else if (isOpen) {
-      setName("")
-      setColor("#000000")
-    }
-  }, [isOpen, tag])
-
-  const handleSave = () => {
-    if (name.trim() !== "") {
-      onSave({
-        id: tag?.id || Date.now().toString(),
-        name,
-        color,
-      })
-      onClose()
-    }
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-white p-0 overflow-hidden">
-        <DialogHeader className="border-b border-gray-200">
-          <DialogTitle className="text-center py-4 font-mono text-lg">{tag ? "EDIT TAG" : "NEW TAG"}</DialogTitle>
-          <DialogClose className="absolute right-4 top-4 opacity-70 hover:opacity-100" />
-        </DialogHeader>
-
-        <div className="p-6">
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">TAG NAME</div>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full border border-blue-500 p-2 font-mono focus:outline-none"
-              placeholder="Enter tag name"
-            />
-          </div>
-
-          <div className="mb-6">
-            <div className="text-sm font-mono text-gray-600 mb-2">COLOR</div>
-            <div className="flex flex-wrap gap-4">
-              {["#000000", "#FF3B30", "#FF9500", "#FFCC00", "#34C759", "#007AFF", "#AF52DE"].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className={`w-10 h-10 rounded-full ${color === c ? "ring-2 ring-offset-2 ring-black" : ""}`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end border-t border-gray-200 p-4">
-          <button
-            onClick={handleSave}
-            disabled={!name.trim()}
-            className="bg-black text-white font-mono py-2 px-6 disabled:opacity-50"
-          >
-            SAVE
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function getContrastColor(hexColor: string): string {
-  const r = Number.parseInt(hexColor.slice(1, 3), 16)
-  const g = Number.parseInt(hexColor.slice(3, 5), 16)
-  const b = Number.parseInt(hexColor.slice(5, 7), 16)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.5 ? "#000000" : "#FFFFFF"
 }
 
 export default function Calendar() {
@@ -1157,7 +868,7 @@ button.nav-arrow:focus {
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
         emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "120px" // Increased height for more space
+        emptyCell.style.height = "100px"
         emptyCell.style.backgroundColor = "white"
         grid.appendChild(emptyCell)
       }
@@ -1165,45 +876,52 @@ button.nav-arrow:focus {
       // Add cells for each day of the month
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-        const dayEvents = events.filter((event) => isSameDay(event.date, date))
+        const dayEvents = events.filter(
+          (event) =>
+            isSameDay(event.date, date) &&
+            projectGroups.find(
+              (g) =>
+                g.active &&
+                ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
+            ),
+        )
+        const limitedEvents = dayEvents.slice(0, 2)
         const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
         const isWeekend = getDay(date) === 0 || getDay(date) === 6
-        const isMarch21 =
-          currentDate.getMonth() === 2 && // March is month 2 (0-indexed)
-          day === 21 &&
-          currentDate.getFullYear() === 2025
 
         const dayCell = document.createElement("div")
         dayCell.style.position = "relative"
         dayCell.style.padding = "10px"
         dayCell.style.borderBottom = "1px solid #eee"
         dayCell.style.borderRight = "1px solid #eee"
-        dayCell.style.height = "120px" // Increased height for more space
+        dayCell.style.height = "100px" // Slightly smaller cells
         dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
 
         // Add day number
         const dayNumber = document.createElement("div")
-        dayNumber.textContent = day.toString()
         dayNumber.style.position = "absolute"
         dayNumber.style.top = "5px"
         dayNumber.style.right = "10px"
         dayNumber.style.fontSize = "14px"
         dayNumber.style.color = "#999"
-
+        dayNumber.textContent = day.toString()
         dayCell.appendChild(dayNumber)
 
         // Add holidays
         const holidaysContainer = document.createElement("div")
         holidaysContainer.style.marginTop = "25px"
+        holidaysContainer.style.overflow = "visible"
 
         dayHolidays.forEach((holiday) => {
           const holidayDiv = document.createElement("div")
-          holidayDiv.textContent = holiday.name.toUpperCase()
-          holidayDiv.style.fontSize = "9px"
+          holidayDiv.style.fontSize = "10px"
           holidayDiv.style.textTransform = "uppercase"
           holidayDiv.style.letterSpacing = "0.05em"
           holidayDiv.style.color = "#666"
           holidayDiv.style.marginBottom = "3px"
+          holidayDiv.style.whiteSpace = "normal"
+          holidayDiv.style.wordBreak = "break-word"
+          holidayDiv.textContent = holiday.name.toUpperCase()
           holidaysContainer.appendChild(holidayDiv)
         })
 
@@ -1217,14 +935,11 @@ button.nav-arrow:focus {
         eventsContainer.style.height = "calc(100% - 25px)"
 
         // If there's only one event, center it vertically
-        if (dayEvents.length === 1) {
+        if (limitedEvents.length === 1) {
           eventsContainer.style.justifyContent = "center"
         } else {
           eventsContainer.style.justifyContent = "space-between"
         }
-
-        // Limit to 2 events
-        const limitedEvents = dayEvents.slice(0, 2)
 
         if (limitedEvents.length === 1) {
           // Single event - centered vertically
@@ -1234,20 +949,18 @@ button.nav-arrow:focus {
           eventDiv.style.fontSize = "11px"
           eventDiv.style.fontWeight = "500"
           eventDiv.style.wordBreak = "break-word"
-          eventDiv.style.overflow = "hidden"
+          eventDiv.style.overflow = "visible"
           eventDiv.style.maxWidth = "100%"
-          eventDiv.style.textOverflow = "ellipsis"
-          eventDiv.style.whiteSpace = "nowrap"
+          eventDiv.style.whiteSpace = "normal"
 
-          // Update the first instance of color mapping in the createPrintableCalendar function for single events
           // Convert Tailwind color classes to CSS colors
           let color = "#000"
-          if (event?.color?.includes("blue")) color = "#2563eb"
-          if (event?.color?.includes("red")) color = "#dc2626"
+          if (event?.color?.includes("blue")) color = "#0012ff"
+          if (event?.color?.includes("red")) color = "#ff0000"
           if (event?.color?.includes("yellow")) color = "#e3e600"
-          if (event?.color?.includes("orange")) color = "#f97316"
-          if (event?.color?.includes("green")) color = "#16a34a"
-          if (event?.color?.includes("purple")) color = "#9333ea"
+          if (event?.color?.includes("orange")) color = "#ff7200"
+          if (event?.color?.includes("green")) color = "#1ae100"
+          if (event?.color?.includes("purple")) color = "#a800ff"
 
           eventDiv.style.color = color
           eventsContainer.appendChild(eventDiv)
@@ -1264,20 +977,18 @@ button.nav-arrow:focus {
           eventDiv1.style.fontSize = "11px"
           eventDiv1.style.fontWeight = "500"
           eventDiv1.style.wordBreak = "break-word"
-          eventDiv1.style.overflow = "hidden"
+          eventDiv1.style.overflow = "visible"
           eventDiv1.style.maxWidth = "100%"
-          eventDiv1.style.textOverflow = "ellipsis"
-          eventDiv1.style.whiteSpace = "nowrap"
+          eventDiv1.style.whiteSpace = "normal"
 
-          // Update the color mapping in the createPrintableCalendar function for yellow
           // Convert Tailwind color classes to CSS colors
           let color1 = "#000"
-          if (event1?.color?.includes("blue")) color1 = "#2563eb"
-          if (event1?.color?.includes("red")) color1 = "#dc2626"
+          if (event1?.color?.includes("blue")) color1 = "#0012ff"
+          if (event1?.color?.includes("red")) color1 = "#ff0000"
           if (event1?.color?.includes("yellow")) color1 = "#e3e600"
-          if (event1?.color?.includes("orange")) color1 = "#f97316"
-          if (event1?.color?.includes("green")) color1 = "#16a34a"
-          if (event1?.color?.includes("purple")) color1 = "#9333ea"
+          if (event1?.color?.includes("orange")) color1 = "#ff7200"
+          if (event1?.color?.includes("green")) color1 = "#1ae100"
+          if (event1?.color?.includes("purple")) color1 = "#a800ff"
 
           eventDiv1.style.color = color1
           topEventContainer.appendChild(eventDiv1)
@@ -1303,19 +1014,18 @@ button.nav-arrow:focus {
           eventDiv2.style.fontSize = "11px"
           eventDiv2.style.fontWeight = "500"
           eventDiv2.style.wordBreak = "break-word"
-          eventDiv2.style.overflow = "hidden"
+          eventDiv2.style.overflow = "visible"
           eventDiv2.style.maxWidth = "100%"
-          eventDiv2.style.textOverflow = "ellipsis"
-          eventDiv2.style.whiteSpace = "nowrap"
+          eventDiv2.style.whiteSpace = "normal"
 
           // Convert Tailwind color classes to CSS colors
           let color2 = "#000"
-          if (event2?.color?.includes("blue")) color2 = "#2563eb"
-          if (event2?.color?.includes("red")) color2 = "#dc2626"
+          if (event2?.color?.includes("blue")) color2 = "#0012ff"
+          if (event2?.color?.includes("red")) color2 = "#ff0000"
           if (event2?.color?.includes("yellow")) color2 = "#e3e600"
-          if (event2?.color?.includes("orange")) color2 = "#f97316"
-          if (event2?.color?.includes("green")) color2 = "#16a34a"
-          if (event2?.color?.includes("purple")) color2 = "#9333ea"
+          if (event2?.color?.includes("orange")) color2 = "#ff7200"
+          if (event2?.color?.includes("green")) color2 = "#1ae100"
+          if (event2?.color?.includes("purple")) color2 = "#a800ff"
 
           eventDiv2.style.color = color2
           bottomEventContainer.appendChild(eventDiv2)
@@ -1327,17 +1037,17 @@ button.nav-arrow:focus {
       }
 
       // Calculate how many cells we've added so far
-      const totalCellsAdded = startingDayOfWeek + daysInMonth
+      const cellsAdded = startingDayOfWeek + daysInMonth
 
       // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
-      const cellsNeeded = 42 - totalCellsAdded
+      const cellsNeeded = 42 - cellsAdded
 
-      // Always add empty cells to complete the grid to exactly 6 rows
+      // Add empty cells to fill out the grid to exactly 6 rows
       for (let i = 0; i < cellsNeeded; i++) {
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
         emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "120px"
+        emptyCell.style.height = "100px" // Slightly smaller cells
         emptyCell.style.backgroundColor = "white"
         grid.appendChild(emptyCell)
       }
@@ -1597,6 +1307,22 @@ button.nav-arrow:focus {
 
       dayCell.appendChild(eventsContainer)
       grid.appendChild(dayCell)
+    }
+
+    // Calculate how many cells we've added so far
+    const cellsAdded = startingDayOfWeek + daysInMonth
+
+    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
+    const cellsNeeded = 42 - cellsAdded
+
+    // Add empty cells to fill out the grid to exactly 6 rows
+    for (let i = 0; i < cellsNeeded; i++) {
+      const emptyCell = document.createElement("div")
+      emptyCell.style.borderBottom = "1px solid #eee"
+      emptyCell.style.borderRight = "1px solid #eee"
+      emptyCell.style.height = "120px"
+      emptyCell.style.backgroundColor = "white"
+      grid.appendChild(emptyCell)
     }
 
     printableDiv.appendChild(grid)
@@ -1927,48 +1653,24 @@ button.nav-arrow:focus {
   }
 
   // Add a new event
-  const handleAddNewEvent = (event?: Event) => {
+  const handleAddNewEvent = () => {
     if (!selectedDate || eventsForSelectedDate.length >= 2) return
 
-    if (event) {
-      // Convert Event to CalendarEvent
-      const newCalendarEvent: CalendarEvent = {
-        id: event.id,
-        date: event.date,
-        content: event.title,
-        color: event.tag?.color || "text-black",
-        projectId: event.tag?.id || "default",
-      }
-
-      // Add to the events for this day
-      const updatedEvents = [...eventsForSelectedDate, newCalendarEvent]
-      setEventsForSelectedDate(updatedEvents)
-
-      // Add to the global events array
-      setEvents([...events.filter((e) => !isSameDay(e.date, selectedDate)), ...updatedEvents])
-
-      // Save to localStorage
-      localStorage.setItem(
-        "calendarEvents",
-        JSON.stringify([...events.filter((e) => !isSameDay(e.date, selectedDate)), ...updatedEvents]),
-      )
-    } else {
-      // Create a new empty event
-      const newEvent: CalendarEvent = {
-        id: Math.random().toString(36).substring(2, 11),
-        date: selectedDate,
-        content: "",
-        color: "text-black",
-        projectId: "default",
-      }
-
-      // Add to the events for this day
-      const updatedEvents = [...eventsForSelectedDate, newEvent]
-      setEventsForSelectedDate(updatedEvents)
+    // Create a new empty event
+    const newEvent = {
+      id: Math.random().toString(36).substring(2, 11),
+      date: selectedDate,
+      content: "",
+      color: "text-black",
+      projectId: "default",
     }
 
+    // Add to the events for this day
+    const updatedEvents = [...eventsForSelectedDate, newEvent]
+    setEventsForSelectedDate(updatedEvents)
+
     // Set the active index to the new event
-    const newIndex = eventsForSelectedDate.length
+    const newIndex = updatedEvents.length - 1
     setActiveEventIndex(newIndex)
 
     // Focus the new event input after a short delay
@@ -1983,6 +1685,89 @@ button.nav-arrow:focus {
       }
     }, 100)
   }
+
+  // Add keyboard event handlers for left and right arrow keys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle keyboard events when no modal is open
+      if (showModal || showResetConfirm || showShareModal || showDateSelector) {
+        return
+      }
+
+      // Left arrow key - previous month
+      if (e.key === "ArrowLeft") {
+        setCurrentDate(subMonths(currentDate, 1))
+      }
+
+      // Right arrow key - next month
+      if (e.key === "ArrowRight") {
+        setCurrentDate(addMonths(currentDate, 1))
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [showModal, showResetConfirm, showShareModal, showDateSelector, currentDate])
+
+  // Update the event modal to close when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showModal && eventModalRef.current && !eventModalRef.current.contains(event.target as Node)) {
+        handleSaveAndClose() // Save changes before closing
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showModal, eventsForSelectedDate])
+
+  // Update the reset confirmation modal to close when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showResetConfirm && resetModalRef.current && !resetModalRef.current.contains(event.target as Node)) {
+        setShowResetConfirm(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showResetConfirm])
+
+  // Update the share modal to close when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showShareModal && shareModalRef.current && !shareModalRef.current.contains(event.target as Node)) {
+        setShowShareModal(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [showShareModal])
+
+  // Focus the appropriate event input when modal opens
+  useEffect(() => {
+    if (showModal && eventsForSelectedDate.length > 0) {
+      setTimeout(() => {
+        if (activeEventIndex === 0 && firstEventInputRef.current) {
+          firstEventInputRef.current.focus()
+        } else {
+          const textareas = document.querySelectorAll("textarea")
+          if (textareas.length > activeEventIndex) {
+            textareas[activeEventIndex].focus()
+          }
+        }
+      }, 100)
+    }
+  }, [showModal, eventsForSelectedDate, activeEventIndex])
 
   // Export Tags Selection Modal
   return (
@@ -2284,24 +2069,282 @@ button.nav-arrow:focus {
 
       {/* Event Modal - Updated to match the group dialog style */}
       {showModal && (
-        <EventModal
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          date={selectedDate}
-          eventsForDate={eventsForSelectedDate}
-          activeEventIndex={activeEventIndex}
-          onUpdateEventContent={handleUpdateEventContent}
-          onUpdateEventColor={handleUpdateEventColor}
-          onAddEvent={handleAddNewEvent}
-          onDeleteEvent={handleDeleteEvent}
-          onSwapEvents={handleSwapEvents}
-          onSetActiveEvent={setActiveEventIndex}
-          projectGroups={projectGroups}
-          onSaveAndClose={handleSaveAndClose}
-          onTextSelect={handleTextSelect}
-          onTextareaKeyDown={handleTextareaKeyDown}
-          firstEventInputRef={firstEventInputRef}
-        />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+          <div
+            ref={eventModalRef}
+            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
+          >
+            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
+              <div className="flex items-center justify-between">
+                <div className="w-4"></div> {/* Spacer for centering */}
+                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
+                  {formatDate(selectedDate)}
+                </h3>
+                <button
+                  onClick={handleSaveAndClose}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              {/* Event Inputs - Stacked directly one under the other */}
+              <div className="mb-4">
+                <label
+                  htmlFor="event-content-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  EVENT
+                </label>
+
+                {/* First Event */}
+                {eventsForSelectedDate.length > 0 && (
+                  <div className="mb-4">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-start">
+                        <textarea
+                          id="event-content-1"
+                          value={eventsForSelectedDate[0]?.content || ""}
+                          onChange={(e) => {
+                            handleUpdateEventContent(0, e.target.value)
+                            setActiveEventIndex(0)
+                          }}
+                          onFocus={() => setActiveEventIndex(0)}
+                          onKeyDown={(e) => {
+                            setActiveEventIndex(0)
+                            handleTextareaKeyDown(e)
+                          }}
+                          onMouseUp={(e) => {
+                            setActiveEventIndex(0)
+                            handleTextSelect(e)
+                          }}
+                          onTouchEnd={(e) => {
+                            setActiveEventIndex(0)
+                            handleTextSelect(e)
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveEventIndex(0)
+                          }}
+                          ref={firstEventInputRef}
+                          className={`flex-1 w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 0 ? "border-black dark:border-white" : ""}`}
+                          placeholder="ENTER EVENT NAME"
+                          rows={2}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteEvent(eventsForSelectedDate[0].id)
+                          }}
+                          className="text-gray-300 hover:text-gray-500 self-start mt-2 ml-2"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
+                          >
+                            <path d="M18 6L6 18"></path>
+                            <path d="M6 6l12 12"></path>
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {projectGroups.map((group) => {
+                          const bgColor = getBgFromTextColor(group.color)
+                          const isSelected = eventsForSelectedDate[0]?.color === group.color
+
+                          return (
+                            <button
+                              key={`event0-${group.id}`}
+                              onClick={() => handleUpdateEventColor(0, group.color, group.id)}
+                              className={cn(
+                                "flex items-center rounded-none border px-2 py-1 text-xs",
+                                isSelected
+                                  ? `${bgColor} text-white border-gray-700`
+                                  : "bg-white border-gray-200 text-gray-400",
+                              )}
+                            >
+                              {group.name}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Second Event */}
+                {eventsForSelectedDate.length > 1 && (
+                  <div className="mb-4">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-start">
+                        <textarea
+                          id="event-content-2"
+                          value={eventsForSelectedDate[1]?.content || ""}
+                          onChange={(e) => {
+                            handleUpdateEventContent(1, e.target.value)
+                            setActiveEventIndex(1)
+                          }}
+                          onFocus={() => setActiveEventIndex(1)}
+                          onKeyDown={(e) => {
+                            setActiveEventIndex(1)
+                            handleTextareaKeyDown(e)
+                          }}
+                          onMouseUp={(e) => {
+                            setActiveEventIndex(1)
+                            handleTextSelect(e)
+                          }}
+                          onTouchEnd={(e) => {
+                            setActiveEventIndex(1)
+                            handleTextSelect(e)
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveEventIndex(1)
+                          }}
+                          className={`flex-1 w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 1 ? "border-black dark:border-white" : ""}`}
+                          placeholder="ENTER EVENT NAME"
+                          rows={2}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteEvent(eventsForSelectedDate[1].id)
+                          }}
+                          className="text-gray-300 hover:text-gray-500 self-start mt-2 ml-2"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4"
+                          >
+                            <path d="M18 6L6 18"></path>
+                            <path d="M6 6l12 12"></path>
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {projectGroups.map((group) => {
+                          const bgColor = getBgFromTextColor(group.color)
+                          const isSelected = eventsForSelectedDate[1]?.color === group.color
+
+                          return (
+                            <button
+                              key={`event1-${group.id}`}
+                              onClick={() => handleUpdateEventColor(1, group.color, group.id)}
+                              className={cn(
+                                "flex items-center rounded-none border px-2 py-1 text-xs",
+                                isSelected
+                                  ? `${bgColor} text-white border-gray-700`
+                                  : "bg-white border-gray-200 text-gray-400",
+                              )}
+                            >
+                              {group.name}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Add a swap button between the events and the Add New Event button */}
+              {eventsForSelectedDate.length === 2 && (
+                <button
+                  onClick={handleSwapEvents}
+                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 mr-2"
+                  >
+                    <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  SWAP EVENTS
+                </button>
+              )}
+
+              {/* Add New Event button - Show when there are fewer than 2 events */}
+              {eventsForSelectedDate.length < 2 && (
+                <button
+                  onClick={handleAddNewEvent}
+                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 mr-2"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  ADD NEW EVENT
+                </button>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={handleCancelEdit}
+                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={handleSaveAndClose}
+                  className="rounded-md border border-transparent bg-black dark:bg-white py-2 px-4 text-sm font-medium text-white dark:text-black shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none"
+                >
+                  SAVE
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Reset Confirmation Modal */}
@@ -2339,24 +2382,24 @@ button.nav-arrow:focus {
                 </button>
               </div>
             </div>
-            <div className="p-6">
-              <p className="font-mono text-sm text-gray-600 dark:text-gray-300">
-                Are you sure you want to reset all calendar data? This action cannot be undone.
+            <div className="p-4 sm:p-6">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                ARE YOU SURE YOU WANT TO RESET ALL CALENDAR DATA? THIS ACTION CANNOT BE UNDONE.
               </p>
-            </div>
-            <div className="flex justify-end border-t border-gray-100 dark:border-gray-700 p-4">
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                className="font-mono text-sm text-gray-600 dark:text-gray-300 px-4 py-2 mr-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                CANCEL
-              </button>
-              <button
-                onClick={handleResetData}
-                className="bg-red-600 text-white font-mono text-sm px-4 py-2 hover:bg-red-700"
-              >
-                RESET
-              </button>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={handleResetData}
+                  className="rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none"
+                >
+                  RESET DATA
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2397,126 +2440,45 @@ button.nav-arrow:focus {
                 </button>
               </div>
             </div>
-            <div className="p-6">
-              <div className="mb-4">
-                <label htmlFor="share-url" className="block font-mono text-sm text-gray-600 dark:text-gray-300 mb-2">
-                  Shareable URL:
-                </label>
-                <div className="relative">
+            <div className="p-4 sm:p-6">
+              <label htmlFor="share-url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                SHAREABLE URL
+              </label>
+              <div className="flex rounded-md shadow-sm">
+                <div className="relative flex items-stretch flex-grow focus-within:z-10">
                   <input
-                    ref={shareInputRef}
                     type="text"
                     id="share-url"
+                    className="block w-full rounded-none rounded-l-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
                     value={shareUrl}
                     readOnly
-                    className="w-full border border-gray-200 dark:border-gray-700 p-2 font-mono text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded focus:outline-none focus:border-blue-500"
+                    ref={shareInputRef}
+                    onClick={(e) => {
+                      ;(e.target as HTMLInputElement).select()
+                    }}
                   />
-                  <button
-                    id="copy-button"
-                    onClick={copyShareUrl}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black text-white font-mono text-xs px-3 py-1 rounded hover:bg-gray-800 focus:outline-none"
-                  >
-                    COPY
-                  </button>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Project Group Modal */}
-      {showAddDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <div className="w-4"></div> {/* Spacer for centering */}
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">ADD NEW TAG</h3>
                 <button
-                  onClick={() => setShowAddDialog(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+                  type="button"
+                  id="copy-button"
+                  onClick={copyShareUrl}
+                  className="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-100 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
+                  <span>COPY</span>
+                </button>
+              </div>
+              <div className="mt-5 flex justify-end">
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
+                >
+                  CLOSE
                 </button>
               </div>
             </div>
-            <div className="p-6">
-              <div className="mb-4">
-                <label
-                  htmlFor="new-project-name"
-                  className="block font-mono text-sm text-gray-600 dark:text-gray-300 mb-2"
-                >
-                  Tag Name:
-                </label>
-                <input
-                  type="text"
-                  id="new-project-name"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  className="w-full border border-gray-200 dark:border-gray-700 p-2 font-mono text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="new-project-color"
-                  className="block font-mono text-sm text-gray-600 dark:text-gray-300 mb-2"
-                >
-                  Tag Color:
-                </label>
-                <select
-                  id="new-project-color"
-                  value={newProjectColor}
-                  onChange={(e) => setNewProjectColor(e.target.value)}
-                  className="w-full border border-gray-200 dark:border-gray-700 p-2 font-mono text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 rounded focus:outline-none focus:border-blue-500"
-                >
-                  {colorOptions.map((color) => (
-                    <option key={color.value} value={color.value}>
-                      {color.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end border-t border-gray-100 dark:border-gray-700 p-4">
-              <button
-                onClick={() => setShowAddDialog(false)}
-                className="font-mono text-sm text-gray-600 dark:text-gray-300 px-4 py-2 mr-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                CANCEL
-              </button>
-              <button
-                onClick={() => {
-                  handleAddProjectGroup(newProjectName, newProjectColor)
-                  setShowAddDialog(false)
-                  setNewProjectName("")
-                  setNewProjectColor("text-black")
-                }}
-                className="bg-black text-white font-mono text-sm px-4 py-2 hover:bg-gray-800 disabled:opacity-50"
-                disabled={!newProjectName.trim()}
-              >
-                ADD
-              </button>
-            </div>
           </div>
         </div>
       )}
-
-      {/* Export Tags Selection Modal */}
       {showExportTagsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
@@ -2548,51 +2510,56 @@ button.nav-arrow:focus {
                 </button>
               </div>
             </div>
-            <div className="p-6">
-              <div className="mb-4">
-                <label className="block font-mono text-sm text-gray-600 dark:text-gray-300 mb-2">Select Tags:</label>
-                <div className="flex flex-col space-y-2">
-                  {projectGroups.map((group) => (
-                    <label key={group.id} className="inline-flex items-center">
-                      <input
-                        type="checkbox"
-                        className="form-checkbox h-5 w-5 text-black rounded focus:ring-0 focus:ring-offset-0"
-                        value={group.id}
-                        checked={selectedExportTags.includes(group.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedExportTags([...selectedExportTags, group.id])
-                          } else {
-                            setSelectedExportTags(selectedExportTags.filter((id) => id !== group.id))
-                          }
-                        }}
-                      />
-                      <span className="ml-2 font-mono text-sm text-gray-700 dark:text-gray-300">{group.name}</span>
+            <div className="p-4 sm:p-6">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                Select which tags to include in your {exportTarget === "ical" ? "iCal" : "Google Calendar"} export. Only
+                user-created events (not holidays) will be exported.
+              </p>
+
+              <div className="space-y-2 mb-6">
+                {projectGroups.map((group) => (
+                  <div key={group.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`export-tag-${group.id}`}
+                      checked={selectedExportTags.includes(group.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedExportTags([...selectedExportTags, group.id])
+                        } else {
+                          setSelectedExportTags(selectedExportTags.filter((id) => id !== group.id))
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                    />
+                    <label
+                      htmlFor={`export-tag-${group.id}`}
+                      className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      {group.name}
                     </label>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            </div>
-            <div className="flex justify-end border-t border-gray-100 dark:border-gray-700 p-4">
-              <button
-                onClick={() => setShowExportTagsModal(false)}
-                className="font-mono text-sm text-gray-600 dark:text-gray-300 px-4 py-2 mr-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                CANCEL
-              </button>
-              <button
-                onClick={handleExportWithTags}
-                className="bg-black text-white font-mono text-sm px-4 py-2 hover:bg-gray-800 disabled:opacity-50"
-                disabled={selectedExportTags.length === 0}
-              >
-                EXPORT
-              </button>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowExportTagsModal(false)}
+                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={handleExportWithTags}
+                  className="rounded-md border border-transparent bg-black dark:bg-white py-2 px-4 text-sm font-medium text-white dark:text-black shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none"
+                >
+                  EXPORT
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Google Calendar Instructions Modal */}
       {showGoogleInstructionsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
           <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
@@ -2600,7 +2567,7 @@ button.nav-arrow:focus {
               <div className="flex items-center justify-between">
                 <div className="w-4"></div> {/* Spacer for centering */}
                 <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
-                  GOOGLE CALENDAR IMPORT INSTRUCTIONS
+                  IMPORT TO GOOGLE CALENDAR
                 </h3>
                 <button
                   onClick={() => setShowGoogleInstructionsModal(false)}
@@ -2624,44 +2591,43 @@ button.nav-arrow:focus {
                 </button>
               </div>
             </div>
-            <div className="p-6">
-              <ol className="list-decimal font-mono text-sm text-gray-600 dark:text-gray-300 space-y-2">
+            <div className="p-4 sm:p-6">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                Your calendar file has been downloaded. To import it into Google Calendar:
+              </p>
+
+              <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
                 <li>
-                  Open{" "}
+                  Go to{" "}
                   <a
                     href="https://calendar.google.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline"
+                    className="text-blue-600 dark:text-blue-400 underline"
                   >
                     Google Calendar
-                  </a>{" "}
-                  in your browser.
+                  </a>
                 </li>
-                <li>
-                  Click the <span className="font-bold">+</span> button next to{" "}
-                  <span className="font-bold">Other calendars</span>.
-                </li>
-                <li>
-                  Select <span className="font-bold">Import</span>.
-                </li>
-                <li>
-                  Click <span className="font-bold">Select file from your computer</span> and choose the{" "}
-                  <span className="font-bold">google_calendar_import.ics</span> file you just downloaded.
-                </li>
-                <li>Choose the calendar where you want to import the events.</li>
-                <li>
-                  Click <span className="font-bold">Import</span>.
-                </li>
+                <li>Click the gear icon (⚙️) in the top right and select "Settings"</li>
+                <li>Click "Import & export" on the left sidebar</li>
+                <li>Click "Select file from your computer" and choose the downloaded .ics file</li>
+                <li>Select which calendar to add the events to</li>
+                <li>Click "Import"</li>
               </ol>
-            </div>
-            <div className="flex justify-end border-t border-gray-100 dark:border-gray-700 p-4">
-              <button
-                onClick={() => setShowGoogleInstructionsModal(false)}
-                className="bg-black text-white font-mono text-sm px-4 py-2 hover:bg-gray-800"
-              >
-                CLOSE
-              </button>
+
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                Note: This is a one-time import. If you make changes to your calendar, you'll need to export and import
+                again.
+              </p>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowGoogleInstructionsModal(false)}
+                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
+                >
+                  CLOSE
+                </button>
+              </div>
             </div>
           </div>
         </div>

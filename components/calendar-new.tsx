@@ -71,7 +71,7 @@ const EventModal = ({
   isOpen: boolean
   onClose: () => void
   date: Date
-  events: CalendarEvent[]
+  events: Event[]
   onAddEvent: (event: Event) => void
   onDeleteEvent: (event: Event) => void
   onSwapEvents: () => void

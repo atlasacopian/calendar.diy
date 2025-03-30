@@ -180,19 +180,18 @@ const EventModal = ({
           <div className="mb-6">
             <div className="text-sm font-mono text-gray-600 mb-2">TAG</div>
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
+              {tags.map((group) => (
                 <button
-                  key={tag.id}
-                  onClick={() => setSelectedTag(tag)}
-                  className={`px-4 py-2 font-mono text-sm ${
-                    selectedTag?.id === tag.id ? "ring-2 ring-offset-2 ring-black" : ""
-                  }`}
-                  style={{
-                    backgroundColor: tag.color,
-                    color: getContrastColor(tag.color),
-                  }}
+                  key={group.id}
+                  onClick={() => {}}
+                  className={cn(
+                    "flex items-center rounded-none border px-2 py-1 text-xs",
+                    false
+                      ? getBgFromTextColor(group.color) + " text-white border-gray-700"
+                      : "bg-white border-gray-200 text-gray-400",
+                  )}
                 >
-                  {tag.name}
+                  {group.name}
                 </button>
               ))}
             </div>
@@ -1243,18 +1242,20 @@ button.nav-arrow:focus {
           eventDiv.style.fontSize = "11px"
           eventDiv.style.fontWeight = "500"
           eventDiv.style.wordBreak = "break-word"
-          eventDiv.style.overflow = "visible"
+          eventDiv.style.overflow = "hidden"
           eventDiv.style.maxWidth = "100%"
-          eventDiv.style.whiteSpace = "normal"
+          eventDiv.style.textOverflow = "ellipsis"
+          eventDiv.style.whiteSpace = "nowrap"
 
+          // Update the first instance of color mapping in the createPrintableCalendar function for single events
           // Convert Tailwind color classes to CSS colors
           let color = "#000"
-          if (event?.color?.includes("blue")) color = "#0012ff"
-          if (event?.color?.includes("red")) color = "#ff0000"
+          if (event?.color?.includes("blue")) color = "#2563eb"
+          if (event?.color?.includes("red")) color = "#dc2626"
           if (event?.color?.includes("yellow")) color = "#e3e600"
-          if (event?.color?.includes("orange")) color = "#ff7200"
-          if (event?.color?.includes("green")) color = "#1ae100"
-          if (event?.color?.includes("purple")) color = "#a800ff"
+          if (event?.color?.includes("orange")) color = "#f97316"
+          if (event?.color?.includes("green")) color = "#16a34a"
+          if (event?.color?.includes("purple")) color = "#9333ea"
 
           eventDiv.style.color = color
           eventsContainer.appendChild(eventDiv)
@@ -1271,18 +1272,20 @@ button.nav-arrow:focus {
           eventDiv1.style.fontSize = "11px"
           eventDiv1.style.fontWeight = "500"
           eventDiv1.style.wordBreak = "break-word"
-          eventDiv1.style.overflow = "visible"
+          eventDiv1.style.overflow = "hidden"
           eventDiv1.style.maxWidth = "100%"
-          eventDiv1.style.whiteSpace = "normal"
+          eventDiv1.style.textOverflow = "ellipsis"
+          eventDiv1.style.whiteSpace = "nowrap"
 
+          // Update the color mapping in the createPrintableCalendar function for yellow
           // Convert Tailwind color classes to CSS colors
           let color1 = "#000"
-          if (event1?.color?.includes("blue")) color1 = "#0012ff"
-          if (event1?.color?.includes("red")) color1 = "#ff0000"
+          if (event1?.color?.includes("blue")) color1 = "#2563eb"
+          if (event1?.color?.includes("red")) color1 = "#dc2626"
           if (event1?.color?.includes("yellow")) color1 = "#e3e600"
-          if (event1?.color?.includes("orange")) color1 = "#ff7200"
-          if (event1?.color?.includes("green")) color1 = "#1ae100"
-          if (event1?.color?.includes("purple")) color1 = "#a800ff"
+          if (event1?.color?.includes("orange")) color1 = "#f97316"
+          if (event1?.color?.includes("green")) color1 = "#16a34a"
+          if (event1?.color?.includes("purple")) color1 = "#9333ea"
 
           eventDiv1.style.color = color1
           topEventContainer.appendChild(eventDiv1)
@@ -1308,18 +1311,19 @@ button.nav-arrow:focus {
           eventDiv2.style.fontSize = "11px"
           eventDiv2.style.fontWeight = "500"
           eventDiv2.style.wordBreak = "break-word"
-          eventDiv2.style.overflow = "visible"
+          eventDiv2.style.overflow = "hidden"
           eventDiv2.style.maxWidth = "100%"
-          eventDiv2.style.whiteSpace = "normal"
+          eventDiv2.style.textOverflow = "ellipsis"
+          eventDiv2.style.whiteSpace = "nowrap"
 
           // Convert Tailwind color classes to CSS colors
           let color2 = "#000"
-          if (event2?.color?.includes("blue")) color2 = "#0012ff"
-          if (event2?.color?.includes("red")) color2 = "#ff0000"
+          if (event2?.color?.includes("blue")) color2 = "#2563eb"
+          if (event2?.color?.includes("red")) color2 = "#dc2626"
           if (event2?.color?.includes("yellow")) color2 = "#e3e600"
-          if (event2?.color?.includes("orange")) color2 = "#ff7200"
-          if (event2?.color?.includes("green")) color2 = "#1ae100"
-          if (event2?.color?.includes("purple")) color2 = "#a800ff"
+          if (event2?.color?.includes("orange")) color2 = "#f97316"
+          if (event2?.color?.includes("green")) color2 = "#16a34a"
+          if (event2?.color?.includes("purple")) color2 = "#9333ea"
 
           eventDiv2.style.color = color2
           bottomEventContainer.appendChild(eventDiv2)
@@ -1331,17 +1335,17 @@ button.nav-arrow:focus {
       }
 
       // Calculate how many cells we've added so far
-      const cellsAdded = startingDayOfWeek + daysInMonth
+      const totalCellsAdded = startingDayOfWeek + daysInMonth
 
       // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
-      const cellsNeeded = 42 - cellsAdded
+      const cellsNeeded = 42 - totalCellsAdded
 
       // Always add empty cells to complete the grid to exactly 6 rows
       for (let i = 0; i < cellsNeeded; i++) {
         const emptyCell = document.createElement("div")
         emptyCell.style.borderBottom = "1px solid #eee"
         emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "100px" // Slightly smaller cells
+        emptyCell.style.height = "120px"
         emptyCell.style.backgroundColor = "white"
         grid.appendChild(emptyCell)
       }
@@ -1361,6 +1365,7 @@ button.nav-arrow:focus {
 
       // Convert to image and download
       const image = canvas.toDataURL("image/png", 1.0)
+
       const link = document.createElement("a")
       link.href = image
       link.download = `calendar_${format(currentDate, "MMMM_yyyy")}.png`
@@ -1601,22 +1606,6 @@ button.nav-arrow:focus {
 
       dayCell.appendChild(eventsContainer)
       grid.appendChild(dayCell)
-    }
-
-    // Calculate how many cells we've added so far
-    const cellsAdded = startingDayOfWeek + daysInMonth
-
-    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
-    const cellsNeeded = 42 - cellsAdded
-
-    // Always add empty cells to complete the grid to exactly 6 rows
-    for (let i = 0; i < cellsNeeded; i++) {
-      const emptyCell = document.createElement("div")
-      emptyCell.style.borderBottom = "1px solid #eee"
-      emptyCell.style.borderRight = "1px solid #eee"
-      emptyCell.style.height = "120px"
-      emptyCell.style.backgroundColor = "white"
-      grid.appendChild(emptyCell)
     }
 
     printableDiv.appendChild(grid)
@@ -2284,11 +2273,11 @@ button.nav-arrow:focus {
           isOpen={showModal}
           onClose={() => setShowModal(false)}
           date={selectedDate || new Date()}
-          events={[]}
-          onAddEvent={() => {}}
-          onDeleteEvent={() => {}}
-          onSwapEvents={() => {}}
-          tags={[]}
+          events={eventsForSelectedDate}
+          onAddEvent={handleAddNewEvent}
+          onDeleteEvent={handleDeleteEvent}
+          onSwapEvents={handleSwapEvents}
+          tags={projectGroups}
         />
       )}
 
@@ -2324,25 +2313,6 @@ button.nav-arrow:focus {
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                ARE YOU SURE YOU WANT TO RESET ALL CALENDAR DATA? THIS ACTION CANNOT BE UNDONE.
-              </p>
-              <div className="mt-5 flex justify-end gap-2">
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleResetData}
-                  className="rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none"
-                >
-                  RESET DATA
                 </button>
               </div>
             </div>

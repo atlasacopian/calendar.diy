@@ -2,15 +2,17 @@
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { createClientComponentClient } from "@supabase/supabase-js"
+import { createClient } from "@supabase/supabase-js"
 
 export default function LoginButtons() {
   const { user, signOut } = useAuth()
   const [showOptions, setShowOptions] = useState(false)
-  const supabase = createClientComponentClient({
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-  })
+
+  // Create a Supabase client using the standard createClient method
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+  )
 
   const handleSignIn = (provider: "google" | "apple") => {
     supabase.auth.signInWithOAuth({

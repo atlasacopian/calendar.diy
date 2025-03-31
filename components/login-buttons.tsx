@@ -2,12 +2,15 @@
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createClientComponentClient } from "@supabase/supabase-js"
 
 export default function LoginButtons() {
   const { user, signOut } = useAuth()
   const [showOptions, setShowOptions] = useState(false)
-  const supabase = createClientComponentClient()
+  const supabase = createClientComponentClient({
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+  })
 
   const handleSignIn = (provider: "google" | "apple") => {
     supabase.auth.signInWithOAuth({

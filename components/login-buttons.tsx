@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Apple, LogOut, UserIcon } from "lucide-react"
 
@@ -30,15 +29,13 @@ export default function LoginButtons() {
         <span className="text-xs text-gray-500 hidden sm:inline">
           {user.email || user.user_metadata.full_name || "Signed In"}
         </span>
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           onClick={handleSignOut}
           className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
         >
           <LogOut className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
           <span>SIGN OUT</span>
-        </Button>
+        </button>
       </div>
     )
   }
@@ -46,14 +43,10 @@ export default function LoginButtons() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
+        <button className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
           <UserIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
           <span>SIGN IN</span>
-        </Button>
+        </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -64,10 +57,9 @@ export default function LoginButtons() {
             Sign in to sync your calendar across devices. All features are available without an account.
           </p>
           <div className="flex flex-col gap-2">
-            <Button
-              variant="outline"
+            <button
               onClick={handleGoogleSignIn}
-              className="flex items-center justify-center gap-2 w-full"
+              className="flex items-center justify-center gap-2 w-full border border-gray-200 rounded-md py-2 px-4 text-sm font-medium hover:bg-gray-50"
             >
               <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
                 <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
@@ -90,15 +82,14 @@ export default function LoginButtons() {
                 </g>
               </svg>
               CONTINUE WITH GOOGLE
-            </Button>
-            <Button
-              variant="outline"
+            </button>
+            <button
               onClick={handleAppleSignIn}
-              className="flex items-center justify-center gap-2 w-full"
+              className="flex items-center justify-center gap-2 w-full border border-gray-200 rounded-md py-2 px-4 text-sm font-medium hover:bg-gray-50"
             >
               <Apple size={16} />
               CONTINUE WITH APPLE
-            </Button>
+            </button>
           </div>
         </div>
       </DialogContent>

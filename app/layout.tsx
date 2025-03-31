@@ -94,33 +94,6 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </AuthProvider>
-
-        {/* Add client-side script after initial render */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Check if the page is being crawled by a bot
-              const isBot = /bot|googlebot|crawler|spider|robot|crawling/i.test(navigator.userAgent);
-              if (!isBot) {
-                // Load the dynamic calendar for real users
-                import('/components/calendar.js')
-                  .then(module => {
-                    const Calendar = module.default;
-                    const staticCalendar = document.querySelector('.calendar-full-container');
-                    if (staticCalendar && staticCalendar.parentNode) {
-                      // Replace static calendar with dynamic one when loaded
-                      const dynamicCalendar = document.createElement('div');
-                      dynamicCalendar.id = 'dynamic-calendar';
-                      staticCalendar.parentNode.replaceChild(dynamicCalendar, staticCalendar);
-                      // Initialize dynamic calendar
-                      new Calendar(dynamicCalendar);
-                    }
-                  })
-                  .catch(err => console.error('Failed to load dynamic calendar:', err));
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   )

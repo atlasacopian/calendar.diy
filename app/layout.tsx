@@ -2,6 +2,7 @@ import type React from "react"
 import "./globals.css"
 import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/lib/auth-context"
 
 export const metadata: Metadata = {
   title: "Free Calendar Template",
@@ -88,9 +89,11 @@ export default function RootLayout({
         <h1 className="sr-only">Editable Calendar – No Signup</h1>
         <p className="sr-only">A simple, editable calendar you can use instantly. Free forever, no account required.</p>
 
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          {children}
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
 
         {/* Add client-side script after initial render */}
         <script

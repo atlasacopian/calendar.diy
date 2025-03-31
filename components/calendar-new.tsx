@@ -7,6 +7,14 @@ import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToda
 import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
+import { useAuth } from "@/lib/auth-context"
+import LoginButtons from "@/components/login-buttons"
+import {
+  saveEventsToSupabase,
+  loadEventsFromSupabase,
+  saveProjectGroupsToSupabase,
+  loadProjectGroupsFromSupabase,
+} from "@/lib/calendar-service"
 
 // import html2canvas from 'html2canvas'; // We'll dynamically import this
 
@@ -43,6 +51,7 @@ const getTextForBg = (textColor: string) => {
 }
 
 export default function Calendar() {
+  const { user } = useAuth() // Add this line to get the authenticated user
   const [currentDate, setCurrentDate] = useState(new Date())
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -88,6 +97,50 @@ export default function Calendar() {
   const shareModalRef = useRef<HTMLDivElement>(null)
   const eventInputRef = useRef<HTMLTextAreaElement>(null)
   const firstEventInputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Add this useEffect to load data from Supabase when the user logs in
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (user) {
+        try {
+          // Load events from Supabase
+          const loadedEvents = await loadEventsFromSupabase(user)
+          if (loadedEvents.length > 0) {
+            setEvents(loadedEvents)
+          }
+
+          // Load project groups from Supabase
+          const loadedGroups = await loadProjectGroupsFromSupabase(user)
+          if (loadedGroups.length > 0) {
+            setProjectGroups(loadedGroups)
+          }
+        } catch (error) {
+          console.error("Error loading user data:", error)
+        }
+      }
+    }
+
+    loadUserData()
+  }, [user])
+
+  // Modify the existing useEffect that saves events to localStorage
+  useEffect(() => {
+    // Save to localStorage for non-logged in users
+    localStorage.setItem("calendarEvents", JSON.stringify(events))
+
+    // If user is logged in, also save to Supabase
+    if (user) {
+      saveEventsToSupabase(events, user)
+    }
+  }, [events, user])
+
+  // Add a new useEffect to save project groups
+  useEffect(() => {
+    // Save project groups to Supabase when they change and user is logged in
+    if (user) {
+      saveProjectGroupsToSupabase(projectGroups, user)
+    }
+  }, [projectGroups, user])
 
   const handleToggleProjectGroup = useCallback((groupId: string) => {
     setProjectGroups((prevGroups) =>
@@ -1118,6 +1171,7 @@ button.nav-arrow:focus {
     grid.style.margin = "0 auto" // Center the grid
 
     // Add day headers
+    const weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     weekDays.forEach((day) => {
       const dayHeader = document.createElement("div")
       dayHeader.textContent = day.toUpperCase()
@@ -1803,6 +1857,11 @@ button.nav-arrow:focus {
             </svg>
             <span>RESET</span>
           </button>
+        </div>
+
+        {/* Add login buttons here */}
+        <div>
+          <LoginButtons />
         </div>
 
         {/* Other buttons on the right */}
@@ -2635,3 +2694,4 @@ button.nav-arrow:focus {
     </div>
   )
 }
+

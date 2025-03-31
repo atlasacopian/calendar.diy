@@ -10,288 +10,288 @@ import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
 import { useAuth } from "@/lib/auth-context"
 import LoginButtons from "@/components/login-buttons"
 import {
-saveEventsToSupabase,
-loadEventsFromSupabase,
-saveProjectGroupsToSupabase,
-loadProjectGroupsFromSupabase,
+  saveEventsToSupabase,
+  loadEventsFromSupabase,
+  saveProjectGroupsToSupabase,
+  loadProjectGroupsFromSupabase,
 } from "@/lib/calendar-service"
 
 // import html2canvas from 'html2canvas'; // We'll dynamically import this
 
 // In the CalendarEvent type, add a new property to store formatted content
 type CalendarEvent = {
-id: string
-date: Date
-content: string
-formattedContent?: string // To store HTML with formatting
-color?: string
-projectId?: string
+  id: string
+  date: Date
+  content: string
+  formattedContent?: string // To store HTML with formatting
+  color?: string
+  projectId?: string
 }
 
 // Color options for color picker
 const colorOptions = [
-{ name: "Black", value: "text-black", bg: "bg-[#000000]", text: "text-white", hex: "#000000" },
-{ name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white", hex: "#ff0000" },
-{ name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-white", hex: "#ff7200" },
-{ name: "Yellow", value: "text-yellow-500", bg: "bg-[#e3e600]", text: "text-white", hex: "#e3e600" },
-{ name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white", hex: "#1ae100" },
-{ name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white", hex: "#0012ff" },
-{ name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white", hex: "#a800ff" },
+  { name: "Black", value: "text-black", bg: "bg-[#000000]", text: "text-white", hex: "#000000" },
+  { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white", hex: "#ff0000" },
+  { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-white", hex: "#ff7200" },
+  { name: "Yellow", value: "text-yellow-500", bg: "bg-[#e3e600]", text: "text-white", hex: "#e3e600" },
+  { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white", hex: "#1ae100" },
+  { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white", hex: "#0012ff" },
+  { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white", hex: "#a800ff" },
 ]
 
 // Get the background color class from a text color class
 const getBgFromTextColor = (textColor: string) => {
-const color = colorOptions.find((c) => c.value === textColor)
-return color ? color.bg : "bg-gray-200"
+  const color = colorOptions.find((c) => c.value === textColor)
+  return color ? color.bg : "bg-gray-200"
 }
 
 const getTextForBg = (textColor: string) => {
-const color = colorOptions.find((c) => c.value === textColor)
-return "text-white"
+  const color = colorOptions.find((c) => c.value === textColor)
+  return "text-white"
 }
 
 export default function Calendar() {
-const { user } = useAuth() // Add this line to get the authenticated user
-const [currentDate, setCurrentDate] = useState(new Date())
-const [events, setEvents] = useState<CalendarEvent[]>([])
-const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-const [showModal, setShowModal] = useState(false)
-const [holidays, setHolidays] = useState<Holiday[]>([])
-const [isDownloading, setIsDownloading] = useState(false)
-const [isMobile, setIsMobile] = useState(false)
-const [keyboardVisible, setKeyboardVisible] = useState(false)
-const [showResetConfirm, setShowResetConfirm] = useState(false)
-const [isDarkMode, setIsDarkMode] = useState(false)
-const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null)
-const [dragOverDate, setDragOverDate] = useState<Date | null>(null)
-const [showShareModal, setShowShareModal] = useState(false)
-const [shareUrl, setShareUrl] = useState("")
-const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
-const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([
-  { id: "default", name: "TAG 01", color: "text-black", active: true },
-])
-const [showDateSelector, setShowDateSelector] = useState(false)
-const [showAddDialog, setShowAddDialog] = useState(false)
-const [newProjectName, setNewProjectName] = useState("")
-const [newProjectColor, setNewProjectColor] = useState("text-black")
-// Track which event is currently being edited (0 or 1)
-const [activeEventIndex, setActiveEventIndex] = useState<number>(0)
-// Add a new state for text selection
-const [selectedText, setSelectedText] = useState<{ start: number; end: number } | null>(null)
+  const { user } = useAuth() // Add this line to get the authenticated user
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [events, setEvents] = useState<CalendarEvent[]>([])
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [holidays, setHolidays] = useState<Holiday[]>([])
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [keyboardVisible, setKeyboardVisible] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null)
+  const [dragOverDate, setDragOverDate] = useState<Date | null>(null)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareUrl, setShareUrl] = useState("")
+  const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
+  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([
+    { id: "default", name: "TAG 01", color: "text-black", active: true },
+  ])
+  const [showDateSelector, setShowDateSelector] = useState(false)
+  const [showAddDialog, setShowAddDialog] = useState(false)
+  const [newProjectName, setNewProjectName] = useState("")
+  const [newProjectColor, setNewProjectColor] = useState("text-black")
+  // Track which event is currently being edited (0 or 1)
+  const [activeEventIndex, setActiveEventIndex] = useState<number>(0)
+  // Add a new state for text selection
+  const [selectedText, setSelectedText] = useState<{ start: number; end: number } | null>(null)
 
-const [showExportTagsModal, setShowExportTagsModal] = useState(false)
-const [exportTarget, setExportTarget] = useState<"ical" | "google">("ical")
-const [selectedExportTags, setSelectedExportTags] = useState<string[]>([])
-const [showGoogleInstructionsModal, setShowGoogleInstructionsModal] = useState(false)
+  const [showExportTagsModal, setShowExportTagsModal] = useState(false)
+  const [exportTarget, setExportTarget] = useState<"ical" | "google">("ical")
+  const [selectedExportTags, setSelectedExportTags] = useState<string[]>([])
+  const [showGoogleInstructionsModal, setShowGoogleInstructionsModal] = useState(false)
 
-const textareaRef = useRef<HTMLTextAreaElement>(null)
-const modalRef = useRef<HTMLDivElement>(null)
-const resetModalRef = useRef<HTMLDivElement>(null)
-const calendarRef = useRef<HTMLDivElement>(null)
-const calendarContentRef = useRef<HTMLDivElement>(null)
-const fullCalendarRef = useRef<HTMLDivElement>(null)
-const printableCalendarRef = useRef<HTMLDivElement>(null)
-const shareInputRef = useRef<HTMLInputElement>(null)
-const dateSelectorRef = useRef<HTMLDivElement>(null)
-const eventModalRef = useRef<HTMLDivElement>(null)
-const shareModalRef = useRef<HTMLDivElement>(null)
-const eventInputRef = useRef<HTMLTextAreaElement>(null)
-const firstEventInputRef = useRef<HTMLTextAreaElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
+  const resetModalRef = useRef<HTMLDivElement>(null)
+  const calendarRef = useRef<HTMLDivElement>(null)
+  const calendarContentRef = useRef<HTMLDivElement>(null)
+  const fullCalendarRef = useRef<HTMLDivElement>(null)
+  const printableCalendarRef = useRef<HTMLDivElement>(null)
+  const shareInputRef = useRef<HTMLInputElement>(null)
+  const dateSelectorRef = useRef<HTMLDivElement>(null)
+  const eventModalRef = useRef<HTMLDivElement>(null)
+  const shareModalRef = useRef<HTMLDivElement>(null)
+  const eventInputRef = useRef<HTMLTextAreaElement>(null)
+  const firstEventInputRef = useRef<HTMLTextAreaElement>(null)
 
-// Add this useEffect to load data from Supabase when the user logs in
-useEffect(() => {
-  const loadUserData = async () => {
-    if (user) {
-      try {
-        // Load events from Supabase
-        const loadedEvents = await loadEventsFromSupabase(user)
-        if (loadedEvents.length > 0) {
-          // Convert any string dates to Date objects
-          const eventsWithDateObjects = loadedEvents.map(event => ({
-            ...event,
-            date: event.date instanceof Date ? event.date : new Date(event.date)
-          }))
-          setEvents(eventsWithDateObjects)
+  // Add this useEffect to load data from Supabase when the user logs in
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (user) {
+        try {
+          // Load events from Supabase
+          const loadedEvents = await loadEventsFromSupabase(user)
+          if (loadedEvents.length > 0) {
+            // Convert any string dates to Date objects
+            const eventsWithDateObjects = loadedEvents.map((event) => ({
+              ...event,
+              date: event.date instanceof Date ? event.date : new Date(event.date),
+            }))
+            setEvents(eventsWithDateObjects)
+          }
+
+          // Load project groups from Supabase
+          const loadedGroups = await loadProjectGroupsFromSupabase(user)
+          if (loadedGroups.length > 0) {
+            setProjectGroups(loadedGroups)
+          }
+        } catch (error) {
+          console.error("Error loading user data:", error)
         }
-
-        // Load project groups from Supabase
-        const loadedGroups = await loadProjectGroupsFromSupabase(user)
-        if (loadedGroups.length > 0) {
-          setProjectGroups(loadedGroups)
-        }
-      } catch (error) {
-        console.error("Error loading user data:", error)
       }
     }
-  }
 
-  loadUserData()
-}, [user])
+    loadUserData()
+  }, [user])
 
-// Modify the existing useEffect that saves events to localStorage
-useEffect(() => {
-  // Save to localStorage for non-logged in users
-  localStorage.setItem("calendarEvents", JSON.stringify(events))
+  // Modify the existing useEffect that saves events to localStorage
+  useEffect(() => {
+    // Save to localStorage for non-logged in users
+    localStorage.setItem("calendarEvents", JSON.stringify(events))
 
-  // If user is logged in, also save to Supabase
-  if (user) {
-    saveEventsToSupabase(events, user)
-  }
-}, [events, user])
-
-// Add a new useEffect to save project groups
-useEffect(() => {
-  // Save project groups to Supabase when they change and user is logged in
-  if (user) {
-    saveProjectGroupsToSupabase(projectGroups, user)
-  }
-}, [projectGroups, user])
-
-const handleToggleProjectGroup = useCallback((groupId: string) => {
-  setProjectGroups((prevGroups) =>
-    prevGroups.map((group) => (group.id === groupId ? { ...group, active: !group.active } : group)),
-  )
-}, [])
-
-const handleAddProjectGroup = useCallback((name: string, color: string) => {
-  const newGroup = {
-    id: Math.random().toString(36).substring(2, 11),
-    name,
-    color,
-    active: true,
-  }
-  setProjectGroups((prev) => [...prev, newGroup])
-}, [])
-
-const handleRemoveProjectGroup = useCallback((groupId: string) => {
-  setProjectGroups((prev) => prev.filter((group) => group.id !== groupId))
-
-  // Update any events using this project group to use the default color
-  setEvents((prev) =>
-    prev.map((event) =>
-      event.projectId === groupId ? { ...event, color: "text-black", projectId: "default" } : event,
-    ),
-  )
-}, [])
-
-const handleEditProjectGroup = useCallback((groupId: string, name: string, color: string) => {
-  // Update the project group
-  setProjectGroups((prev) => prev.map((group) => (group.id === groupId ? { ...group, name, color } : group)))
-
-  // Update any events using this project group to use the new color
-  setEvents((prev) => prev.map((event) => (event.projectId === groupId ? { ...event, color } : event)))
-}, [])
-
-// Initialize component
-useEffect(() => {
-  try {
-    // Force light mode
-    setIsDarkMode(false)
-
-    // Apply light mode to document
-    if (typeof document !== "undefined") {
-      document.documentElement.classList.remove("dark")
+    // If user is logged in, also save to Supabase
+    if (user) {
+      saveEventsToSupabase(events, user)
     }
+  }, [events, user])
 
-    // Initialize events from localStorage
-    if (typeof window !== "undefined" && window.localStorage) {
-      const savedEvents = localStorage.getItem("calendarEvents")
-      if (savedEvents) {
-        try {
-          // Convert any bg- color classes to text- color classes for backward compatibility
-          const parsedEvents = JSON.parse(savedEvents)
-          if (Array.isArray(parsedEvents)) {
-            const updatedEvents = parsedEvents.map((event) => {
-              let color = event.color || "text-black"
-              if (color.startsWith("bg-")) {
-                color = color.replace("bg-", "text-")
-              }
-              return {
-                ...event,
-                id: event.id || Math.random().toString(36).substring(2, 11),
-                date: new Date(event.date),
-                color,
-              }
-            })
-            setEvents(updatedEvents)
-          } else {
-            console.error("Saved events is not an array:", parsedEvents)
+  // Add a new useEffect to save project groups
+  useEffect(() => {
+    // Save project groups to Supabase when they change and user is logged in
+    if (user) {
+      saveProjectGroupsToSupabase(projectGroups, user)
+    }
+  }, [projectGroups, user])
+
+  const handleToggleProjectGroup = useCallback((groupId: string) => {
+    setProjectGroups((prevGroups) =>
+      prevGroups.map((group) => (group.id === groupId ? { ...group, active: !group.active } : group)),
+    )
+  }, [])
+
+  const handleAddProjectGroup = useCallback((name: string, color: string) => {
+    const newGroup = {
+      id: Math.random().toString(36).substring(2, 11),
+      name,
+      color,
+      active: true,
+    }
+    setProjectGroups((prev) => [...prev, newGroup])
+  }, [])
+
+  const handleRemoveProjectGroup = useCallback((groupId: string) => {
+    setProjectGroups((prev) => prev.filter((group) => group.id !== groupId))
+
+    // Update any events using this project group to use the default color
+    setEvents((prev) =>
+      prev.map((event) =>
+        event.projectId === groupId ? { ...event, color: "text-black", projectId: "default" } : event,
+      ),
+    )
+  }, [])
+
+  const handleEditProjectGroup = useCallback((groupId: string, name: string, color: string) => {
+    // Update the project group
+    setProjectGroups((prev) => prev.map((group) => (group.id === groupId ? { ...group, name, color } : group)))
+
+    // Update any events using this project group to use the new color
+    setEvents((prev) => prev.map((event) => (event.projectId === groupId ? { ...event, color } : event)))
+  }, [])
+
+  // Initialize component
+  useEffect(() => {
+    try {
+      // Force light mode
+      setIsDarkMode(false)
+
+      // Apply light mode to document
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("dark")
+      }
+
+      // Initialize events from localStorage
+      if (typeof window !== "undefined" && window.localStorage) {
+        const savedEvents = localStorage.getItem("calendarEvents")
+        if (savedEvents) {
+          try {
+            // Convert any bg- color classes to text- color classes for backward compatibility
+            const parsedEvents = JSON.parse(savedEvents)
+            if (Array.isArray(parsedEvents)) {
+              const updatedEvents = parsedEvents.map((event) => {
+                let color = event.color || "text-black"
+                if (color.startsWith("bg-")) {
+                  color = color.replace("bg-", "text-")
+                }
+                return {
+                  ...event,
+                  id: event.id || Math.random().toString(36).substring(2, 11),
+                  date: new Date(event.date),
+                  color,
+                }
+              })
+              setEvents(updatedEvents)
+            } else {
+              console.error("Saved events is not an array:", parsedEvents)
+              setEvents([])
+            }
+          } catch (e) {
+            console.error("Error parsing saved events:", e)
             setEvents([])
           }
-        } catch (e) {
-          console.error("Error parsing saved events:", e)
-          setEvents([])
         }
-      }
 
-      // Check URL for shared date
-      try {
-        const urlParams = new URLSearchParams(window.location.search)
-        const dateParam = urlParams.get("date")
-        if (dateParam) {
-          const sharedDate = new Date(dateParam)
-          if (!isNaN(sharedDate.getTime())) {
-            setCurrentDate(sharedDate)
+        // Check URL for shared date
+        try {
+          const urlParams = new URLSearchParams(window.location.search)
+          const dateParam = urlParams.get("date")
+          if (dateParam) {
+            const sharedDate = new Date(dateParam)
+            if (!isNaN(sharedDate.getTime())) {
+              setCurrentDate(sharedDate)
+            }
           }
+        } catch (e) {
+          console.error("Error parsing date from URL:", e)
         }
-      } catch (e) {
-        console.error("Error parsing date from URL:", e)
       }
+    } catch (error) {
+      console.error("Error in initialization:", error)
     }
-  } catch (error) {
-    console.error("Error in initialization:", error)
-  }
-  // Initialize selectedExportTags with all project group IDs by default
-  setSelectedExportTags(projectGroups.map((group) => group.id))
-}, [])
+    // Initialize selectedExportTags with all project group IDs by default
+    setSelectedExportTags(projectGroups.map((group) => group.id))
+  }, [])
 
-// Check if device is mobile
-useEffect(() => {
-  const checkIfMobile = () => {
-    setIsMobile(window.innerWidth < 768)
-  }
+  // Check if device is mobile
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
 
-  // Initial check
-  checkIfMobile()
+    // Initial check
+    checkIfMobile()
 
-  // Add event listener for window resize
-  window.addEventListener("resize", checkIfMobile)
+    // Add event listener for window resize
+    window.addEventListener("resize", checkIfMobile)
 
-  // Cleanup
-  return () => {
-    window.removeEventListener("resize", checkIfMobile)
-  }
-}, [])
+    // Cleanup
+    return () => {
+      window.removeEventListener("resize", checkIfMobile)
+    }
+  }, [])
 
-// Load holidays for the years needed
-useEffect(() => {
-  // Get the current view year
-  const viewYear = currentDate.getFullYear()
+  // Load holidays for the years needed
+  useEffect(() => {
+    // Get the current view year
+    const viewYear = currentDate.getFullYear()
 
-  // Get current system year
-  const systemYear = new Date().getFullYear()
+    // Get current system year
+    const systemYear = new Date().getFullYear()
 
-  // Create a set of years we need to load
-  const yearsToLoad = new Set([viewYear, viewYear - 1, viewYear + 1, systemYear, systemYear + 1])
+    // Create a set of years we need to load
+    const yearsToLoad = new Set([viewYear, viewYear - 1, viewYear + 1, systemYear, systemYear + 1])
 
-  // Load holidays for all needed years
-  const allHolidays: Holiday[] = []
-  yearsToLoad.forEach((year) => {
-    allHolidays.push(...getAllHolidays(year))
-  })
+    // Load holidays for all needed years
+    const allHolidays: Holiday[] = []
+    yearsToLoad.forEach((year) => {
+      allHolidays.push(...getAllHolidays(year))
+    })
 
-  setHolidays(allHolidays)
-}, [currentDate]) // Re-run when currentDate changes
+    setHolidays(allHolidays)
+  }, [currentDate]) // Re-run when currentDate changes
 
-// Save events to localStorage whenever they change
-useEffect(() => {
-  localStorage.setItem("calendarEvents", JSON.stringify(events))
-}, [events])
+  // Save events to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("calendarEvents", JSON.stringify(events))
+  }, [events])
 
-// Add CSS for proper hover effects
-useEffect(() => {
-  const style = document.createElement("style")
-  style.textContent = `
+  // Add CSS for proper hover effects
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.textContent = `
 .calendar-day {
   position: relative;
 }
@@ -566,248 +566,253 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
 -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
 }
 `
-  document.head.appendChild(style)
+    document.head.appendChild(style)
 
-  return () => {
-    document.head.removeChild(style)
-  }
-}, [])
-
-const handlePreviousMonth = () => {
-  setCurrentDate(subMonths(currentDate, 1))
-}
-
-const handleNextMonth = () => {
-  setCurrentDate(addMonths(currentDate, 1))
-}
-
-const handleDayClick = (day: Date) => {
-  setSelectedDate(day)
-  const existingEvents = events.filter((event) => isSameDay(event.date, day))
-  setEventsForSelectedDate(existingEvents)
-  setActiveEventIndex(0) // Reset to first event
-
-  setShowModal(true)
-
-  // If there are no events for this day, automatically create one
-  if (existingEvents.length === 0) {
-    const newEvent = {
-      id: Math.random().toString(36).substring(2, 11),
-      date: day,
-      content: "",
-      color: "text-black",
-      projectId: "default",
+    return () => {
+      document.head.removeChild(style)
     }
-    setEventsForSelectedDate([newEvent])
+  }, [])
 
-    // Focus the input field after a short delay to ensure the DOM is ready
-    setTimeout(() => {
-      if (firstEventInputRef.current) {
-        firstEventInputRef.current.focus()
+  const handlePreviousMonth = () => {
+    setCurrentDate(subMonths(currentDate, 1))
+  }
+
+  const handleNextMonth = () => {
+    setCurrentDate(addMonths(currentDate, 1))
+  }
+
+  const handleDayClick = (day: Date) => {
+    setSelectedDate(day)
+    const existingEvents = events.filter((event) => isSameDay(event.date, day))
+    setEventsForSelectedDate(existingEvents)
+    setActiveEventIndex(0) // Reset to first event
+
+    setShowModal(true)
+
+    // If there are no events for this day, automatically create one
+    if (existingEvents.length === 0) {
+      const newEvent = {
+        id: Math.random().toString(36).substring(2, 11),
+        date: day,
+        content: "",
+        color: "text-black",
+        projectId: "default",
       }
-    }, 50)
-  }
-}
+      setEventsForSelectedDate([newEvent])
 
-const handleCancelEdit = () => {
-  setShowModal(false)
-  setSelectedDate(null)
-  setActiveEventIndex(0)
-}
-
-const handleSaveAndClose = () => {
-  // Save any changes to the events
-  if (eventsForSelectedDate.length > 0) {
-    // Filter out empty events
-    const nonEmptyEvents = eventsForSelectedDate.filter((event) => event.content.trim() !== "")
-
-    // First, remove all events for this day from the main events array
-    const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
-
-    // Then add back the updated events for this day
-    const newEvents = [...otherEvents, ...nonEmptyEvents]
-    setEvents(newEvents)
-
-    // Save to localStorage immediately
-    localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
-  }
-
-  // Close the modal
-  setShowModal(false)
-  setSelectedDate(null)
-  setActiveEventIndex(0)
-}
-
-// Update the handleUpdateEventContent function to handle formatted content
-const handleUpdateEventContent = (index: number, content: string, formattedContent?: string) => {
-  if (index >= eventsForSelectedDate.length) return
-
-  const updatedEvents = [...eventsForSelectedDate]
-  if (formattedContent) {
-    updatedEvents[index] = { ...updatedEvents[index], content, formattedContent }
-  } else {
-    updatedEvents[index] = { ...updatedEvents[index], content }
-  }
-  setEventsForSelectedDate(updatedEvents)
-}
-
-// Add a function to handle bold formatting
-const handleBoldText = () => {
-  if (activeEventIndex >= eventsForSelectedDate.length || !selectedText) return
-
-  const event = eventsForSelectedDate[activeEventIndex]
-  const content = event.content
-
-  // Get the selected text
-  const selectedContent = content.substring(selectedText.start, selectedText.end)
-
-  // Create the formatted content by wrapping selected text in <strong> tags
-  const formattedContent =
-    content.substring(0, selectedText.start) +
-    `<strong>${selectedContent}</strong>` +
-    content.substring(selectedText.end)
-
-  // Update the event with both plain content and formatted content
-  handleUpdateEventContent(activeEventIndex, content, formattedContent)
-
-  // Reset selection
-  setSelectedText(null)
-}
-
-// Update the handleTextareaKeyDown function to allow Shift+Enter for new lines
-// and handle Cmd+B or Ctrl+B for bold text
-const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-  // Handle Cmd+B or Ctrl+B for bold text
-  if ((e.metaKey || e.ctrlKey) && e.key === "b") {
-    e.preventDefault()
-
-    // Get the current selection from the textarea
-    const textarea = e.currentTarget
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-
-    if (start !== end) {
-      setSelectedText({ start, end })
-      handleBoldText()
+      // Focus the input field after a short delay to ensure the DOM is ready
+      setTimeout(() => {
+        if (firstEventInputRef.current) {
+          firstEventInputRef.current.focus()
+        }
+      }, 50)
     }
-    return
   }
 
-  // Only save and close on Enter without shift key (shift+enter allows for line breaks)
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault()
-    handleSaveAndClose() // This will save and close the modal
+  const handleCancelEdit = () => {
+    setShowModal(false)
+    setSelectedDate(null)
+    setActiveEventIndex(0)
   }
-}
 
-// Add a function to track text selection
-const handleTextSelect = (e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => {
-  const textarea = e.currentTarget
-  setSelectedText({
-    start: textarea.selectionStart,
-    end: textarea.selectionEnd,
-  })
-}
+  const handleSaveAndClose = () => {
+    // Save any changes to the events
+    if (eventsForSelectedDate.length > 0) {
+      // Filter out empty events
+      const nonEmptyEvents = eventsForSelectedDate.filter((event) => event.content.trim() !== "")
 
-// Show reset confirmation modal
-const handleShowResetConfirm = () => {
-  setShowResetConfirm(true)
-}
+      // First, remove all events for this day from the main events array
+      const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
 
-// Reset all user data
-const handleResetData = () => {
-  // Clear events
-  setEvents([])
+      // Then add back the updated events for this day
+      const newEvents = [...otherEvents, ...nonEmptyEvents]
+      setEvents(newEvents)
 
-  // Reset project groups to original state
-  setProjectGroups([{ id: "default", name: "TAG 01", color: "text-black", active: true }])
+      // Save to localStorage immediately
+      localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
+    }
 
-  // Clear localStorage
-  localStorage.removeItem("calendarEvents")
-
-  // Close the confirmation modal
-  setShowResetConfirm(false)
-}
-
-// Improved drag and drop functionality
-// Handle drag start for events
-const handleDragStart = (event: CalendarEvent, e: React.DragEvent) => {
-  e.stopPropagation()
-  setDraggedEvent(event)
-
-  // Set data for drag operation
-  if (e.dataTransfer) {
-    e.dataTransfer.effectAllowed = "move"
-    e.dataTransfer.setData("text/plain", event.id)
-
-    // Set a ghost drag image
-    const ghostElement = document.createElement("div")
-    ghostElement.classList.add("event-ghost")
-    ghostElement.textContent = event.content
-    ghostElement.style.padding = "4px 8px"
-    ghostElement.style.background = "#f5f5f5"
-    ghostElement.style.border = "1px solid #ddd"
-    ghostElement.style.borderRadius = "4px"
-    ghostElement.style.width = "100px"
-    ghostElement.style.overflow = "hidden"
-    ghostElement.style.whiteSpace = "nowrap"
-    ghostElement.style.textOverflow = "ellipsis"
-    ghostElement.style.position = "absolute"
-    ghostElement.style.top = "-1000px"
-    document.body.appendChild(ghostElement)
-
-    e.dataTransfer.setDragImage(ghostElement, 50, 10)
-
-    // Remove the ghost element after a short delay
-    setTimeout(() => {
-      document.body.removeChild(ghostElement)
-    }, 100)
+    // Close the modal
+    setShowModal(false)
+    setSelectedDate(null)
+    setActiveEventIndex(0)
   }
-}
 
-// Handle drag over for calendar days
-const handleDragOver = (day: Date, e: React.DragEvent) => {
-  e.preventDefault()
-  e.dataTransfer.dropEffect = "move"
-  setDragOverDate(day)
-}
+  // Update the handleUpdateEventContent function to handle formatted content
+  const handleUpdateEventContent = (index: number, content: string, formattedContent?: string) => {
+    if (index >= eventsForSelectedDate.length) return
 
-// Handle drop for calendar days
-const handleDrop = (day: Date, e: React.DragEvent) => {
-  e.preventDefault()
-  e.stopPropagation()
+    const updatedEvents = [...eventsForSelectedDate]
+    if (formattedContent) {
+      updatedEvents[index] = { ...updatedEvents[index], content, formattedContent }
+    } else {
+      updatedEvents[index] = { ...updatedEvents[index], content }
+    }
+    setEventsForSelectedDate(updatedEvents)
+  }
 
-  if (draggedEvent) {
-    // Check if the target day already has 2 events
-    const dayEvents = events.filter((event) => isSameDay(event.date, day) && event.id !== draggedEvent.id)
+  // Add a function to handle bold formatting
+  const handleBoldText = () => {
+    if (activeEventIndex >= eventsForSelectedDate.length || !selectedText) return
 
-    if (dayEvents.length >= 2) {
-      // If the day already has 2 events, don't allow the drop
-      setDraggedEvent(null)
-      setDragOverDate(null)
+    const event = eventsForSelectedDate[activeEventIndex]
+    const content = event.content
+
+    // Get the selected text
+    const selectedContent = content.substring(selectedText.start, selectedText.end)
+
+    // Create the formatted content by wrapping selected text in <strong> tags
+    const formattedContent =
+      content.substring(0, selectedText.start) +
+      `<strong>${selectedContent}</strong>` +
+      content.substring(selectedText.end)
+
+    // Update the event with both plain content and formatted content
+    handleUpdateEventContent(activeEventIndex, content, formattedContent)
+
+    // Reset selection
+    setSelectedText(null)
+  }
+
+  // Update the handleTextareaKeyDown function to allow Shift+Enter for new lines
+  // and handle Cmd+B or Ctrl+B for bold text
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle Cmd+B or Ctrl+B for bold text
+    if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+      e.preventDefault()
+
+      // Get the current selection from the textarea
+      const textarea = e.currentTarget
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+
+      if (start !== end) {
+        setSelectedText({ start, end })
+        handleBoldText()
+      }
       return
     }
 
-    // Remove the event from its original date
-    const filteredEvents = events.filter((event) => event.id !== draggedEvent.id)
-
-    // Add it to the new date
-    const updatedEvent = {
-      ...draggedEvent,
-      date: day,
-    }
-
-    setEvents([...filteredEvents, updatedEvent])
-
-    // If the modal is open and showing the target day, update the events for that day
-    if (showModal && selectedDate && isSameDay(selectedDate, day)) {
-      const updatedDayEvents = [...eventsForSelectedDate.filter((e) => e.id !== draggedEvent.id), updatedEvent]
-      setEventsForSelectedDate(updatedDayEvents)
+    // Only save and close on Enter without shift key (shift+enter allows for line breaks)
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSaveAndClose() // This will save and close the modal
     }
   }
 
-  setDraggedEvent(null)
-  setDragOverDate(null)
+  // Add a function to track text selection
+  const handleTextSelect = (e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => {
+    const textarea = e.currentTarget
+    setSelectedText({
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    })
+  }
+
+  // Show reset confirmation modal
+  const handleShowResetConfirm = () => {
+    setShowResetConfirm(true)
+  }
+
+  // Reset all user data
+  const handleResetData = () => {
+    // Clear events
+    setEvents([])
+
+    // Reset project groups to original state
+    setProjectGroups([{ id: "default", name: "TAG 01", color: "text-black", active: true }])
+
+    // Clear localStorage
+    localStorage.removeItem("calendarEvents")
+
+    // Close the confirmation modal
+    setShowResetConfirm(false)
+  }
+
+  // Improved drag and drop functionality
+  // Handle drag start for events
+  const handleDragStart = (event: CalendarEvent, e: React.DragEvent) => {
+    e.stopPropagation()
+    setDraggedEvent(event)
+
+    // Set data for drag operation
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move"
+      e.dataTransfer.setData("text/plain", event.id)
+
+      // Set a ghost drag image
+      const ghostElement = document.createElement("div")
+      ghostElement.classList.add("event-ghost")
+      ghostElement.textContent = event.content
+      ghostElement.style.padding = "4px 8px"
+      ghostElement.style.background = "#f5f5f5"
+      ghostElement.style.border = "1px solid #ddd"
+      ghostElement.style.borderRadius = "4px"
+      ghostElement.style.width = "100px"
+      ghostElement.style.overflow = "hidden"
+      ghostElement.style.whiteSpace = "nowrap"
+      ghostElement.style.textOverflow = "ellipsis"
+      ghostElement.style.position = "absolute"
+      ghostElement.style.top = "-1000px"
+      document.body.appendChild(ghostElement)
+
+      e.dataTransfer.setDragImage(ghostElement, 50, 10)
+
+      // Remove the ghost element after a short delay
+      setTimeout(() => {
+        document.body.removeChild(ghostElement)
+      }, 100)
+    }
+  }
+
+  // Handle drag over for calendar days
+  const handleDragOver = (day: Date, e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+    setDragOverDate(day)
+  }
+
+  // Handle drop for calendar days
+  const handleDrop = (day: Date, e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (draggedEvent) {
+      // Check if the target day already has 2 events
+      const dayEvents = events.filter((event) => isSameDay(event.date, day) && event.id !== draggedEvent.id)
+
+      if (dayEvents.length >= 2) {
+        // If the day already has 2 events, don't allow the drop
+        setDraggedEvent(null)
+        setDragOverDate(null)
+        return
+      }
+
+      // Remove the event from its original date
+      const filteredEvents = events.filter((event) => event.id !== draggedEvent.id)
+
+      // Add it to the new date
+      const updatedEvent = {
+        ...draggedEvent,
+        date: day,
+      }
+
+      setEvents([...filteredEvents, updatedEvent])
+
+      // If the modal is open and showing the target day, update the events for that day
+      if (showModal && selectedDate && isSameDay(selectedDate, day)) {
+        const updatedDayEvents = [...eventsForSelectedDate.filter((e) => e.id !== draggedEvent.id), updatedEvent]
+        setEventsForSelectedDate(updatedDayEvents)
+      }
+    }
+    \
+  setDraggedEvent  updatedEvent]
+      setEventsForSelectedDate(updatedDayEvents)
+  }
+}
+
+setDraggedEvent(null)
+setDragOverDate(null)
 }
 
 // Handle drag end
@@ -1834,10 +1839,11 @@ return (
     className="flex flex-col space-y-4 min-h-screen max-h-screen overflow-hidden calendar-wrapper"
     style={{ paddingTop: isMobile ? "24px" : "0" }}
   >
-    {/* Calendar Controls - Now with reset button on left and others on right */}
+    {/* Calendar Controls - Now with login buttons to the left of reset button */}
     <div className="calendar-controls flex flex-wrap items-center justify-between gap-1 p-0 mb-1 pt-4 sm:pt-0">
-      {/* Reset button on the left */}
-      <div>
+      {/* Login buttons and Reset button on the left */}
+      <div className="flex items-center gap-2">
+        <LoginButtons />
         <button
           onClick={handleShowResetConfirm}
           className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -1862,11 +1868,6 @@ return (
           </svg>
           <span>RESET</span>
         </button>
-      </div>
-
-      {/* Add login buttons here */}
-      <div>
-        <LoginButtons />
       </div>
 
       {/* Other buttons on the right */}
@@ -2699,3 +2700,4 @@ return (
   </div>
 )
 }
+

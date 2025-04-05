@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
 import { useAuth } from "@/lib/auth-context"
-import { LoginButtons } from "@/components/login-buttons"
+import LoginButtons from "@/components/login-buttons"
 import {
   saveEventsToSupabase,
   loadEventsFromSupabase,
@@ -2698,4 +2698,3 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
     </div>
   )
 }
-

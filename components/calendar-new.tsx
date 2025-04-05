@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { getAllHolidays, type Holiday } from "@/lib/holidays"
 import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
 import { useAuth } from "@/lib/auth-context"
-import LoginButtons from "@/components/login-buttons"
+import { LoginButtons } from "@/components/login-buttons"
 import {
   saveEventsToSupabase,
   loadEventsFromSupabase,

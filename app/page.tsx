@@ -1,54 +1,136 @@
-import type { Metadata } from "next"
-import dynamic from "next/dynamic"
+"use client"
 
-// Dynamically import the Calendar component with no SSR
-const Calendar = dynamic(() => import("@/components/calendar-new"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-screen w-full flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-2xl mb-2">Loading calendar...</div>
-        <div className="text-sm text-gray-500">Please wait while we set up your calendar</div>
-      </div>
-    </div>
-  ),
-})
+import { useState } from "react"
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
-export const metadata: Metadata = {
-  title: "Free Calendar Template",
-  description:
-    "A clean, free, editable calendar you can use instantly. No account. No clutter. Just a simple calendar for your projects, schedules, or planning.",
-}
+export default function Calendar() {
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 3, 1)) // April 2025
 
-export default function Home() {
+  const monthNames = [
+    "JANUARY",
+    "FEBRUARY",
+    "MARCH",
+    "APRIL",
+    "MAY",
+    "JUNE",
+    "JULY",
+    "AUGUST",
+    "SEPTEMBER",
+    "OCTOBER",
+    "NOVEMBER",
+    "DECEMBER",
+  ]
+
+  const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"]
+
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate()
+  }
+
+  const getFirstDayOfMonth = (year: number, month: number) => {
+    return new Date(year, month, 1).getDay()
+  }
+
+  const renderCalendarDays = () => {
+    const year = currentDate.getFullYear()
+    const month = currentDate.getMonth()
+
+    const daysInMonth = getDaysInMonth(year, month)
+    const firstDayOfMonth = getFirstDayOfMonth(year, month)
+
+    const days = []
+
+    // Empty cells for days before the first day of the month
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push(<div key={`empty-${i}`} className="h-24 border border-gray-100"></div>)
+    }
+
+    // Cells for days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const isToday = day === 5 && month === 3 // Highlight April 5th
+      days.push(
+        <div key={day} className={cn("h-24 border border-gray-100 p-2", isToday ? "bg-gray-50" : "")}>
+          <div className="text-right">{day}</div>
+        </div>,
+      )
+    }
+
+    return days
+  }
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
+  }
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
+  }
+
   return (
-    <main className="flex min-h-screen items-center justify-center p-2 sm:p-4 md:p-8 lg:p-12 xl:p-16 transition-colors duration-200">
-      <div className="w-full max-w-full sm:max-w-2xl">
-        {/* Client-side rendered calendar */}
-        <Calendar />
+    <div className="min-h-screen flex flex-col items-center p-4">
+      <div className="w-full max-w-4xl">
+        {/* Top buttons */}
+        <div className="flex justify-between overflow-x-auto no-scrollbar mb-6">
+          <div className="space-x-2">
+            <Button variant="outline" size="sm" className="whitespace-nowrap">
+              SIGN IN
+            </Button>
+            <Button variant="outline" size="sm" className="whitespace-nowrap">
+              RESET
+            </Button>
+          </div>
+          <div className="space-x-2">
+            <Button variant="outline" size="sm" className="whitespace-nowrap">
+              SCREENSHOT
+            </Button>
+            <Button variant="outline" size="sm" className="whitespace-nowrap">
+              ICAL
+            </Button>
+            <Button variant="outline" size="sm" className="whitespace-nowrap">
+              GOOGLE
+            </Button>
+            <Button variant="outline" size="sm" className="whitespace-nowrap">
+              SHARE
+            </Button>
+          </div>
+        </div>
 
-        {/* Visually hidden content for SEO */}
-        <div className="sr-only">
-          <h1>Editable Calendar – No Signup</h1>
-          <p>A simple, editable calendar you can use instantly. Free forever, no account required.</p>
-          <p>
-            Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account
-            needed.
-          </p>
-          <p>Features include:</p>
-          <ul>
-            <li>Add and edit events with custom colors</li>
-            <li>Drag and drop events between days</li>
-            <li>Export to iCal or Google Calendar</li>
-            <li>Download calendar as image</li>
-            <li>Share calendar view with others</li>
-            <li>Works on mobile and desktop</li>
-            <li>No account required</li>
-            <li>Data saved locally in your browser</li>
-          </ul>
+        {/* Calendar header */}
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={prevMonth} className="p-2">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <h2 className="text-xl font-medium">
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </h2>
+          <button onClick={nextMonth} className="p-2">
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Days of week header */}
+        <div className="grid grid-cols-7 text-center py-2">
+          {daysOfWeek.map((day) => (
+            <div key={day} className="text-sm font-medium text-gray-500">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7">{renderCalendarDays()}</div>
+
+        {/* Tag button */}
+        <div className="flex justify-center mt-6">
+          <Button variant="default" className="bg-black text-white hover:bg-black/90 rounded-sm">
+            <span className="mr-1">TAG</span>
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
       </div>
-    </main>
+    </div>
   )
 }
 

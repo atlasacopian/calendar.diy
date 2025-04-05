@@ -1834,139 +1834,35 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
       className="flex flex-col space-y-4 min-h-screen max-h-screen overflow-hidden calendar-wrapper"
       style={{ paddingTop: isMobile ? "24px" : "0" }}
     >
-      "use client"
-
-{
-  /* Calendar Controls - Now with login buttons to the left of reset button */
-}
-;<div className="calendar-controls flex items-center justify-between gap-1 p-0 mb-1 pt-4 sm:pt-0">
-  {/* Login buttons and Reset button on the left */}
-  <div className="flex items-center gap-1">
-    <LoginButtons />
-    <button
-      onClick={handleShowResetConfirm}
-      className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-      title="Reset Calendar Data"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-      >
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-        <line x1="12" y1="9" x2="12" y2="13"></line>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-      </svg>
-      <span>RESET</span>
-    </button>
-  </div>
-
-  {/* Other buttons on the right */}
-  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-    <button
-      onClick={downloadCalendarAsImage}
-      className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 whitespace-nowrap"
-      title="Download as Image"
-      disabled={isDownloading}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-      >
-        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-        <circle cx="12" cy="13" r="3" />
-      </svg>
-      <span>SCREENSHOT</span>
-    </button>
-    <button
-      onClick={exportToIcal}
-      className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 whitespace-nowrap"
-      title="Export to iCal"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-      >
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-        <line x1="16" y1="2" x2="16" y2="6"></line>
-        <line x1="8" y1="2" x2="8" y2="6"></line>
-        <line x1="3" y1="10" x2="21" y2="10"></line>
-      </svg>
-      <span>ICAL</span>
-    </button>
-    <button
-      onClick={exportToGoogleCalendar}
-      className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 whitespace-nowrap"
-      title="Export to Google Calendar"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-      >
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-        <line x1="16" y1="2" x2="16" y2="6"></line>
-        <line x1="8" y1="2" x2="8" y2="6"></line>
-        <line x1="3" y1="10" x2="21" y2="10"></line>
-      </svg>
-      <span>GOOGLE</span>
-    </button>
-    <button
-      onClick={handleShare}
-      className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 whitespace-nowrap"
-      title="Share Calendar"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-      >
-        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-      </svg>
-      <span>SHARE</span>
-    </button>
-  </div>
-</div>
-
-
+      {/* Calendar Controls - Now with login buttons to the left of reset button */}
+      <div className="calendar-controls flex flex-wrap items-center justify-between gap-1 p-0 mb-1 pt-4 sm:pt-0">
+        {/* Login buttons and Reset button on the left */}
+        <div className="flex items-center gap-2">
+          <LoginButtons />
+          <button
+            onClick={handleShowResetConfirm}
+            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Reset Calendar Data"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
+            >
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <span>RESET</span>
+          </button>
+        </div>
 
         {/* Other buttons on the right */}
         <div className="flex flex-wrap items-center gap-1">

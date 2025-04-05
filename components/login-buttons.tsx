@@ -37,6 +37,9 @@ export default function LoginButtons() {
   return (
     <div className="relative">
       <button
+        onClick={() => setShowOptions(!showOptions)}
+        className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+        title="Sign in to prevent losing your data when clearing browser history or using a different device"
       >
         SIGN IN
       </button>

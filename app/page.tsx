@@ -71,8 +71,8 @@ export default function Calendar() {
   return (
     <div className="min-h-screen flex flex-col items-center p-4">
       <div className="w-full max-w-4xl">
-        {/* Top buttons */}
-        <div className="flex justify-between overflow-x-auto no-scrollbar mb-6">
+        {/* Top buttons - Modified to fix mobile layout */}
+        <div className="flex justify-between mb-6 overflow-x-auto no-scrollbar">
           <div className="space-x-2">
             <Button variant="outline" size="sm" className="whitespace-nowrap">
               SIGN IN

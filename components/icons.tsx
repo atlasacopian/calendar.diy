@@ -1,3 +1,4 @@
+import type React from "react"
 import {
   AlertTriangle,
   ArrowRight,
@@ -12,7 +13,6 @@ import {
   Image,
   Laptop,
   Loader2,
-  type LightbulbIcon as LucideProps,
   Moon,
   MoreVertical,
   Pizza,
@@ -26,7 +26,9 @@ import {
   LogOut,
 } from "lucide-react"
 
-export type IconProps = LucideProps
+export type IconProps = React.ComponentProps<"svg"> & {
+  size?: number
+}
 
 export const Icons = {
   logo: Command,

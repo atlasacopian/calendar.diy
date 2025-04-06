@@ -1,151 +1,392 @@
 "use client"
 
-import type React from "react"
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, getDay, getDaysInMonth, parse, isToday } from 'date-fns';
+import { ChevronLeft, ChevronRight, Plus, Tag, X, User, AlertTriangle, Camera, Calendar as CalendarIcon, Link, ArrowUpDown, Check, RefreshCcw, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
+import ProjectGroups from './project-groups';
+import { Button } from '@/components/ui/button';
 
-import { useEffect, useRef, useState, useCallback } from "react"
-import { addMonths, format, getDay, getDaysInMonth, isSameDay, subMonths, isToday } from "date-fns"
-import { cn } from "@/lib/utils"
-import { getAllHolidays, type Holiday } from "@/lib/holidays"
-import ProjectGroups, { type ProjectGroup } from "@/components/project-groups"
-import { useAuth } from "@/lib/auth-context"
-import LoginButtons from "@/components/login-buttons"
-import {
-  saveEventsToSupabase,
-  loadEventsFromSupabase,
-  saveProjectGroupsToSupabase,
-  loadProjectGroupsFromSupabase,
-} from "@/lib/calendar-service"
-
-// import html2canvas from 'html2canvas'; // We'll dynamically import this
-
-// In the CalendarEvent type, add a new property to store formatted content
-type CalendarEvent = {
-  id: string
-  date: Date
-  content: string
-  formattedContent?: string // To store HTML with formatting
-  color?: string
-  projectId?: string
+interface Event {
+  id: string;
+  date: Date;
+  content: string;
+  formattedContent?: string;
+  color?: string;
+  projectId?: string;
 }
 
-// Color options for color picker
+interface ProjectGroup {
+  id: string;
+  name: string;
+  color: string;
+  active: boolean;
+}
+
+interface Holiday {
+  date: Date;
+  name: string;
+}
+
 const colorOptions = [
-  { name: "Black", value: "text-black", bg: "bg-[#000000]", text: "text-white", hex: "#000000" },
-  { name: "Red", value: "text-red-600", bg: "bg-[#ff0000]", text: "text-white", hex: "#ff0000" },
-  { name: "Orange", value: "text-orange-500", bg: "bg-[#ff7200]", text: "text-white", hex: "#ff7200" },
-  { name: "Yellow", value: "text-yellow-500", bg: "bg-[#e3e600]", text: "text-white", hex: "#e3e600" },
-  { name: "Green", value: "text-green-600", bg: "bg-[#1ae100]", text: "text-white", hex: "#1ae100" },
-  { name: "Blue", value: "text-blue-600", bg: "bg-[#0012ff]", text: "text-white", hex: "#0012ff" },
-  { name: "Purple", value: "text-purple-600", bg: "bg-[#a800ff]", text: "text-white", hex: "#a800ff" },
-]
+  { name: 'Default', value: 'text-black', bg: 'bg-[#000000]' },
+  { name: 'Red', value: 'text-red-500', bg: 'bg-[#ff0000]' },
+  { name: 'Orange', value: 'text-orange-500', bg: 'bg-[#ff7200]' },
+  { name: 'Yellow', value: 'text-yellow-500', bg: 'bg-[#e3e600]' },
+  { name: 'Green', value: 'text-green-500', bg: 'bg-[#1ae100]' },
+  { name: 'Blue', value: 'text-blue-600', bg: 'bg-[#0012ff]' },
+  { name: 'Purple', value: 'text-purple-600', bg: 'bg-[#a800ff]' },
+];
 
-// Get the background color class from a text color class
+const weekDays = ["S", "M", "T", "W", "T", "F", "S"]
+const weekDaysMobile = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+
 const getBgFromTextColor = (textColor: string) => {
-  const color = colorOptions.find((c) => c.value === textColor)
-  return color ? color.bg : "bg-gray-200"
-}
+  const color = colorOptions.find((c) => c.value === textColor);
+  return color ? color.bg : "bg-gray-200";
+};
 
 const getTextForBg = (textColor: string) => {
-  const color = colorOptions.find((c) => c.value === textColor)
   return "text-white"
 }
 
-export default function Calendar() {
-  const { user } = useAuth() // Add this line to get the authenticated user
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [showModal, setShowModal] = useState(false)
-  const [holidays, setHolidays] = useState<Holiday[]>([])
-  const [isDownloading, setIsDownloading] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [keyboardVisible, setKeyboardVisible] = useState(false)
-  const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null)
-  const [dragOverDate, setDragOverDate] = useState<Date | null>(null)
-  const [showShareModal, setShowShareModal] = useState(false)
-  const [shareUrl, setShareUrl] = useState("")
-  const [eventsForSelectedDate, setEventsForSelectedDate] = useState<CalendarEvent[]>([])
-  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([
-    { id: "default", name: "TAG 01", color: "text-black", active: true },
-  ])
-  const [showDateSelector, setShowDateSelector] = useState(false)
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [newProjectName, setNewProjectName] = useState("")
-  const [newProjectColor, setNewProjectColor] = useState("text-black")
-  // Track which event is currently being edited (0 or 1)
-  const [activeEventIndex, setActiveEventIndex] = useState<number>(0)
-  // Add a new state for text selection
-  const [selectedText, setSelectedText] = useState<{ start: number; end: number } | null>(null)
+const getTextColorClass = (colorClass: string | undefined) => {
+  if (!colorClass) return "text-gray-600"
+  const color = colorOptions.find((c) => c.value === colorClass)
+  return color ? color.value : "text-gray-600"
+}
 
-  const [showExportTagsModal, setShowExportTagsModal] = useState(false)
-  const [exportTarget, setExportTarget] = useState<"ical" | "google">("ical")
-  const [selectedExportTags, setSelectedExportTags] = useState<string[]>([])
-  const [showGoogleInstructionsModal, setShowGoogleInstructionsModal] = useState(false)
+function getTextColorFromBg(bgColor: string): string {
+  const color = colorOptions.find(c => c.bg === bgColor);
+  return color ? color.value : 'text-gray-800';
+}
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const modalRef = useRef<HTMLDivElement>(null)
-  const resetModalRef = useRef<HTMLDivElement>(null)
-  const calendarRef = useRef<HTMLDivElement>(null)
-  const calendarContentRef = useRef<HTMLDivElement>(null)
-  const fullCalendarRef = useRef<HTMLDivElement>(null)
-  const printableCalendarRef = useRef<HTMLDivElement>(null)
-  const shareInputRef = useRef<HTMLInputElement>(null)
-  const dateSelectorRef = useRef<HTMLDivElement>(null)
-  const eventModalRef = useRef<HTMLDivElement>(null)
-  const shareModalRef = useRef<HTMLDivElement>(null)
-  const eventInputRef = useRef<HTMLTextAreaElement>(null)
-  const firstEventInputRef = useRef<HTMLTextAreaElement>(null)
+export default function CalendarNew() {
+  const searchParams = useSearchParams();
 
-  // Add this useEffect to load data from Supabase when the user logs in
-  useEffect(() => {
-    const loadUserData = async () => {
-      if (user) {
+  const [currentDate, setCurrentDate] = useState(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam) {
+      const [year, month] = dateParam.split('-').map(Number);
+      if (!isNaN(year) && !isNaN(month) && year > 1900 && year < 3000 && month >= 1 && month <= 12) {
+        const targetDate = new Date(year, month - 1, 1);
+        if (!isNaN(targetDate.getTime())) {
+          console.log(`Setting initial date from URL: ${targetDate}`)
+          return targetDate;
+        }
+      }
+      console.warn(`Invalid date parameter in URL: ${dateParam}`)
+    }
+    console.log(`Setting initial date to default: ${new Date()}`)
+    return new Date()
+  });
+
+  const [events, setEvents] = useState<Event[]>(() => {
+    let loadedEvents: Event[] = [];
+    let loadedGroups: ProjectGroup[] = [{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }];
+    if (typeof window !== 'undefined') {
+      const savedGroups = localStorage.getItem('projectGroups');
+      if (savedGroups) {
         try {
-          // Load events from Supabase
-          const loadedEvents = await loadEventsFromSupabase(user)
-          if (loadedEvents.length > 0) {
-            // Convert any string dates to Date objects
-            const eventsWithDateObjects = loadedEvents.map((event) => ({
-              ...event,
-              date: event.date instanceof Date ? event.date : new Date(event.date),
-            }))
-            setEvents(eventsWithDateObjects)
-          }
+          loadedGroups = JSON.parse(savedGroups);
+        } catch (e) { console.error("Failed parse groups on load"); }
+      }
 
-          // Load project groups from Supabase
-          const loadedGroups = await loadProjectGroupsFromSupabase(user)
-          if (loadedGroups.length > 0) {
-            setProjectGroups(loadedGroups)
-          }
-        } catch (error) {
-          console.error("Error loading user data:", error)
+      const savedEvents = localStorage.getItem('calendarEvents');
+      if (savedEvents) {
+        try {
+          const parsedEvents: Event[] = JSON.parse(savedEvents, (key, value) => {
+            if (key === 'date' && typeof value === 'string') {
+              return parse(value, "yyyy-MM-dd'T'HH:mm:ss.SSSX", new Date());
+            }
+            return value;
+          });
+
+          loadedEvents = parsedEvents.map(event => {
+            if (event.projectId) {
+              const matchingGroup = loadedGroups.find(g => g.id === event.projectId);
+              if (matchingGroup && event.color !== matchingGroup.color) {
+                 console.log(`Correcting color for event ${event.id} (projectId: ${event.projectId}) from ${event.color} to ${matchingGroup.color}`);
+                 return { ...event, color: matchingGroup.color };
+              }
+            }
+
+            if (!event.projectId && event.color !== 'text-black') {
+                 console.log(`Correcting color for untagged event ${event.id} to default`);
+                 return { ...event, color: 'text-black' };
+            }
+            return event;
+          });
+
+        } catch (e) {
+          console.error("Failed to parse/correct saved events:", e);
+          loadedEvents = [];
         }
       }
     }
+    return loadedEvents;
+  });
 
-    loadUserData()
-  }, [user])
+  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>(() => {
+    let loadedGroups: ProjectGroup[] = [];
+    const defaultGroups = [{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }];
+    const validColorValues = new Set(colorOptions.map(opt => opt.value));
 
-  // Modify the existing useEffect that saves events to localStorage
-  useEffect(() => {
-    // Save to localStorage for non-logged in users
-    localStorage.setItem("calendarEvents", JSON.stringify(events))
+    if (typeof window !== 'undefined') {
+      const savedGroups = localStorage.getItem('projectGroups');
+      if (savedGroups) {
+        try {
+          const parsedGroups: ProjectGroup[] = JSON.parse(savedGroups);
+          let foundDefault = false;
+          loadedGroups = parsedGroups.map(group => {
+            if (group.id === 'default') {
+              foundDefault = true;
+              return { ...group, name: 'TAG 01', color: 'text-black' };
+            }
+            if (!validColorValues.has(group.color)) {
+              console.warn(`Invalid color "${group.color}" found for group "${group.name}". Resetting to default.`);
+              return { ...group, color: 'text-black' };
+            }
+            return group;
+          });
 
-    // If user is logged in, also save to Supabase
-    if (user) {
-      saveEventsToSupabase(events, user)
+          if (!foundDefault) {
+            loadedGroups.unshift(defaultGroups[0]);
+          }
+
+        } catch (e) {
+          console.error("Failed to parse/correct saved groups:", e);
+          loadedGroups = defaultGroups;
+        }
+      } else {
+        loadedGroups = defaultGroups;
+      }
+    } else {
+      loadedGroups = defaultGroups;
     }
-  }, [events, user])
+    return loadedGroups;
+  });
 
-  // Add a new useEffect to save project groups
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [eventsForSelectedDate, setEventsForSelectedDate] = useState<Event[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedEvent, setDraggedEvent] = useState<Event | null>(null);
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectColor, setNewProjectColor] = useState('text-black');
+  const [showDateSelector, setShowDateSelector] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [showExportOptionsModal, setShowExportOptionsModal] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const cancelResetButtonRef = useRef<HTMLButtonElement>(null);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [activeEventIndex, setActiveEventIndex] = useState<number>(0);
+  const [selectedText, setSelectedText] = useState<{ start: number; end: number } | null>(null);
+  const [exportTarget, setExportTarget] = useState<"ical" | "google">("ical");
+  const [selectedExportTags, setSelectedExportTags] = useState<string[]>([]);
+  const [showGoogleInstructionsModal, setShowGoogleInstructionsModal] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [tagsCopied, setTagsCopied] = useState(false);
+  const [showDeleteConfirmId, setShowDeleteConfirmId] = useState<string | null>(null);
+  const deleteConfirmRef = useRef<HTMLDivElement>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
+  const [newlyAddedEventId, setNewlyAddedEventId] = useState<string | null>(null);
+  const [modalCloseState, setModalCloseState] = useState<'idle' | 'saving' | 'saved' | 'canceling'>('idle');
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const resetModalRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const calendarContentRef = useRef<HTMLDivElement>(null);
+  const fullCalendarRef = useRef<HTMLDivElement>(null);
+  const printableCalendarRef = useRef<HTMLDivElement>(null);
+  const shareInputRef = useRef<HTMLInputElement>(null);
+  const dateSelectorRef = useRef<HTMLDivElement>(null);
+  const eventModalRef = useRef<HTMLDivElement>(null);
+  const shareModalRef = useRef<HTMLDivElement>(null);
+  const eventInputRef = useRef<HTMLTextAreaElement>(null);
+  const firstEventInputRef = useRef<HTMLTextAreaElement>(null);
+  const calendarScreenshotContainerRef = useRef<HTMLDivElement>(null);
+  const [holidayForSelectedDate, setHolidayForSelectedDate] = useState<string | null>(null);
+
   useEffect(() => {
-    // Save project groups to Supabase when they change and user is logged in
-    if (user) {
-      saveProjectGroupsToSupabase(projectGroups, user)
+    try {
+      const checkIfMobile = () => {
+        setIsMobile(window.innerWidth < 640)
+      }
+      checkIfMobile()
+      window.addEventListener("resize", checkIfMobile)
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            console.log("Left arrow key pressed");
+            console.log("Current date before change:", currentDate);
+            setCurrentDate(prevDate => {
+              const newDate = subMonths(prevDate, 1);
+              console.log("New date after change:", newDate);
+              return newDate;
+            });
+            const leftArrow = document.getElementById('calendar-nav-left');
+            if (leftArrow) {
+              console.log("Left arrow element found");
+              leftArrow.style.color = 'black';
+              setTimeout(() => leftArrow.style.color = '', 75);
+            } else {
+              console.log("Left arrow element not found");
+            }
+          } else if (e.key === "ArrowRight") {
+            e.preventDefault();
+            setCurrentDate(prevDate => addMonths(prevDate, 1));
+            const rightArrow = document.getElementById('calendar-nav-right');
+            if (rightArrow) {
+              rightArrow.style.color = 'black';
+              setTimeout(() => rightArrow.style.color = '', 75);
+            }
+          }
+        }
+      }
+      window.addEventListener("keydown", handleKeyDown)
+
+      return () => {
+        window.removeEventListener("resize", checkIfMobile)
+        window.removeEventListener("keydown", handleKeyDown)
+      }
+    } catch (error) {
+      console.error("Error initializing calendar listeners:", error)
     }
-  }, [projectGroups, user])
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const eventsToSave = JSON.stringify(events, (key, value) => {
+          if (value instanceof Date) {
+            return value.toISOString();
+          }
+          return value;
+        });
+        localStorage.setItem('calendarEvents', eventsToSave);
+      } catch (e) {
+        console.error("Failed to save events:", e);
+      }
+    }
+  }, [events]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
+      } catch (e) {
+        console.error("Failed to save groups:", e);
+      }
+    }
+  }, [projectGroups]);
+
+  useEffect(() => {
+    const fetchHolidays = async () => {
+       try {
+        const year = currentDate.getFullYear();
+        const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/US`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        const formattedHolidays: Holiday[] = data.map((holiday: any) => ({
+          date: parse(holiday.date, 'yyyy-MM-dd', new Date()),
+          name: holiday.localName,
+        }));
+
+        const uniqueHolidaysMap = new Map<string, Holiday>();
+        formattedHolidays.forEach(holiday => {
+            const key = `${format(holiday.date, 'yyyy-MM-dd')}-${holiday.name}`;
+            if (!uniqueHolidaysMap.has(key)) {
+                uniqueHolidaysMap.set(key, holiday);
+            }
+        });
+        const uniqueHolidays = Array.from(uniqueHolidaysMap.values());
+
+        setHolidays(uniqueHolidays);
+
+      } catch (error) {
+        console.error("Could not fetch holidays:", error);
+      }
+    };
+    fetchHolidays();
+  }, [currentDate]);
+
+  const handleExportWithTags = () => {
+    if (selectedExportTags.length === 0) {
+      console.warn("No tags selected for export.");
+      return;
+    }
+
+    const eventsToExport = events.filter(event => {
+      const eventTagId = event.projectId ?? 'default';
+      return selectedExportTags.includes(eventTagId);
+    });
+
+    if (eventsToExport.length === 0) {
+      console.warn("No events found for the selected tags.");
+      alert("No events found for the selected tags.");
+      return;
+    }
+
+    let icalString = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//YourCalendarApp//DIY Calendar//EN
+`;
+
+    eventsToExport.forEach(event => {
+      const startDate = format(event.date, 'yyyyMMdd');
+      const summary = event.content.replace(/\r\n|\r|\n/g, '\\n');
+
+      icalString += `BEGIN:VEVENT
+`;
+      icalString += `UID:${event.id}@yourdomain.com\n`;
+      icalString += `DTSTAMP:${format(new Date(), 'yyyyMMdd\'T\'HHmmss\'Z\'')}\n`;
+      icalString += `DTSTART;VALUE=DATE:${startDate}\n`;
+      icalString += `SUMMARY:${summary}\n`;
+      icalString += `END:VEVENT\n`;
+    });
+
+    icalString += `END:VCALENDAR`;
+
+    const blob = new Blob([icalString], { type: 'text/calendar;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+
+    const filename = exportTarget === 'google' ? 'google-calendar-export.ics' : 'calendar-export.ics';
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    if (exportTarget === 'google') {
+      setShowGoogleInstructionsModal(true);
+    }
+
+    setShowExportOptionsModal(false);
+    setSelectedExportTags([]);
+  };
 
   const handleToggleProjectGroup = useCallback((groupId: string) => {
     setProjectGroups((prevGroups) =>
@@ -153,443 +394,90 @@ export default function Calendar() {
     )
   }, [])
 
-  const handleAddProjectGroup = useCallback((name: string, color: string) => {
-    const newGroup = {
-      id: Math.random().toString(36).substring(2, 11),
-      name,
-      color,
-      active: true,
+  const handleCloseDialog = () => {
+    setShowAddDialog(false);
+    setEditingGroupId(null);
+    setNewProjectName('');
+    setNewProjectColor('text-black');
+    setDialogError(null);
+  };
+
+  const handleShowAddDialog = () => {
+    setEditingGroupId(null);
+    setNewProjectName('');
+    setNewProjectColor('text-black');
+    setShowAddDialog(true);
+  };
+
+  const handleShowEditDialog = (group: ProjectGroup) => {
+      setEditingGroupId(group.id);
+      setNewProjectName(group.name);
+      setNewProjectColor(group.color);
+      setShowAddDialog(true);
+  };
+
+  const handleSaveDialog = () => {
+    const nameToSave = newProjectName.trim().toUpperCase() || 'TAG 01';
+    const colorToSave = newProjectColor;
+    const currentId = editingGroupId;
+    setDialogError(null);
+
+    const duplicateExists = projectGroups.some(
+        group => group.id !== currentId && group.name.toUpperCase() === nameToSave
+    );
+
+    if (duplicateExists) {
+        setDialogError(`Name "${newProjectName.trim()}" already exists.`);
+        return;
     }
-    setProjectGroups((prev) => [...prev, newGroup])
-  }, [])
 
-  const handleRemoveProjectGroup = useCallback((groupId: string) => {
-    setProjectGroups((prev) => prev.filter((group) => group.id !== groupId))
+    if (currentId) {
+      setProjectGroups(prevGroups => prevGroups.map(group =>
+        group.id === currentId ? { ...group, name: nameToSave, color: colorToSave } : group
+      ));
+    } else {
+      const newGroup: ProjectGroup = {
+        id: Date.now().toString(),
+        name: nameToSave,
+        color: colorToSave,
+        active: true,
+      };
+      setProjectGroups(prevGroups => [...prevGroups, newGroup]);
+    }
+    handleCloseDialog();
+  };
 
-    // Update any events using this project group to use the default color
-    setEvents((prev) =>
-      prev.map((event) =>
-        event.projectId === groupId ? { ...event, color: "text-black", projectId: "default" } : event,
-      ),
-    )
-  }, [])
+  const handleRequestDelete = (groupId: string) => {
+    if (groupId === 'default') return;
+    setShowDeleteConfirmId(groupId);
+    handleCloseDialog();
+  };
 
-  const handleEditProjectGroup = useCallback((groupId: string, name: string, color: string) => {
-    // Update the project group
-    setProjectGroups((prev) => prev.map((group) => (group.id === groupId ? { ...group, name, color } : group)))
+  const handleDeleteGroup = () => {
+    if (!showDeleteConfirmId) return;
 
-    // Update any events using this project group to use the new color
-    setEvents((prev) => prev.map((event) => (event.projectId === groupId ? { ...event, color } : event)))
-  }, [])
-
-  // Initialize component
-  useEffect(() => {
-    try {
-      // Force light mode
-      setIsDarkMode(false)
-
-      // Apply light mode to document
-      if (typeof document !== "undefined") {
-        document.documentElement.classList.remove("dark")
-      }
-
-      // Initialize events from localStorage
-      if (typeof window !== "undefined" && window.localStorage) {
-        const savedEvents = localStorage.getItem("calendarEvents")
-        if (savedEvents) {
-          try {
-            // Convert any bg- color classes to text- color classes for backward compatibility
-            const parsedEvents = JSON.parse(savedEvents)
-            if (Array.isArray(parsedEvents)) {
-              const updatedEvents = parsedEvents.map((event) => {
-                let color = event.color || "text-black"
-                if (color.startsWith("bg-")) {
-                  color = color.replace("bg-", "text-")
-                }
-                return {
-                  ...event,
-                  id: event.id || Math.random().toString(36).substring(2, 11),
-                  date: new Date(event.date),
-                  color,
-                }
-              })
-              setEvents(updatedEvents)
-            } else {
-              console.error("Saved events is not an array:", parsedEvents)
-              setEvents([])
-            }
-          } catch (e) {
-            console.error("Error parsing saved events:", e)
-            setEvents([])
-          }
+    const groupIdToDelete = showDeleteConfirmId;
+    setProjectGroups(prevGroups => prevGroups.filter(group => group.id !== groupIdToDelete));
+    setEvents(prevEvents => prevEvents.map(event => {
+        if (event.projectId === groupIdToDelete) {
+            return { ...event, projectId: undefined, color: 'text-black' };
         }
-
-        // Check URL for shared date
-        try {
-          const urlParams = new URLSearchParams(window.location.search)
-          const dateParam = urlParams.get("date")
-          if (dateParam) {
-            const sharedDate = new Date(dateParam)
-            if (!isNaN(sharedDate.getTime())) {
-              setCurrentDate(sharedDate)
-            }
-          }
-        } catch (e) {
-          console.error("Error parsing date from URL:", e)
-        }
-      }
-    } catch (error) {
-      console.error("Error in initialization:", error)
-    }
-    // Initialize selectedExportTags with all project group IDs by default
-    setSelectedExportTags(projectGroups.map((group) => group.id))
-  }, [projectGroups])
-
-  // Check if device is mobile
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    // Initial check
-    checkIfMobile()
-
-    // Add event listener for window resize
-    window.addEventListener("resize", checkIfMobile)
-
-    // Cleanup
-    return () => {
-      window.removeEventListener("resize", checkIfMobile)
-    }
-  }, [])
-
-  // Load holidays for the years needed
-  useEffect(() => {
-    // Get the current view year
-    const viewYear = currentDate.getFullYear()
-
-    // Get current system year
-    const systemYear = new Date().getFullYear()
-
-    // Create a set of years we need to load
-    const yearsToLoad = new Set([viewYear, viewYear - 1, viewYear + 1, systemYear, systemYear + 1])
-
-    // Load holidays for all needed years
-    const allHolidays: Holiday[] = []
-    yearsToLoad.forEach((year) => {
-      allHolidays.push(...getAllHolidays(year))
-    })
-
-    setHolidays(allHolidays)
-  }, [currentDate]) // Re-run when currentDate changes
-
-  // Save events to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("calendarEvents", JSON.stringify(events))
-  }, [events])
-
-  // Add CSS for proper hover effects
-  useEffect(() => {
-    const style = document.createElement("style")
-    style.textContent = `
-.calendar-day {
-  position: relative;
-}
-.calendar-day:hover {
-  background-color: rgba(249, 250, 251, 1) !important;
-}
-
-.dark .calendar-day:hover {
-  background-color: rgba(30, 30, 30, 1) !important;
-}
-
-/* Explicitly remove any styling for day 22 */
-.calendar-day:nth-child(29) .rounded-full {
-  background-color: transparent !important;
-  color: rgba(156, 163, 175, var(--tw-text-opacity)) !important;
-}
-
-/* Print styles */
-@media print {
-  body {
-    background: white !important;
-    color: black !important;
-  }
-  
-  .calendar-container {
-    border: 1px solid #eee !important;
-    box-shadow: none !important;
-  }
-  
-  .calendar-day {
-    border: 1px solid #eee !important;
-  }
-  
-  .calendar-controls, .dark-mode-toggle {
-    display: none !important;
-  }
-}
-
-/* Ensure text doesn't overflow and is properly truncated */
-.calendar-day .truncate {
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-max-width: 100%;
-}
-
-.calendar-day .line-clamp-2 {
-display: -webkit-box;
--webkit-line-clamp: 2;
--webkit-box-orient: vertical;
-overflow: hidden;
-text-overflow: ellipsis;
-max-width: 100%;
-white-space: normal;
-}
-
-.line-clamp-4 {
-display: -webkit-box;
--webkit-line-clamp: 4;
--webkit-box-orient: vertical;
-overflow: hidden;
-text-overflow: ellipsis;
-white-space: normal;
-}
-
-/* Ensure calendar day cells have proper height for multi-line content */
-.calendar-day {
-min-height: 5rem;
-}
-
-/* Make most text uppercase except user input */
-.calendar-day, .font-mono, button, h1, h2, h3, h4, h5, h6, p, span:not(.preserve-case), div:not(.preserve-case), a, label {
-  text-transform: uppercase !important;
-}
-
-/* Add body class to prevent scrolling when modal is open */
-body.modal-open {
-  overflow: hidden;
-}
-
-/* Make sure text is preserved as lowercase in inputs */
-input, textarea {
-  text-transform: none !important;
-}
-
-/* Ensure event text is not cut off */
-.preserve-case {
-  text-transform: none !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  word-break: break-word !important;
-}
-
-/* Highlight active event */
-.event-input-active {
-  background-color: rgba(249, 250, 251, 0.8);
-  border-color: rgba(209, 213, 219, 1);
-}
-
-/* Make event items draggable with visual cue */
-.event-draggable {
-  cursor: grab;
-}
-
-.event-draggable:active {
-  cursor: grabbing;
-}
-
-/* Bold text styling */
-.calendar-day .bold-text {
-  font-weight: bold;
-}
-
-/* Improve drag and drop visual feedback */
-.cursor-grab {
-cursor: grab;
-}
-.cursor-grab:active {
-cursor: grabbing;
-}
-.cursor-grab:hover {
-background-color: rgba(0, 0, 0, 0.05);
-border-radius: 4px;
-}
-
-/* Fix mobile layout */
-@media (max-width: 640px) {
-.calendar-controls {
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.calendar-controls button {
-  font-size: 10px;
-  padding: 4px 6px;
-}
-
-.calendar-controls button svg {
-  width: 10px;
-  height: 10px;
-}
-}
-
-/* Ensure the grid is properly aligned */
-.grid-cols-7 {
-display: grid;
-grid-template-columns: repeat(7, minmax(0, 1fr));
-}
-
-/* Fix empty cells in last row */
-.calendar-day:last-child,
-.calendar-day:nth-last-child(-n+7) {
-border-bottom: 1px solid rgba(229, 231, 235, 1);
-}
-
-.dark .calendar-day:last-child,
-.dark .calendar-day:nth-last-child(-n+7) {
-border-bottom: 1px solid rgba(75, 85, 99, 1);
-}
-
-/* Prevent vertical scrolling */
-body {
-overflow-y: hidden;
-height: 100vh;
-position: fixed;
-width: 100%;
-}
-
-/* Make calendar fit in viewport */
-.calendar-full-container {
-max-height: calc(100vh - 150px);
-}
-
-/* Adjust cell heights to fit in viewport */
-@media (max-height: 700px) {
-.calendar-day {
-  height: 14vw !important;
-  min-height: 3.5rem !important;
-}
-}
-
-/* Ensure month title stays on one line */
-.date-selector-container button {
-white-space: nowrap;
-display: inline-block;
-}
-
-/* Fix navigation arrow highlight issue */
-.nav-arrow {
--webkit-tap-highlight-color: transparent !important;
--webkit-user-select: none !important;
-user-select: none !important;
--webkit-touch-callout: none !important;
-outline: none !important;
-touch-action: manipulation;
-}
-
-button.nav-arrow:active,
-button.nav-arrow:focus {
-background-color: transparent !important;
-outline: none !important;
-box-shadow: none !important;
-}
-
-/* Add more space at the top on mobile */
-@media (max-width: 768px) {
-.calendar-wrapper {
-  padding-top: 24px !important;
-}
-}
-
-/* Fix grid alignment issues - ensure all cells have the same height */
-.grid-cols-7 {
-display: grid;
-grid-template-columns: repeat(7, 1fr);
-width: 100%;
-}
-
-.grid-cols-7 > div {
-min-height: 5rem;
-height: 5rem;
-border-right: 1px solid rgba(229, 231, 235, 1);
-border-bottom: 1px solid rgba(229, 231, 235, 1);
-}
-
-.dark .grid-cols-7 > div {
-border-right: 1px solid rgba(75, 85, 99, 1);
-border-bottom: 1px solid rgba(75, 85, 99, 1);
-}
-
-/* Make the day header row more compact */
-.day-header {
-height: 2rem !important;
-min-height: 2rem !important;
-display: flex;
-align-items: center;
-justify-content: center;
-}
-
-/* Fix empty cells in last row */
-.grid-cols-7 > div:empty {
-border-right: 1px solid rgba(229, 231, 235, 1);
-border-bottom: 1px solid rgba(229, 231, 235, 1);
-min-height: 5rem;
-}
-
-.dark .grid-cols-7 > div:empty {
-border-right: 1px solid rgba(75, 85, 99, 1);
-border-bottom: 1px solid rgba(75, 85, 99, 1);
-}
-
-/* Fix the last row cells */
-.calendar-grid-row {
-display: grid;
-grid-template-columns: repeat(7, 1fr);
-width: 100%;
-}
-
-.calendar-grid-row > div {
-min-height: 5rem;
-border-right: 1px solid rgba(229, 231, 235, 1);
-border-bottom: 1px solid rgba(229, 231, 235, 1);
-}
-
-.dark .calendar-grid-row > div {
-border-right: 1px solid rgba(75, 85, 99, 1);
-border-bottom: 1px solid rgba(75, 85, 99, 1);
-}
-
-/* Completely disable tap highlight on mobile */
-* {
--webkit-tap-highlight-color: rgba(0,0,0,0) !important;
-}
-`
-    document.head.appendChild(style)
-
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [])
-
-  const handlePreviousMonth = () => {
-    setCurrentDate(subMonths(currentDate, 1))
-  }
-
-  const handleNextMonth = () => {
-    setCurrentDate(addMonths(currentDate, 1))
-  }
+        return event;
+    }));
+    setShowDeleteConfirmId(null);
+  };
 
   const handleDayClick = (day: Date) => {
     setSelectedDate(day)
     const existingEvents = events.filter((event) => isSameDay(event.date, day))
     setEventsForSelectedDate(existingEvents)
-    setActiveEventIndex(0) // Reset to first event
+    setActiveEventIndex(0)
+
+    const dayHoliday = holidays.find((holiday) => isSameDay(holiday.date, day));
+    setHolidayForSelectedDate(dayHoliday ? dayHoliday.name : null);
 
     setShowModal(true)
 
-    // If there are no events for this day, automatically create one
     if (existingEvents.length === 0) {
       const newEvent = {
         id: Math.random().toString(36).substring(2, 11),
@@ -600,7 +488,6 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
       }
       setEventsForSelectedDate([newEvent])
 
-      // Focus the input field after a short delay to ensure the DOM is ready
       setTimeout(() => {
         if (firstEventInputRef.current) {
           firstEventInputRef.current.focus()
@@ -610,78 +497,78 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
   }
 
   const handleCancelEdit = () => {
-    setShowModal(false)
-    setSelectedDate(null)
-    setActiveEventIndex(0)
+    setModalCloseState('canceling');
+    setTimeout(() => {
+      setShowModal(false)
+      setSelectedDate(null)
+      setActiveEventIndex(0)
+    }, 150);
   }
 
   const handleSaveAndClose = () => {
-    // Save any changes to the events
-    if (eventsForSelectedDate.length > 0) {
-      // Filter out empty events
-      const nonEmptyEvents = eventsForSelectedDate.filter((event) => event.content.trim() !== "")
+    setModalCloseState('saving');
 
-      // First, remove all events for this day from the main events array
-      const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
+    if (selectedDate) {
+        const nonEmptyEvents = eventsForSelectedDate.filter((event) => event.content.trim() !== "");
+        const eventsToSave = nonEmptyEvents.map(ev => ({ ...ev, date: selectedDate }));
+        const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate));
+        const newEvents = [...otherEvents, ...eventsToSave];
+        setEvents(newEvents);
 
-      // Then add back the updated events for this day
-      const newEvents = [...otherEvents, ...nonEmptyEvents]
-      setEvents(newEvents)
-
-      // Save to localStorage immediately
-      localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
+        try {
+            const eventsToSaveString = JSON.stringify(newEvents, (key, value) => {
+                if (value instanceof Date) { return value.toISOString(); }
+                return value;
+            });
+            localStorage.setItem("calendarEvents", eventsToSaveString);
+        } catch (e) {
+            console.error("Failed to save events during save & close:", e);
+        }
     }
 
-    // Close the modal
-    setShowModal(false)
-    setSelectedDate(null)
-    setActiveEventIndex(0)
+    setModalCloseState('saved');
+
+    setTimeout(() => {
+      setShowModal(false)
+      setSelectedDate(null)
+      setActiveEventIndex(0)
+    }, 400);
   }
 
-  // Update the handleUpdateEventContent function to handle formatted content
   const handleUpdateEventContent = (index: number, content: string, formattedContent?: string) => {
     if (index >= eventsForSelectedDate.length) return
 
     const updatedEvents = [...eventsForSelectedDate]
-    if (formattedContent) {
-      updatedEvents[index] = { ...updatedEvents[index], content, formattedContent }
-    } else {
-      updatedEvents[index] = { ...updatedEvents[index], content }
+    updatedEvents[index] = {
+      ...updatedEvents[index],
+      content,
+      formattedContent
     }
     setEventsForSelectedDate(updatedEvents)
   }
 
-  // Add a function to handle bold formatting
   const handleBoldText = () => {
     if (activeEventIndex >= eventsForSelectedDate.length || !selectedText) return
 
     const event = eventsForSelectedDate[activeEventIndex]
     const content = event.content
 
-    // Get the selected text
     const selectedContent = content.substring(selectedText.start, selectedText.end)
 
-    // Create the formatted content by wrapping selected text in <strong> tags
     const formattedContent =
       content.substring(0, selectedText.start) +
       `<strong>${selectedContent}</strong>` +
       content.substring(selectedText.end)
 
-    // Update the event with both plain content and formatted content
     handleUpdateEventContent(activeEventIndex, content, formattedContent)
 
-    // Reset selection
     setSelectedText(null)
   }
 
-  // Update the handleTextareaKeyDown function to allow Shift+Enter for new lines
-  // and handle Cmd+B or Ctrl+B for bold text
-  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Handle Cmd+B or Ctrl+B for bold text
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, index: number) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "b") {
       e.preventDefault()
 
-      // Get the current selection from the textarea
       const textarea = e.currentTarget
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
@@ -693,14 +580,12 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
       return
     }
 
-    // Only save and close on Enter without shift key (shift+enter allows for line breaks)
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      handleSaveAndClose() // This will save and close the modal
+      handleSaveAndClose()
     }
   }
 
-  // Add a function to track text selection
   const handleTextSelect = (e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget
     setSelectedText({
@@ -709,38 +594,26 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
     })
   }
 
-  // Show reset confirmation modal
-  const handleShowResetConfirm = () => {
+  const handleReset = () => {
     setShowResetConfirm(true)
   }
 
-  // Reset all user data
   const handleResetData = () => {
-    // Clear events
     setEvents([])
-
-    // Reset project groups to original state
     setProjectGroups([{ id: "default", name: "TAG 01", color: "text-black", active: true }])
-
-    // Clear localStorage
     localStorage.removeItem("calendarEvents")
-
-    // Close the confirmation modal
+    localStorage.removeItem("projectGroups")
     setShowResetConfirm(false)
   }
 
-  // Improved drag and drop functionality
-  // Handle drag start for events
-  const handleDragStart = (event: CalendarEvent, e: React.DragEvent) => {
+  const handleDragStart = (event: Event, e: React.DragEvent) => {
     e.stopPropagation()
     setDraggedEvent(event)
 
-    // Set data for drag operation
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = "move"
       e.dataTransfer.setData("text/plain", event.id)
 
-      // Set a ghost drag image
       const ghostElement = document.createElement("div")
       ghostElement.classList.add("event-ghost")
       ghostElement.textContent = event.content
@@ -758,59 +631,34 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
 
       e.dataTransfer.setDragImage(ghostElement, 50, 10)
 
-      // Remove the ghost element after a short delay
       setTimeout(() => {
-        document.body.removeChild(ghostElement)
+        if (document.body.contains(ghostElement)) {
+            document.body.removeChild(ghostElement)
+        }
       }, 100)
     }
   }
 
-  // Handle drag over for calendar days
   const handleDragOver = (day: Date, e: React.DragEvent) => {
     e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
+    if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = "move"
+    }
     setDragOverDate(day)
   }
 
-  // Handle drop for calendar days
-  const handleDrop = (day: Date, e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent, date: Date) => {
     e.preventDefault()
-    e.stopPropagation()
+    if (!draggedEvent) return
 
-    if (draggedEvent) {
-      // Check if the target day already has 2 events
-      const dayEvents = events.filter((event) => isSameDay(event.date, day) && event.id !== draggedEvent.id)
-
-      if (dayEvents.length >= 2) {
-        // If the day already has 2 events, don't allow the drop
-        setDraggedEvent(null)
-        setDragOverDate(null)
-        return
-      }
-
-      // Remove the event from its original date
-      const filteredEvents = events.filter((event) => event.id !== draggedEvent.id)
-
-      // Add it to the new date
-      const updatedEvent = {
-        ...draggedEvent,
-        date: day,
-      }
-
-      setEvents([...filteredEvents, updatedEvent])
-
-      // If the modal is open and showing the target day, update the events for that day
-      if (showModal && selectedDate && isSameDay(selectedDate, day)) {
-        const updatedDayEvents = [...eventsForSelectedDate.filter((e) => e.id !== draggedEvent.id), updatedEvent]
-        setEventsForSelectedDate(updatedDayEvents)
-      }
-    }
-
+    const updatedEvents = events.map((event) =>
+      event.id === draggedEvent.id ? { ...event, date } : event,
+    )
+    setEvents(updatedEvents)
     setDraggedEvent(null)
     setDragOverDate(null)
   }
 
-  // Handle drag end
   const handleDragEnd = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -818,342 +666,98 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
     setDragOverDate(null)
   }
 
-  // Share current month view
   const handleShare = () => {
-    const url = new URL(window.location.href)
-    // Format the date to include year and month for proper sharing
-    const dateString = format(currentDate, "yyyy-MM")
-    url.searchParams.set("date", dateString)
-    setShareUrl(url.toString())
-    setShowShareModal(true)
-  }
+    const url = new URL(window.location.href);
+    const dateString = format(currentDate, "yyyy-MM");
+    url.searchParams.set("date", dateString);
 
-  // Copy share URL to clipboard
-  const copyShareUrl = () => {
-    if (shareInputRef.current) {
-      shareInputRef.current.select()
-      document.execCommand("copy")
-
-      // Show feedback
-      const button = document.getElementById("copy-button")
-      if (button) {
-        const originalText = button.textContent
-        button.textContent = "COPIED!"
-        setTimeout(() => {
-          if (button) button.textContent = originalText
-        }, 2000)
-      }
+    const activeTagIds = projectGroups.filter(g => g.active).map(g => g.id);
+    if (activeTagIds.length > 0 && activeTagIds.length < projectGroups.length) {
+        url.searchParams.set("tags", activeTagIds.join(','));
+    } else {
+        url.searchParams.delete("tags");
     }
-  }
 
-  // Completely new approach for downloading calendar as image
+    const generatedUrl = url.toString();
+    setShareUrl(generatedUrl);
+    setShowShareModal(true);
+
+    setTimeout(() => {
+      if (shareInputRef.current) {
+        shareInputRef.current.focus();
+        shareInputRef.current.select();
+      }
+    }, 100);
+  };
+
   const downloadCalendarAsImage = async () => {
     try {
-      setIsDownloading(true)
+      setIsDownloading(true);
 
-      // Use html2canvas for rendering
-      const html2canvas = await import("html2canvas")
+      const html2canvas = (await import("html2canvas")).default;
 
-      // Create a fresh calendar for screenshot purposes
-      const screenshotDiv = document.createElement("div")
-      screenshotDiv.style.position = "fixed"
-      screenshotDiv.style.left = "-9999px"
-      screenshotDiv.style.top = "0"
-      screenshotDiv.style.width = "900px" // Slightly smaller width for more proportional white space
-      screenshotDiv.style.backgroundColor = "white"
-      screenshotDiv.style.fontFamily = '"JetBrains Mono", monospace'
-      screenshotDiv.style.padding = "80px" // Increased padding for more white space
-      document.body.appendChild(screenshotDiv)
+      const calendarElement = calendarScreenshotContainerRef.current;
 
-      // Create a container for the calendar with border
-      const calendarContainer = document.createElement("div")
-      calendarContainer.style.border = "1px solid #e5e7eb"
-      calendarContainer.style.borderRadius = "8px"
-      calendarContainer.style.overflow = "hidden"
-      calendarContainer.style.width = "100%"
-      calendarContainer.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)"
-      screenshotDiv.appendChild(calendarContainer)
-
-      // Create header with gray background
-      const headerContainer = document.createElement("div")
-      headerContainer.style.backgroundColor = "#f9fafb" // Light gray background matching website
-      headerContainer.style.borderBottom = "1px solid #e5e7eb" // Border at bottom
-      headerContainer.style.padding = "16px"
-      headerContainer.style.position = "relative" // For positioning the title
-
-      // Month/year title
-      const header = document.createElement("div")
-      header.style.textAlign = "center"
-      header.style.fontSize = "24px"
-      header.style.fontWeight = "500"
-      header.style.textTransform = "uppercase"
-      header.textContent = format(currentDate, "MMMM yyyy")
-      headerContainer.appendChild(header)
-
-      calendarContainer.appendChild(headerContainer)
-
-      // Create calendar grid
-      const grid = document.createElement("div")
-      grid.style.display = "grid"
-      grid.style.gridTemplateColumns = "repeat(7, 1fr)"
-      grid.style.borderBottom = "none"
-      grid.style.borderRight = "none"
-      calendarContainer.appendChild(grid)
-
-      // Add day headers - use single letters to match website
-      const singleLetterDays = ["S", "M", "T", "W", "T", "F", "S"]
-      singleLetterDays.forEach((day) => {
-        const dayHeader = document.createElement("div")
-        dayHeader.style.padding = "10px"
-        dayHeader.style.textAlign = "center"
-        dayHeader.style.borderBottom = "1px solid #eee"
-        dayHeader.style.borderRight = "1px solid #eee"
-        dayHeader.style.backgroundColor = "#f9f9f9"
-        dayHeader.style.fontSize = "14px"
-        dayHeader.style.color = "#666"
-        dayHeader.style.textTransform = "uppercase"
-        dayHeader.textContent = day
-        grid.appendChild(dayHeader)
-      })
-
-      // Calculate calendar days
-      const daysInMonth = getDaysInMonth(currentDate)
-      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-      const startingDayOfWeek = getDay(firstDayOfMonth)
-
-      // Add empty cells for days before the first day of the month
-      for (let i = 0; i < startingDayOfWeek; i++) {
-        const emptyCell = document.createElement("div")
-        emptyCell.style.borderBottom = "1px solid #eee"
-        emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "100px"
-        emptyCell.style.backgroundColor = "white"
-        grid.appendChild(emptyCell)
+      if (!calendarElement) {
+        console.error("Calendar element not found for screenshot.");
+        alert("Failed to capture calendar. Element not found.");
+        setIsDownloading(false);
+        return;
       }
 
-      // Add cells for each day of the month
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-        const dayEvents = events.filter(
-          (event) =>
-            isSameDay(event.date, date) &&
-            projectGroups.find(
-              (g) =>
-                g.active &&
-                ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
-            ),
-        )
-        const limitedEvents = dayEvents.slice(0, 2)
-        const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
-        const isWeekend = getDay(date) === 0 || getDay(date) === 6
-
-        const dayCell = document.createElement("div")
-        dayCell.style.position = "relative"
-        dayCell.style.padding = "10px"
-        dayCell.style.borderBottom = "1px solid #eee"
-        dayCell.style.borderRight = "1px solid #eee"
-        dayCell.style.height = "100px" // Slightly smaller cells
-        dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
-
-        // Add day number
-        const dayNumber = document.createElement("div")
-        dayNumber.style.position = "absolute"
-        dayNumber.style.top = "5px"
-        dayNumber.style.right = "10px"
-        dayNumber.style.fontSize = "14px"
-        dayNumber.style.color = "#999"
-        dayNumber.textContent = day.toString()
-        dayCell.appendChild(dayNumber)
-
-        // Add holidays
-        const holidaysContainer = document.createElement("div")
-        holidaysContainer.style.marginTop = "25px"
-        holidaysContainer.style.overflow = "visible"
-
-        dayHolidays.forEach((holiday) => {
-          const holidayDiv = document.createElement("div")
-          holidayDiv.style.fontSize = "10px"
-          holidayDiv.style.textTransform = "uppercase"
-          holidayDiv.style.letterSpacing = "0.05em"
-          holidayDiv.style.color = "#666"
-          holidayDiv.style.marginBottom = "3px"
-          holidayDiv.style.whiteSpace = "normal"
-          holidayDiv.style.wordBreak = "break-word"
-          holidayDiv.textContent = holiday.name.toUpperCase()
-          holidaysContainer.appendChild(holidayDiv)
-        })
-
-        dayCell.appendChild(holidaysContainer)
-
-        // Add events
-        const eventsContainer = document.createElement("div")
-        eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "15px"
-        eventsContainer.style.display = "flex"
-        eventsContainer.style.flexDirection = "column"
-        eventsContainer.style.height = "calc(100% - 25px)"
-
-        // If there's only one event, center it vertically
-        if (limitedEvents.length === 1) {
-          eventsContainer.style.justifyContent = "center"
-        } else {
-          eventsContainer.style.justifyContent = "space-between"
-        }
-
-        if (limitedEvents.length === 1) {
-          // Single event - centered vertically
-          const event = limitedEvents[0]
-          const eventDiv = document.createElement("div")
-          eventDiv.textContent = event.content
-          eventDiv.style.fontSize = "11px"
-          eventDiv.style.fontWeight = "500"
-          eventDiv.style.wordBreak = "break-word"
-          eventDiv.style.overflow = "visible"
-          eventDiv.style.maxWidth = "100%"
-          eventDiv.style.whiteSpace = "normal"
-
-          // Convert Tailwind color classes to CSS colors
-          let color = "#000"
-          if (event?.color?.includes("blue")) color = "#0012ff"
-          if (event?.color?.includes("red")) color = "#ff0000"
-          if (event?.color?.includes("yellow")) color = "#e3e600"
-          if (event?.color?.includes("orange")) color = "#ff7200"
-          if (event?.color?.includes("green")) color = "#1ae100"
-          if (event?.color?.includes("purple")) color = "#a800ff"
-
-          eventDiv.style.color = color
-          eventsContainer.appendChild(eventDiv)
-        } else if (limitedEvents.length === 2) {
-          // Two events with centered divider
-          const topEventContainer = document.createElement("div")
-          topEventContainer.style.flex = "1"
-          topEventContainer.style.display = "flex"
-          topEventContainer.style.alignItems = "flex-start"
-
-          const event1 = limitedEvents[0]
-          const eventDiv1 = document.createElement("div")
-          eventDiv1.textContent = event1.content
-          eventDiv1.style.fontSize = "11px"
-          eventDiv1.style.fontWeight = "500"
-          eventDiv1.style.wordBreak = "break-word"
-          eventDiv1.style.overflow = "visible"
-          eventDiv1.style.maxWidth = "100%"
-          eventDiv1.style.whiteSpace = "normal"
-
-          // Convert Tailwind color classes to CSS colors
-          let color1 = "#000"
-          if (event1?.color?.includes("blue")) color1 = "#0012ff"
-          if (event1?.color?.includes("red")) color1 = "#ff0000"
-          if (event1?.color?.includes("yellow")) color1 = "#e3e600"
-          if (event1?.color?.includes("orange")) color1 = "#ff7200"
-          if (event1?.color?.includes("green")) color1 = "#1ae100"
-          if (event1?.color?.includes("purple")) color1 = "#a800ff"
-
-          eventDiv1.style.color = color1
-          topEventContainer.appendChild(eventDiv1)
-          eventsContainer.appendChild(topEventContainer)
-
-          // Add centered divider only when there are 2 events
-          const divider = document.createElement("div")
-          divider.style.height = "1px"
-          divider.style.backgroundColor = "#eee"
-          divider.style.width = "100%"
-          divider.style.margin = "auto 0"
-          eventsContainer.appendChild(divider)
-
-          // Bottom event
-          const bottomEventContainer = document.createElement("div")
-          bottomEventContainer.style.flex = "1"
-          bottomEventContainer.style.display = "flex"
-          bottomEventContainer.style.alignItems = "flex-end"
-
-          const event2 = limitedEvents[1]
-          const eventDiv2 = document.createElement("div")
-          eventDiv2.textContent = event2.content
-          eventDiv2.style.fontSize = "11px"
-          eventDiv2.style.fontWeight = "500"
-          eventDiv2.style.wordBreak = "break-word"
-          eventDiv2.style.overflow = "visible"
-          eventDiv2.style.maxWidth = "100%"
-          eventDiv2.style.whiteSpace = "normal"
-
-          // Convert Tailwind color classes to CSS colors
-          let color2 = "#000"
-          if (event2?.color?.includes("blue")) color2 = "#0012ff"
-          if (event2?.color?.includes("red")) color2 = "#ff0000"
-          if (event2?.color?.includes("yellow")) color2 = "#e3e600"
-          if (event2?.color?.includes("orange")) color2 = "#ff7200"
-          if (event2?.color?.includes("green")) color2 = "#1ae100"
-          if (event2?.color?.includes("purple")) color2 = "#a800ff"
-
-          eventDiv2.style.color = color2
-          bottomEventContainer.appendChild(eventDiv2)
-          eventsContainer.appendChild(bottomEventContainer)
-        }
-
-        dayCell.appendChild(eventsContainer)
-        grid.appendChild(dayCell)
-      }
-
-      // Calculate how many cells we've added so far
-      const cellsAdded = startingDayOfWeek + daysInMonth
-
-      // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
-      const cellsNeeded = 42 - cellsAdded
-
-      // Add empty cells to fill out the grid to exactly 6 rows
-      for (let i = 0; i < cellsNeeded; i++) {
-        const emptyCell = document.createElement("div")
-        emptyCell.style.borderBottom = "1px solid #eee"
-        emptyCell.style.borderRight = "1px solid #eee"
-        emptyCell.style.height = "100px" // Slightly smaller cells
-        emptyCell.style.backgroundColor = "white"
-        grid.appendChild(emptyCell)
-      }
-
-      // Wait for the DOM to update
-      await new Promise((resolve) => setTimeout(resolve, 100))
-
-      // Render with html2canvas with higher quality settings
-      const canvas = await html2canvas.default(screenshotDiv, {
-        scale: 3, // Higher resolution
+      const canvas = await html2canvas(calendarElement, {
+        scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: "white",
+        backgroundColor: '#ffffff',
         logging: false,
-        imageTimeout: 0, // No timeout for images
-      })
+        imageTimeout: 0,
+        onclone: (clonedDoc) => {
+            // Remove styling from 'today' marker
+            const todayElement = clonedDoc.querySelector('.bg-black.text-white.rounded-full');
+            if (todayElement) {
+                todayElement.classList.remove('bg-black', 'text-white', 'rounded-full', 'w-5', 'h-5', 'flex', 'items-center', 'justify-center', 'text-[9px]');
+                todayElement.classList.add('text-gray-600', 'text-xs', 'sm:text-sm');
+            }
+            // Hide left/right arrow buttons by ID
+            const leftArrow = clonedDoc.getElementById('calendar-nav-left') as HTMLElement | null;
+            const rightArrow = clonedDoc.getElementById('calendar-nav-right') as HTMLElement | null;
+            if (leftArrow) {
+                leftArrow.style.visibility = 'hidden';
+            }
+            if (rightArrow) {
+                rightArrow.style.visibility = 'hidden';
+            }
+        }
+      });
 
-      // Convert to image and download
-      const image = canvas.toDataURL("image/png", 1.0)
-      const link = document.createElement("a")
-      link.href = image
-      link.download = `calendar_${format(currentDate, "MMMM_yyyy")}.png`
-      link.click()
+      const image = canvas.toDataURL("image/png", 1.0);
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `calendar_${format(currentDate, "MMMM_yyyy")}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-      // Clean up
-      document.body.removeChild(screenshotDiv)
     } catch (error) {
-      console.error("Error generating calendar image:", error)
-      alert("Failed to generate image. Please try again.")
+      console.error("Error generating calendar image:", error);
+      alert("Failed to generate image. Please try again.");
     } finally {
-      setIsDownloading(false)
+      setIsDownloading(false);
     }
-  }
+  };
 
-  // Create a temporary printable version of the calendar
   const createPrintableCalendar = () => {
-    // Create a temporary div for the printable calendar
     const printableDiv = document.createElement("div")
     printableDiv.className = "printable-calendar"
     printableDiv.style.position = "absolute"
     printableDiv.style.left = "-9999px"
-    printableDiv.style.width = "1200px" // Fixed width to ensure consistency
+    printableDiv.style.width = "1200px"
     printableDiv.style.backgroundColor = "white"
     printableDiv.style.color = "#333"
     printableDiv.style.fontFamily = '"JetBrains Mono", monospace'
-    printableDiv.style.padding = "40px" // Add padding for more white space
+    printableDiv.style.padding = "40px"
 
-    // Add month/year header
     const header = document.createElement("h2")
     header.textContent = format(currentDate, "MMMM yyyy").toUpperCase()
     header.style.padding = "20px"
@@ -1165,19 +769,17 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
     header.style.color = "#333"
     printableDiv.appendChild(header)
 
-    // Create calendar grid
     const grid = document.createElement("div")
     grid.style.display = "grid"
     grid.style.gridTemplateColumns = "repeat(7, 1fr)"
     grid.style.border = "1px solid #eee"
     grid.style.borderBottom = "none"
     grid.style.borderRight = "none"
-    grid.style.maxWidth = "1100px" // Increased width for more space
-    grid.style.margin = "0 auto" // Center the grid
+    grid.style.maxWidth = "1100px"
+    grid.style.margin = "0 auto"
 
-    // Add day headers
-    const weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-    weekDays.forEach((day) => {
+    const weekDaysPrintable = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    weekDaysPrintable.forEach((day) => {
       const dayHeader = document.createElement("div")
       dayHeader.textContent = day.toUpperCase()
       dayHeader.style.padding = "10px"
@@ -1194,36 +796,29 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
     const startingDayOfWeek = getDay(firstDayOfMonth)
 
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       const emptyCell = document.createElement("div")
       emptyCell.style.borderBottom = "1px solid #eee"
       emptyCell.style.borderRight = "1px solid #eee"
-      emptyCell.style.height = "120px" // Increased height for more space
+      emptyCell.style.height = "120px"
       emptyCell.style.backgroundColor = "white"
       grid.appendChild(emptyCell)
     }
 
-    // Add cells for each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
       const dayEvents = events.filter((event) => isSameDay(event.date, date))
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
       const isWeekend = getDay(date) === 0 || getDay(date) === 6
-      const isMarch21 =
-        currentDate.getMonth() === 2 && // March is month 2 (0-indexed)
-        day === 21 &&
-        currentDate.getFullYear() === 2025
 
       const dayCell = document.createElement("div")
       dayCell.style.position = "relative"
       dayCell.style.padding = "10px"
       dayCell.style.borderBottom = "1px solid #eee"
       dayCell.style.borderRight = "1px solid #eee"
-      dayCell.style.height = "120px" // Increased height for more space
+      dayCell.style.height = "120px"
       dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
 
-      // Add day number
       const dayNumber = document.createElement("div")
       dayNumber.textContent = day.toString()
       dayNumber.style.position = "absolute"
@@ -1231,13 +826,10 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
       dayNumber.style.right = "10px"
       dayNumber.style.fontSize = "14px"
       dayNumber.style.color = "#999"
-
       dayCell.appendChild(dayNumber)
 
-      // Add holidays
       const holidaysContainer = document.createElement("div")
       holidaysContainer.style.marginTop = "25px"
-
       dayHolidays.forEach((holiday) => {
         const holidayDiv = document.createElement("div")
         holidayDiv.textContent = holiday.name.toUpperCase()
@@ -1248,28 +840,40 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
         holidayDiv.style.marginBottom = "3px"
         holidaysContainer.appendChild(holidayDiv)
       })
-
       dayCell.appendChild(holidaysContainer)
 
-      // Add events
       const eventsContainer = document.createElement("div")
       eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "15px"
       eventsContainer.style.display = "flex"
       eventsContainer.style.flexDirection = "column"
-      eventsContainer.style.height = "calc(100% - 25px)"
+      eventsContainer.style.height = "calc(100% - 40px)" // Adjusted height calc slightly
 
-      // If there's only one event, center it vertically
-      if (dayEvents.length === 1) {
-        eventsContainer.style.justifyContent = "center"
-      } else {
-        eventsContainer.style.justifyContent = "space-between"
-      }
+      const activeGroupIds = new Set(projectGroups.filter(g => g.active).map(g => g.id));
+      const activeDayEvents = dayEvents.filter(event => {
+          const eventEffectiveId = event.projectId ?? 'default';
+          return activeGroupIds.has(eventEffectiveId);
+      });
 
-      // Limit to 2 events
-      const limitedEvents = dayEvents.slice(0, 2)
+      const limitedEvents = activeDayEvents.slice(0, 4)
+
+       if (limitedEvents.length === 1) {
+            eventsContainer.style.justifyContent = "center";
+       } else if (limitedEvents.length === 2) {
+            eventsContainer.style.justifyContent = "space-between";
+       } else {
+            eventsContainer.style.justifyContent = "flex-start";
+       }
+
+      const colorMap = colorOptions.reduce((acc, opt) => {
+        const match = opt.bg.match(/#([0-9a-fA-F]{6})/);
+        if (match) {
+            acc[opt.value] = `#${match[1]}`;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
 
       if (limitedEvents.length === 1) {
-        // Single event - centered vertically
         const event = limitedEvents[0]
         const eventDiv = document.createElement("div")
         eventDiv.textContent = event.content
@@ -1280,25 +884,15 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
         eventDiv.style.maxWidth = "100%"
         eventDiv.style.textOverflow = "ellipsis"
         eventDiv.style.whiteSpace = "nowrap"
-
-        // Update the first instance of color mapping in the createPrintableCalendar function for single events
-        // Convert Tailwind color classes to CSS colors
-        let color = "#000"
-        if (event?.color?.includes("blue")) color = "#2563eb"
-        if (event?.color?.includes("red")) color = "#dc2626"
-        if (event?.color?.includes("yellow")) color = "#e3e600"
-        if (event?.color?.includes("orange")) color = "#f97316"
-        if (event?.color?.includes("green")) color = "#16a34a"
-        if (event?.color?.includes("purple")) color = "#9333ea"
-
-        eventDiv.style.color = color
+        eventDiv.style.color = event.color ? colorMap[event.color] || '#000000' : '#000000';
         eventsContainer.appendChild(eventDiv)
+
       } else if (limitedEvents.length === 2) {
-        // Two events with centered divider
         const topEventContainer = document.createElement("div")
         topEventContainer.style.flex = "1"
         topEventContainer.style.display = "flex"
         topEventContainer.style.alignItems = "flex-start"
+        topEventContainer.style.overflow = "hidden";
 
         const event1 = limitedEvents[0]
         const eventDiv1 = document.createElement("div")
@@ -1310,34 +904,21 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
         eventDiv1.style.maxWidth = "100%"
         eventDiv1.style.textOverflow = "ellipsis"
         eventDiv1.style.whiteSpace = "nowrap"
-
-        // Update the color mapping in the createPrintableCalendar function for yellow
-        // Convert Tailwind color classes to CSS colors
-        let color1 = "#000"
-        if (event1?.color?.includes("blue")) color1 = "#2563eb"
-        if (event1?.color?.includes("red")) color1 = "#dc2626"
-        if (event1?.color?.includes("yellow")) color1 = "#e3e600"
-        if (event1?.color?.includes("orange")) color1 = "#f97316"
-        if (event1?.color?.includes("green")) color1 = "#16a34a"
-        if (event1?.color?.includes("purple")) color1 = "#9333ea"
-
-        eventDiv1.style.color = color1
+        eventDiv1.style.color = event1.color ? colorMap[event1.color] || '#000000' : '#000000';
         topEventContainer.appendChild(eventDiv1)
         eventsContainer.appendChild(topEventContainer)
 
-        // Add centered divider only when there are 2 events
         const divider = document.createElement("div")
         divider.style.height = "1px"
         divider.style.backgroundColor = "#eee"
         divider.style.width = "100%"
-        divider.style.margin = "auto 0"
         eventsContainer.appendChild(divider)
 
-        // Bottom event
         const bottomEventContainer = document.createElement("div")
         bottomEventContainer.style.flex = "1"
         bottomEventContainer.style.display = "flex"
         bottomEventContainer.style.alignItems = "flex-end"
+        bottomEventContainer.style.overflow = "hidden";
 
         const event2 = limitedEvents[1]
         const eventDiv2 = document.createElement("div")
@@ -1349,17 +930,7 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
         eventDiv2.style.maxWidth = "100%"
         eventDiv2.style.textOverflow = "ellipsis"
         eventDiv2.style.whiteSpace = "nowrap"
-
-        // Convert Tailwind color classes to CSS colors
-        let color2 = "#000"
-        if (event2?.color?.includes("blue")) color2 = "#2563eb"
-        if (event2?.color?.includes("red")) color2 = "#dc2626"
-        if (event2?.color?.includes("yellow")) color2 = "#e3e600"
-        if (event2?.color?.includes("orange")) color2 = "#f97316"
-        if (event2?.color?.includes("green")) color2 = "#16a34a"
-        if (event2?.color?.includes("purple")) color2 = "#9333ea"
-
-        eventDiv2.style.color = color2
+        eventDiv2.style.color = event2.color ? colorMap[event2.color] || '#000000' : '#000000';
         bottomEventContainer.appendChild(eventDiv2)
         eventsContainer.appendChild(bottomEventContainer)
       }
@@ -1368,13 +939,9 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
       grid.appendChild(dayCell)
     }
 
-    // Calculate how many cells we've added so far
     const cellsAdded = startingDayOfWeek + daysInMonth
-
-    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
     const cellsNeeded = 42 - cellsAdded
 
-    // Add empty cells to fill out the grid to exactly 6 rows
     for (let i = 0; i < cellsNeeded; i++) {
       const emptyCell = document.createElement("div")
       emptyCell.style.borderBottom = "1px solid #eee"
@@ -1386,1084 +953,561 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
 
     printableDiv.appendChild(grid)
 
-    // Add more bottom padding
     const bottomSpace = document.createElement("div")
     bottomSpace.style.height = "40px"
     printableDiv.appendChild(bottomSpace)
 
     document.body.appendChild(printableDiv)
 
-    return printableDiv
-  }
+    return printableDiv;
+  };
 
-  // Replace the exportToIcal function with this improved version that filters by active tags
-  const exportToIcal = () => {
-    // Show tag selection modal
-    setShowExportTagsModal(true)
-  }
+  const handleDragOverEmpty = (e: React.DragEvent) => {
+      e.preventDefault();
+  };
 
-  // Replace the exportToGoogleCalendar function with this improved version
-  const exportToGoogleCalendar = () => {
-    // Show tag selection modal with Google as the target
-    setExportTarget("google")
-    setShowExportTagsModal(true)
-  }
+  const handleDropOnEmpty = (e: React.DragEvent, emptyCellIndex: number) => {
+      e.preventDefault();
+      console.log("Dropped on empty cell index:", emptyCellIndex, " Need to calculate date.");
+      setDraggedEvent(null);
+      setDragOverDate(null);
+  };
 
-  // Add this new function to handle the actual export after tag selection
-  const handleExportWithTags = () => {
-    // Filter events based on selected tags and only include user events (not holidays)
-    const filteredEvents = events.filter((event) =>
-      // Only include events whose projectId is in the selectedExportTags array
-      selectedExportTags.includes(event.projectId || "default"),
-    )
+  const handleUpdateEventColor = (index: number, color: string) => {
+      if (index >= eventsForSelectedDate.length || !selectedDate) return;
 
-    if (filteredEvents.length === 0) {
-      alert("No events to export with the selected tags")
-      setShowExportTagsModal(false)
-      return
-    }
+      const updatedEvents = [...eventsForSelectedDate];
+      updatedEvents[index] = { ...updatedEvents[index], color: color };
+      setEventsForSelectedDate(updatedEvents);
 
-    // Generate iCal content for both export types
-    let icalContent = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//Calendar.diy//Calendar//EN",
-      "CALSCALE:GREGORIAN",
-      "METHOD:PUBLISH",
-    ]
+      setEvents(prevEvents => {
+          const mainEventIndex = prevEvents.findIndex(ev => ev.id === updatedEvents[index].id);
+          if (mainEventIndex !== -1) {
+              const newMainEvents = [...prevEvents];
+              newMainEvents[mainEventIndex] = { ...newMainEvents[mainEventIndex], color: color };
+              return newMainEvents;
+          }
+          return prevEvents;
+      });
+  };
 
-    // Add only user events with selected tags
-    filteredEvents.forEach((event) => {
-      const dateString = format(event.date, "yyyyMMdd")
-      const uid = `${dateString}-${Math.random().toString(36).substring(2, 11)}@calendar.diy`
-      icalContent = [
-        ...icalContent,
-        "BEGIN:VEVENT",
-        `UID:${uid}`,
-        `DTSTAMP:${format(new Date(), "yyyyMMddTHHmmss")}Z`,
-        `DTSTART;VALUE=DATE:${dateString}`,
-        `DTEND;VALUE=DATE:${dateString}`,
-        `SUMMARY:${event.content}`,
-        "END:VEVENT",
-      ]
-    })
 
-    icalContent.push("END:VCALENDAR")
+  const handleAddEvent = () => {
+    if (!selectedDate) return;
+    if (eventsForSelectedDate.length >= 4) return;
 
-    // Create and download the file
-    const blob = new Blob([icalContent.join("\r\n")], { type: "text/calendar" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-
-    // Set different filenames based on export target
-    if (exportTarget === "ical") {
-      link.download = "calendar_export.ics"
-    } else {
-      link.download = "google_calendar_import.ics"
-    }
-
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    // If this was a Google Calendar export, show instructions after download
-    if (exportTarget === "google") {
-      setShowExportTagsModal(false)
-      setShowGoogleInstructionsModal(true)
-    } else {
-      // Close the modal for iCal export
-      setShowExportTagsModal(false)
-    }
-  }
-
-  // Generate calendar grid
-  const renderCalendar = () => {
-    // Ensure events is defined and is an array
-    if (!Array.isArray(events)) {
-      console.error("Events is not an array:", events)
-      return []
-    }
-
-    const daysInMonth = getDaysInMonth(currentDate)
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    const startingDayOfWeek = getDay(firstDayOfMonth)
-
-    const days = []
-
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(
-        <div
-          key={`empty-${i}`}
-          className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
-          onDragOver={(e) => e.preventDefault()}
-        ></div>,
-      )
-    }
-
-    // Add cells for each day of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      const dayEvents = events.filter(
-        (event) =>
-          isSameDay(event.date, date) &&
-          projectGroups.find(
-            (g) =>
-              g.active &&
-              ((event.projectId && g.id === event.projectId) || (!event.projectId && g.color === event.color)),
-          ),
-      )
-      // Limit to 2 events per day
-      const limitedEvents = dayEvents.slice(0, 2)
-      const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
-      const isWeekend = getDay(date) === 0 || getDay(date) === 6
-      const isCurrentDay = isToday(date)
-      const isDragOver = dragOverDate && isSameDay(dragOverDate, date)
-
-      days.push(
-        <div
-          key={day}
-          onClick={() => handleDayClick(date)}
-          onDragOver={(e) => handleDragOver(date, e)}
-          onDrop={(e) => handleDrop(date, e)}
-          className={cn(
-            "calendar-day relative h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800 p-1 md:p-2 pt-0.5 md:pt-1",
-            isWeekend ? "bg-gray-50/30 dark:bg-gray-900/30" : "",
-            isCurrentDay ? "bg-gray-50 dark:bg-gray-900/50" : "",
-            isDragOver ? "bg-gray-100 dark:bg-gray-800" : "",
-          )}
-        >
-          <div
-            className={cn(
-              "absolute right-1 md:right-2 top-0.5 flex h-4 md:h-5 w-4 md:w-5 items-center justify-center rounded-full font-mono text-[10px] md:text-xs",
-              isCurrentDay ? "bg-gray-200 dark:bg-gray-700" : "text-gray-400 dark:text-gray-500",
-            )}
-          >
-            {day}
-          </div>
-
-          <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
-            {dayHolidays.map((holiday, index) => (
-              <div
-                key={`holiday-${index}`}
-                className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 dark:text-gray-400 whitespace-normal break-words"
-              >
-                {holiday.name.toUpperCase()}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-0 pt-0 overflow-visible flex flex-col h-[calc(100%-12px)] justify-center">
-            {limitedEvents.length === 1 ? (
-              // If there's only one event, center it vertically
-              <div
-                className="flex-1 flex items-center event-draggable"
-                draggable
-                onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
-                onDragEnd={handleDragEnd}
-              >
-                <span
-                  className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-4 break-words"
-                  style={{
-                    color: getExactColorHex(limitedEvents[0].color),
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
-                  }}
-                ></span>
-              </div>
-            ) : (
-              // If there are two events, space them with the divider centered
-              <div className="flex flex-col h-full">
-                <div
-                  className="flex-1 flex items-start event-draggable"
-                  draggable
-                  onDragStart={(e) => handleDragStart(limitedEvents[0], e)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <span
-                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
-                    style={{
-                      color: getExactColorHex(limitedEvents[0]?.color),
-                    }}
-                    dangerouslySetInnerHTML={{
-                      __html: limitedEvents[0] ? limitedEvents[0].formattedContent || limitedEvents[0].content : "",
-                    }}
-                  ></span>
-                </div>
-
-                {/* Only show divider when there are two entries */}
-                {limitedEvents.length === 2 && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 w-full my-auto"></div>
-                )}
-
-                <div
-                  className="flex-1 flex items-end event-draggable"
-                  draggable
-                  onDragStart={(e) => handleDragStart(limitedEvents[1], e)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <span
-                    className="font-mono text-[10px] md:text-[10px] font-medium cursor-move preserve-case hover:underline max-w-full block line-clamp-2 break-words"
-                    style={{
-                      color: getExactColorHex(limitedEvents[1]?.color),
-                    }}
-                    dangerouslySetInnerHTML={{
-                      __html: limitedEvents[1] ? limitedEvents[1].formattedContent || limitedEvents[1].content : "",
-                    }}
-                  ></span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>,
-      )
-    }
-
-    // Calculate how many cells we've added so far
-    const totalCellsAdded = startingDayOfWeek + daysInMonth
-
-    // Calculate how many more cells we need to add to reach 42 cells (6 rows x 7 columns)
-    const cellsNeeded = 42 - totalCellsAdded
-
-    // Always add empty cells to complete the grid to exactly 6 rows
-    for (let i = 0; i < cellsNeeded; i++) {
-      days.push(
-        <div
-          key={`empty-end-${i}`}
-          className="h-16 md:h-20 border-b border-r border-gray-100 dark:border-gray-800"
-          onDragOver={(e) => e.preventDefault()}
-        ></div>,
-      )
-    }
-
-    return days
-  }
-
-  // Add this helper function to get the exact hex color
-  const getExactColorHex = (colorClass: string | undefined) => {
-    if (!colorClass) return "#000000" // Default to black
-
-    const colorOption = colorOptions.find((c) => c.value === colorClass)
-    if (colorOption) {
-      return colorOption.hex
-    }
-
-    // Fallback mapping for legacy color classes
-    if (colorClass.includes("blue")) return "#0012ff"
-    if (colorClass.includes("red")) return "#ff0000"
-    if (colorClass.includes("yellow")) return "#e3e600"
-    if (colorClass.includes("green")) return "#1ae100"
-    if (colorClass.includes("purple")) return "#a800ff"
-    if (colorClass.includes("orange")) return "#ff7200"
-
-    return "#000000" // Default to black
-  }
-
-  const weekDays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
-  const weekDaysMobile = ["S", "M", "T", "W", "T", "F", "S"]
-
-  // Add a function to delete an event
-  const handleDeleteEvent = (eventId: string) => {
-    // Remove from current day's events
-    const updatedDayEvents = eventsForSelectedDate.filter((event) => event.id !== eventId)
-    setEventsForSelectedDate(updatedDayEvents)
-
-    // Remove from global events
-    const updatedEvents = events.filter((event) => event.id !== eventId)
-    setEvents(updatedEvents)
-
-    // Save to localStorage immediately
-    localStorage.setItem("calendarEvents", JSON.stringify(updatedEvents))
-  }
-
-  // Add a new function to swap the order of events for a day
-  const handleSwapEvents = () => {
-    if (eventsForSelectedDate.length !== 2) return
-
-    // Create a new array with swapped events
-    const swappedEvents = [eventsForSelectedDate[1], eventsForSelectedDate[0]]
-
-    // Update the events for selected date
-    setEventsForSelectedDate(swappedEvents)
-
-    // Update the global events array by removing all events for this day and adding the swapped ones
-    const otherEvents = events.filter((event) => !isSameDay(event.date, selectedDate as Date))
-    const newEvents = [...otherEvents, ...swappedEvents]
-    setEvents(newEvents)
-
-    // Save to localStorage immediately
-    localStorage.setItem("calendarEvents", JSON.stringify(newEvents))
-  }
-
-  // Update event color
-  const handleUpdateEventColor = (index: number, color: string, projectId: string) => {
-    if (index >= eventsForSelectedDate.length) return
-
-    const updatedEvents = [...eventsForSelectedDate]
-    updatedEvents[index] = { ...updatedEvents[index], color, projectId }
-    setEventsForSelectedDate(updatedEvents)
-  }
-
-  const formatDate = (date: Date | null) => {
-    if (!date) return ""
-    return format(date, "MMMM d, yyyy").toUpperCase()
-  }
-
-  // Add a new event
-  const handleAddNewEvent = () => {
-    if (!selectedDate || eventsForSelectedDate.length >= 2) return
-
-    // Create a new empty event
-    const newEvent = {
+    const newEvent: Event = {
       id: Math.random().toString(36).substring(2, 11),
       date: selectedDate,
       content: "",
       color: "text-black",
       projectId: "default",
     }
+    setEventsForSelectedDate((prev) => [...prev, newEvent])
+    setNewlyAddedEventId(newEvent.id);
 
-    // Add to the events for this day
-    const updatedEvents = [...eventsForSelectedDate, newEvent]
-    setEventsForSelectedDate(updatedEvents)
-
-    // Set the active index to the new event
-    const newIndex = updatedEvents.length - 1
-    setActiveEventIndex(newIndex)
-
-    // Focus the new event input after a short delay
     setTimeout(() => {
-      if (newIndex === 0 && firstEventInputRef.current) {
-        firstEventInputRef.current.focus()
-      } else {
-        const textareas = document.querySelectorAll("textarea")
-        if (textareas.length > newIndex) {
-          textareas[newIndex].focus()
-        }
-      }
-    }, 100)
+       const textareas = eventModalRef.current?.querySelectorAll('textarea');
+       if(textareas && textareas.length > 0) {
+           textareas[textareas.length - 1].focus();
+       }
+    }, 50)
+
   }
 
-  // Add keyboard event handlers for left and right arrow keys
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle keyboard events when no modal is open
-      if (showModal || showResetConfirm || showShareModal || showDateSelector) {
-        return
-      }
-
-      // Left arrow key - previous month
-      if (e.key === "ArrowLeft") {
-        setCurrentDate(subMonths(currentDate, 1))
-      }
-
-      // Right arrow key - next month
-      if (e.key === "ArrowRight") {
-        setCurrentDate(addMonths(currentDate, 1))
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown)
-    }
-  }, [showModal, showResetConfirm, showShareModal, showDateSelector, currentDate])
-
-  // Update the event modal to close when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showModal && eventModalRef.current && !eventModalRef.current.contains(event.target as Node)) {
-        handleSaveAndClose() // Save changes before closing
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [showModal, eventsForSelectedDate])
-
-  // Update the reset confirmation modal to close when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showResetConfirm && resetModalRef.current && !resetModalRef.current.contains(event.target as Node)) {
-        setShowResetConfirm(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
+    if (showResetConfirm) {
+      setTimeout(() => {
+        cancelResetButtonRef.current?.focus();
+      }, 0);
     }
   }, [showResetConfirm])
 
-  // Update the share modal to close when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showShareModal && shareModalRef.current && !shareModalRef.current.contains(event.target as Node)) {
-        setShowShareModal(false)
-      }
+    if (newlyAddedEventId) {
+      const timer = setTimeout(() => {
+        setNewlyAddedEventId(null);
+      }, 50);
+      return () => clearTimeout(timer);
     }
+  }, [newlyAddedEventId]);
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [showShareModal])
-
-  // Focus the appropriate event input when modal opens
   useEffect(() => {
-    if (showModal && eventsForSelectedDate.length > 0) {
-      setTimeout(() => {
-        if (activeEventIndex === 0 && firstEventInputRef.current) {
-          firstEventInputRef.current.focus()
-        } else {
-          const textareas = document.querySelectorAll("textarea")
-          if (textareas.length > activeEventIndex) {
-            textareas[activeEventIndex].focus()
-          }
+    if (!showModal) {
+      const timer = setTimeout(() => {
+        setModalCloseState('idle');
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [showModal]);
+
+  const renderCalendar = useCallback(() => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+
+    const activeGroupIds = new Set(projectGroups.filter(g => g.active).map(g => g.id));
+
+    const days = [];
+    let dayIterator = startDate;
+    let cellIndex = 0;
+
+    while (dayIterator <= endDate) {
+      const currentDateInLoop = dayIterator;
+      const isCurrentMonth = isSameMonth(currentDateInLoop, monthStart);
+      const isTodayDate = isToday(currentDateInLoop);
+      const isWeekend = getDay(currentDateInLoop) === 0 || getDay(currentDateInLoop) === 6;
+
+      const dayEvents = events.filter(
+        (event) => {
+          const eventEffectiveId = event.projectId ?? 'default';
+          return isSameDay(event.date, currentDateInLoop) && activeGroupIds.has(eventEffectiveId);
         }
-      }, 100)
+      );
+      const limitedEvents = dayEvents.slice(0, 4);
+      const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, currentDateInLoop));
+
+      const rowIndex = Math.floor(cellIndex / 7);
+      const colIndex = cellIndex % 7;
+      const borderClasses = cn(
+        'border-gray-300',
+        rowIndex < 5 ? 'border-b' : '',
+        colIndex < 6 ? 'border-r' : ''
+      );
+
+      days.push(
+        <div
+          key={currentDateInLoop.toString()}
+          className={cn(
+            'h-16 sm:h-20 md:h-24 transition-colors duration-100 ease-in-out bg-white overflow-hidden', // Added overflow-hidden
+            'flex flex-col p-0.5 sm:p-1.5 min-w-0', // Reduced padding, added min-w-0
+            borderClasses,
+            isCurrentMonth ? 'hover:bg-gray-100' : '', // Ensure all current month days, including today, turn gray on hover
+            !isCurrentMonth ? 'bg-gray-50' : '',
+            isDragging ? 'cursor-grabbing' : (isCurrentMonth ? 'cursor-pointer' : 'cursor-default')
+          )}
+          onClick={() => isCurrentMonth && handleDayClick(currentDateInLoop)}
+          onDragOver={(e) => isCurrentMonth && handleDragOver(currentDateInLoop, e)}
+          onDrop={(e) => isCurrentMonth && handleDrop(e, currentDateInLoop)}
+        >
+          {isCurrentMonth && (
+            <div className="flex justify-between items-start w-full min-h-[18px]">
+              <div className="text-[9px] uppercase tracking-wider font-mono text-gray-500 pr-1"> {/* Removed truncation/shrinking */}
+                 {dayHolidays.length > 0 ? dayHolidays[0].name : <span>&nbsp;</span>}
+              </div>
+
+              <div className={cn(
+                "text-xs sm:text-sm font-medium",
+                isTodayDate
+                  ? "bg-gray-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-[9px]"
+                  : "text-gray-600"
+              )}>
+                {format(currentDateInLoop, 'd')}
+              </div>
+            </div>
+          )}
+
+          {isCurrentMonth && limitedEvents.length > 0 && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {limitedEvents.map((event, index) => {
+                let eventTextColor = 'text-black';
+                if (event.projectId) {
+                   const group = projectGroups.find(g => g.id === event.projectId);
+                   if (group) {
+                      eventTextColor = group.color;
+                   }
+                } else {
+                   eventTextColor = 'text-black';
+                }
+
+                return (
+                  <div
+                    key={event.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(event, e)}
+                    className={cn(
+                      'block text-[9px] sm:text-[10px] font-medium rounded-[2px] cursor-grab',
+                      eventTextColor,
+                       event.projectId && projectGroups.find(g => g.id === event.projectId)
+                          ? `${getBgFromTextColor(eventTextColor)}/15`
+                          : ''
+                    )}
+                    title={event.content}
+                  >
+                    <div className="flex items-start">
+                      <span className="mr-1">▪</span>
+                      <span className={cn(
+                         'break-words overflow-hidden',
+                         limitedEvents.length === 1 ? 'line-clamp-4' :
+                         limitedEvents.length === 2 ? 'line-clamp-2' :
+                         'line-clamp-1'
+                       )}>
+                        {event.content}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+      dayIterator = addDays(dayIterator, 1);
+      cellIndex++;
     }
-  }, [showModal, eventsForSelectedDate, activeEventIndex])
 
-  // Export Tags Selection Modal
+    const cellsGenerated = cellIndex;
+    const cellsNeeded = 42 - cellsGenerated
+
+    for (let i = 0; i < cellsNeeded; i++) {
+      const totalCellIndex = cellsGenerated + i;
+      const rowIndex = Math.floor(totalCellIndex / 7);
+      const colIndex = totalCellIndex % 7;
+
+      const borderClasses = cn(
+        'border-gray-300',
+        rowIndex < 5 ? 'border-b' : '',
+        colIndex < 6 ? 'border-r' : ''
+      );
+
+      days.push(
+        <div
+          key={`empty-end-${i}`}
+          className={cn(
+            'h-16 sm:h-20 md:h-24 bg-white', // Match reverted base height
+            borderClasses
+            )}
+          onDragOver={handleDragOverEmpty}
+          onDrop={(e) => handleDropOnEmpty(e, i)}
+        ></div>,
+      );
+    }
+
+    return days;
+  }, [currentDate, events, projectGroups, holidays, isDragging, handleDragStart, handleDayClick, handleDrop, handleDragOver]);
+
   return (
-    <div
-      className="flex flex-col space-y-4 min-h-screen max-h-screen overflow-hidden calendar-wrapper"
-      style={{ paddingTop: isMobile ? "24px" : "0" }}
-    >
-      {/* Calendar Controls - Now with login buttons to the left of reset button */}
-      <div className="calendar-controls flex flex-wrap items-center justify-between gap-1 p-0 mb-1 pt-4 sm:pt-0">
-        {/* Login buttons and Reset button on the left */}
-        <div className="flex items-center gap-2">
-          <LoginButtons />
-          <button
-            onClick={handleShowResetConfirm}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Reset Calendar Data"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
+    <div className={cn(
+      "flex flex-col h-full max-w-5xl mx-auto font-mono pt-8 pb-4",
+      "bg-white"
+    )}>
+      {/* Top Buttons */}
+        <div className="mx-1 sm:mx-6 md:mx-12">
+          <div className="flex flex-row flex-nowrap justify-between w-full mb-4 items-center gap-2 sm:gap-4">
+            {/* Right Aligned Button Group */}
+            <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center">
+              <button
+                onClick={downloadCalendarAsImage}
+                disabled={isDownloading}
+                className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDownloading ? '...' : <Camera size={14} />} {isDownloading ? 'GENERATING' : 'SCREENSHOT'}
+              </button>
+              <div className="relative">
+                <button
+                    onClick={() => {
+                        setSelectedExportTags(projectGroups.map(g => g.id));
+                        setShowExportOptionsModal(true);
+                    }}
+                    className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+                >
+                  <CalendarIcon size={14} /> EXPORT
+                </button>
+              </div>
+              <button
+                onClick={handleShare}
+                className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+              >
+                <Link size={14} /> SHARE
+              </button>
+            </div>
+            <button
+              onClick={handleReset}
+              className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
             >
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <span>RESET</span>
+              <RefreshCcw size={14} /> RESET
+            </button>
+          </div>
+        </div>
+
+
+      {/* Calendar Container */}
+      <div ref={calendarScreenshotContainerRef} className="bg-white border border-gray-300 shadow-sm mx-1 sm:mx-6 md:mx-12 overflow-hidden rounded-sm">
+        {/* Calendar Header */}
+        <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 bg-gray-50 border-b border-gray-300">
+          <button
+            id="calendar-nav-left" // Correct ID for left arrow
+            onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+            className="text-sm text-gray-400 hover:bg-gray-100 active:bg-gray-200 p-1 sm:p-1.5 rounded-sm w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center transition-colors"
+          >
+            <ChevronLeft size={14} />
+          </button>
+
+          <div className="relative date-selector-container">
+            <button
+              onClick={() => setShowDateSelector(!showDateSelector)}
+              className="text-base sm:text-lg font-bold font-mono tracking-tight hover:cursor-pointer hover:underline text-black"
+            >
+            <div className="text-xl font-mono tracking-tight text-center">
+              {format(currentDate, "MMMM yyyy").toUpperCase()}
+            </div>
+            </button>
+
+            {showDateSelector && (
+              <div ref={dateSelectorRef} className="absolute z-50 mt-2 left-1/2 -translate-x-1/2 bg-white border border-gray-200 shadow-lg rounded-sm w-64">
+                <div className="p-2 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentDate(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1));
+                      }}
+                      className="p-1 hover:bg-gray-100 rounded-sm text-gray-600"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="text-sm font-mono text-gray-700">{currentDate.getFullYear()}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1));
+                      }}
+                      className="p-1 hover:bg-gray-100 rounded-sm text-gray-600"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1 p-2">
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const date = new Date(currentDate.getFullYear(), i, 1);
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setCurrentDate(new Date(currentDate.getFullYear(), i, 1));
+                          setShowDateSelector(false);
+                        }}
+                        className={`p-1 text-xs font-mono rounded-sm ${
+                          currentDate.getMonth() === i ? 'bg-black text-white hover:bg-black' : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        {format(date, 'MMM').toUpperCase()}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            id="calendar-nav-right" // ID for right arrow
+            onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+            className="text-sm text-gray-400 hover:bg-gray-100 active:bg-gray-200 p-1 sm:p-1.5 rounded-sm w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center transition-colors"
+          >
+            <ChevronRight size={14} />
           </button>
         </div>
 
-        {/* Other buttons on the right */}
-        <div className="flex flex-wrap items-center gap-1">
-          <button
-            onClick={downloadCalendarAsImage}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Download as Image"
-            disabled={isDownloading}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-            >
-              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-              <circle cx="12" cy="13" r="3" />
-            </svg>
-            <span>SCREENSHOT</span>
-          </button>
-          <button
-            onClick={exportToIcal}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Export to iCal"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-            >
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span>ICAL</span>
-          </button>
-          <button
-            onClick={exportToGoogleCalendar}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Export to Google Calendar"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-            >
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <span>GOOGLE</span>
-          </button>
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1 text-[10px] sm:text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            title="Share Calendar"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-2.5 w-2.5 sm:h-3 sm:w-3"
-            >
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-            </svg>
-            <span>SHARE</span>
-          </button>
+        <div className="w-full" style={{ textTransform: 'none' }}>
+          <div ref={calendarContentRef} style={{ textTransform: 'none' }}>
+            <div className="grid grid-cols-7 bg-gray-50">
+              {weekDays.map((day, index) => (
+                <div
+                  key={day}
+                  className={`py-1 sm:py-1.5 md:py-2 text-center font-mono text-[10px] sm:text-[11px] md:text-xs tracking-wider border-b border-gray-300 text-gray-600 ${
+                    index < weekDays.length - 1 ? 'border-r border-gray-300' : ''
+                  }`}
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7" style={{ textTransform: 'none' }}>
+              {renderCalendar()}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div
-        ref={fullCalendarRef}
-        className="calendar-full-container overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
-      >
-        <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-2 md:p-4">
-          <div className="grid grid-cols-3 items-center">
-            <div className="flex justify-start">
-              <button
-                onClick={handlePreviousMonth}
-                tabIndex={-1}
-                className="nav-arrow flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
-                style={{ WebkitTapHighlightColor: "transparent" }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3 w-3 md:h-4 md:w-4"
-                >
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              </button>
+      {/* Project Groups Panel */}
+      <div className="w-full flex justify-center px-2 sm:px-0">
+         <ProjectGroups
+            groups={projectGroups}
+            onToggleGroup={handleToggleProjectGroup}
+            showDialog={showAddDialog}
+            editingGroupId={editingGroupId}
+            dialogName={newProjectName}
+            dialogColor={newProjectColor}
+            setDialogName={(name) => setNewProjectName(name)}
+            setDialogColor={(color) => setNewProjectColor(color)}
+            onCloseDialog={handleCloseDialog}
+            onSaveDialog={handleSaveDialog}
+            onRequestDelete={handleRequestDelete}
+            onShowAddRequest={handleShowAddDialog}
+            onShowEditRequest={handleShowEditDialog}
+            dialogError={dialogError}
+            colorOptions={colorOptions}
+            getBgFromTextColor={getBgFromTextColor}
+            getTextForBg={getTextForBg}
+         />
+      </div>
+
+      {/* Event Modal */}
+      {selectedDate && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && modalCloseState === 'idle') {
+              handleCancelEdit();
+            }
+          }}
+        >
+           <div ref={eventModalRef} className="bg-white rounded-sm w-full max-w-md">
+            {/* Modal Header - Removed border */} 
+            <div className="p-6"> {/* Removed border-b border-gray-200 */} 
+              <div className="flex items-center justify-center"> 
+                <div> 
+                  <h3 className="text-lg font-mono">EDIT {format(selectedDate, "MMMM d, yyyy").toUpperCase()}</h3>
+                  {holidayForSelectedDate && (
+                    <p className="text-xs text-gray-500 font-mono mt-1 text-center">{holidayForSelectedDate.toUpperCase()}</p>)}
+                </div>
+              </div>
             </div>
 
-            <div className="flex justify-center">
-              <div className="relative date-selector-container">
-                <button
-                  onClick={() => setShowDateSelector(!showDateSelector)}
-                  className="font-mono text-lg md:text-xl tracking-tight uppercase text-center dark:text-white focus:outline-none px-2 py-1 hover:underline whitespace-nowrap"
+            {/* Modal Content */} 
+            <div className="p-6"> {/* Removed border-t */} 
+              {eventsForSelectedDate.map((event, index) => (
+                <div
+                  key={event.id}
+                  className={cn(
+                    "mb-6 last:mb-0 transition-all duration-300 ease-in-out overflow-hidden",
+                    event.id === newlyAddedEventId
+                      ? "opacity-0 max-h-0"
+                      : "opacity-100 max-h-[200px]"
+                  )}
                 >
-                  {format(currentDate, "MMMM yyyy").toUpperCase()}
-                </button>
+                  <div className="relative">
+                    <textarea
+                      ref={index === 0 ? firstEventInputRef : eventInputRef}
+                      value={event.content}
+                      onChange={(e) => handleUpdateEventContent(index, e.target.value)}
+                      onKeyDown={(e) => handleTextareaKeyDown(e, index)}
+                      onSelect={(e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => handleTextSelect(e)}
+                      placeholder="event"
+                      className={`w-full p-3 border rounded-sm ${getTextColorClass(event.color)} focus:outline-none focus:border-black font-mono resize-none h-[72px] pr-8`}
+                      style={{ textTransform: 'none', fontFamily: 'inherit' }}
+                    />
+                  </div>
 
-                {showDateSelector && (
+                  {/* Tag Selection and Delete Button Container with transition */}
                   <div
-                    ref={dateSelectorRef}
-                    className="absolute z-10 mt-1 w-56 origin-top-center left-1/2 transform -translate-x-1/2 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="menu-button"
+                    className={cn(
+                      "flex flex-wrap gap-2 items-center transition-all duration-300 ease-in-out overflow-hidden",
+                      event.content.trim() !== ''
+                        ? "opacity-100 max-h-40 mb-2"
+                        : "opacity-0 max-h-0 mb-0 pointer-events-none"
+                    )}
                   >
-                    <div className="py-1" role="none">
-                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                        <div className="grid grid-cols-1 gap-1">
-                          <select
-                            value={currentDate.getFullYear()}
-                            onChange={(e) => {
-                              setCurrentDate(new Date(Number.parseInt(e.target.value), currentDate.getMonth(), 1))
-                            }}
-                            className="p-1 text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded focus:ring-black focus:border-black"
-                          >
-                            {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
-                              <option key={year} value={year}>
-                                {year}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <button
-                          onClick={() => setShowDateSelector(false)}
-                          className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-4 w-4"
-                          >
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1 p-2">
-                        {Array.from({ length: 12 }, (_, i) => i).map((month) => (
+                    <div className="flex-1 flex flex-wrap gap-2">
+                      {projectGroups.map((group) => {
+                        const currentEvent = eventsForSelectedDate[index];
+                        const currentProjectId = currentEvent?.projectId ?? 'default';
+
+                        return (
                           <button
-                            key={month}
+                            key={group.id}
                             onClick={() => {
-                              setCurrentDate(new Date(currentDate.getFullYear(), month, 1))
-                              // Don't close the dropdown
+                              const clickedGroupId = group.id;
+                              if (clickedGroupId !== currentProjectId) {
+                                const updatedEvents = [...eventsForSelectedDate];
+                                if (currentEvent) {
+                                    const newProjectId = clickedGroupId === 'default' ? undefined : clickedGroupId;
+                                    updatedEvents[index] = {
+                                        ...currentEvent,
+                                        projectId: newProjectId,
+                                        color: group.color
+                                    };
+                                    setEventsForSelectedDate(updatedEvents);
+                                } else {
+                                   console.error("Current event is undefined, cannot update tag.");
+                                }
+                              }
                             }}
-                            className={`p-1 text-xs rounded ${
-                              currentDate.getMonth() === month
-                                ? "bg-gray-200 dark:bg-gray-700 font-bold"
-                                : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                            }`}
+                            className={cn(
+                              `px-2 py-1.5 text-xs rounded-sm font-mono flex items-center gap-1 transition-all duration-150 ease-in-out`,
+                              getBgFromTextColor(group.color),
+                              'text-white'
+                            )}
                           >
-                            {format(new Date(2000, month, 1), "MMM")}
+                            <Tag size={14} />
+                            {group.name}
+                            {currentProjectId === group.id && <Check size={14} className="ml-1" />}
                           </button>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        if (eventsForSelectedDate.length > 1) {
+                          const updatedEvents = eventsForSelectedDate.filter((_, i) => i !== index);
+                          setEventsForSelectedDate(updatedEvents);
+                        } else {
+                          const updatedEvents = [...eventsForSelectedDate];
+                          updatedEvents[index].content = ""; 
+                          setEventsForSelectedDate(updatedEvents);
+                        }
+                        setTimeout(() => firstEventInputRef.current?.focus(), 0); 
+                      }}
+                      className="text-red-600 hover:text-red-600 hover:underline self-start bg-transparent focus:outline-none border-none hover:bg-transparent"
+                    >
+                      DELETE
+                    </Button>
                   </div>
-                )}
-              </div>
+                </div>
+              ))}
             </div>
 
-            <div className="flex justify-end">
-              <button
-                onClick={handleNextMonth}
-                tabIndex={-1}
-                className="nav-arrow flex h-6 w-6 md:h-7 md:w-7 items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none active:outline-none"
-                style={{ WebkitTapHighlightColor: "transparent" }}
+            {/* Modal Footer - Stacked layout */}
+            <div className="p-0">
+              <Button
+                variant="ghost"
+                onClick={handleAddEvent}
+                disabled={modalCloseState !== 'idle' || eventsForSelectedDate.length >= 4}
+                className="w-[calc(100%-3rem)] mx-6 mb-4 border border-dotted border-gray-300 text-gray-500 hover:bg-gray-100 flex items-center justify-center py-2 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3 w-3 md:h-4 md:w-4"
-                >
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
+                ADD ANOTHER EVENT
+              </Button>
             </div>
-          </div>
-        </div>
-
-        <div className="flex">
-          <div className="flex-1">
-            <div className="w-full">
-              <div ref={calendarContentRef} className="grid grid-cols-7">
-                {(isMobile ? weekDaysMobile : weekDaysMobile).map((day) => (
-                  <div
-                    key={day}
-                    className="day-header border-b border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1 text-center font-mono text-[10px] md:text-xs font-light tracking-wider text-gray-500 dark:text-gray-400"
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7">{renderCalendar()}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Project groups */}
-      <ProjectGroups
-        groups={projectGroups}
-        onToggleGroup={handleToggleProjectGroup}
-        onAddGroup={handleAddProjectGroup}
-        onRemoveGroup={handleRemoveProjectGroup}
-        onEditGroup={handleEditProjectGroup}
-        className="mt-4 flex justify-center" // Changed from mt-12 to mt-auto and added pt-8
-      />
-
-      {/* Event Modal - Updated to match the group dialog style */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={eventModalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
-          >
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <div className="w-4"></div> {/* Spacer for centering */}
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
-                  {formatDate(selectedDate)}
-                </h3>
-                <button
-                  onClick={handleSaveAndClose}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              {/* Event Inputs - Stacked directly one under the other */}
-              <div className="mb-4">
-                <label
-                  htmlFor="event-content-1"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  EVENT
-                </label>
-
-                {/* First Event */}
-                {eventsForSelectedDate.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-start">
-                        <textarea
-                          id="event-content-1"
-                          value={eventsForSelectedDate[0]?.content || ""}
-                          onChange={(e) => {
-                            handleUpdateEventContent(0, e.target.value)
-                            setActiveEventIndex(0)
-                          }}
-                          onFocus={() => setActiveEventIndex(0)}
-                          onKeyDown={(e) => {
-                            setActiveEventIndex(0)
-                            handleTextareaKeyDown(e)
-                          }}
-                          onMouseUp={(e) => {
-                            setActiveEventIndex(0)
-                            handleTextSelect(e)
-                          }}
-                          onTouchEnd={(e) => {
-                            setActiveEventIndex(0)
-                            handleTextSelect(e)
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setActiveEventIndex(0)
-                          }}
-                          ref={firstEventInputRef}
-                          className={`flex-1 w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 0 ? "border-black dark:border-white" : ""}`}
-                          placeholder="ENTER EVENT NAME"
-                          rows={2}
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteEvent(eventsForSelectedDate[0].id)
-                          }}
-                          className="text-gray-300 hover:text-gray-500 self-start mt-2 ml-2"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-4 w-4"
-                          >
-                            <path d="M18 6L6 18"></path>
-                            <path d="M6 6l12 12"></path>
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {projectGroups.map((group) => {
-                          const bgColor = getBgFromTextColor(group.color)
-                          const isSelected = eventsForSelectedDate[0]?.color === group.color
-
-                          return (
-                            <button
-                              key={`event0-${group.id}`}
-                              onClick={() => handleUpdateEventColor(0, group.color, group.id)}
-                              className={cn(
-                                "flex items-center rounded-none border px-2 py-1 text-xs",
-                                isSelected
-                                  ? `${bgColor} text-white border-gray-700`
-                                  : "bg-white border-gray-200 text-gray-400",
-                              )}
-                            >
-                              {group.name}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
+            <div className="flex justify-end gap-2 p-4">
+              <Button
+                variant="ghost"
+                onClick={handleCancelEdit}
+                disabled={modalCloseState !== 'idle'}
+                className={cn(
+                   "disabled:opacity-50",
+                   modalCloseState === 'canceling' && "opacity-75"
                 )}
-
-                {/* Second Event */}
-                {eventsForSelectedDate.length > 1 && (
-                  <div className="mb-4">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-start">
-                        <textarea
-                          id="event-content-2"
-                          value={eventsForSelectedDate[1]?.content || ""}
-                          onChange={(e) => {
-                            handleUpdateEventContent(1, e.target.value)
-                            setActiveEventIndex(1)
-                          }}
-                          onFocus={() => setActiveEventIndex(1)}
-                          onKeyDown={(e) => {
-                            setActiveEventIndex(1)
-                            handleTextareaKeyDown(e)
-                          }}
-                          onMouseUp={(e) => {
-                            setActiveEventIndex(1)
-                            handleTextSelect(e)
-                          }}
-                          onTouchEnd={(e) => {
-                            setActiveEventIndex(1)
-                            handleTextSelect(e)
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setActiveEventIndex(1)
-                          }}
-                          className={`flex-1 w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm py-2 px-3 preserve-case ${activeEventIndex === 1 ? "border-black dark:border-white" : ""}`}
-                          placeholder="ENTER EVENT NAME"
-                          rows={2}
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteEvent(eventsForSelectedDate[1].id)
-                          }}
-                          className="text-gray-300 hover:text-gray-500 self-start mt-2 ml-2"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="h-4 w-4"
-                          >
-                            <path d="M18 6L6 18"></path>
-                            <path d="M6 6l12 12"></path>
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {projectGroups.map((group) => {
-                          const bgColor = getBgFromTextColor(group.color)
-                          const isSelected = eventsForSelectedDate[1]?.color === group.color
-
-                          return (
-                            <button
-                              key={`event1-${group.id}`}
-                              onClick={() => handleUpdateEventColor(1, group.color, group.id)}
-                              className={cn(
-                                "flex items-center rounded-none border px-2 py-1 text-xs",
-                                isSelected
-                                  ? `${bgColor} text-white border-gray-700`
-                                  : "bg-white border-gray-200 text-gray-400",
-                              )}
-                            >
-                              {group.name}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
+              >
+                CANCEL
+              </Button>
+              <Button
+                onClick={handleSaveAndClose}
+                disabled={modalCloseState !== 'idle'}
+                className={cn("w-[90px]",
+                   "disabled:opacity-50"
                 )}
-              </div>
-
-              {/* Add a swap button between the events and the Add New Event button */}
-              {eventsForSelectedDate.length === 2 && (
-                <button
-                  onClick={handleSwapEvents}
-                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 mr-2"
-                  >
-                    <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                  SWAP EVENTS
-                </button>
-              )}
-
-              {/* Add New Event button - Show when there are fewer than 2 events */}
-              {eventsForSelectedDate.length < 2 && (
-                <button
-                  onClick={handleAddNewEvent}
-                  className="w-full flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-500 focus:outline-none border border-gray-200 bg-gray-50 hover:bg-gray-100 mb-4"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 mr-2"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  ADD NEW EVENT
-                </button>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={handleCancelEdit}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleSaveAndClose}
-                  className="rounded-md border border-transparent bg-black dark:bg-white py-2 px-4 text-sm font-medium text-white dark:text-black shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none"
-                >
-                  SAVE
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Confirmation Modal */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={resetModalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
-          >
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <div className="w-4"></div> {/* Spacer for centering */}
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
-                  RESET CALENDAR DATA
-                </h3>
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                ARE YOU SURE YOU WANT TO RESET ALL CALENDAR DATA? THIS ACTION CANNOT BE UNDONE.
-              </p>
-              {!user && (
-                <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
-                  TIP: Sign in to prevent losing your data when clearing browser history or using a different device.
-                </p>
-              )}
-              <div className="mt-5 flex justify-end gap-2">
-                <button
-                  onClick={() => setShowResetConfirm(false)}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleResetData}
-                  className="rounded-md border border-transparent bg-red-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none"
-                >
-                  RESET DATA
-                </button>
-              </div>
+              >
+                {modalCloseState === 'saving' && <Loader2 size={16} className="animate-spin mr-1" />}
+                {modalCloseState === 'saving' ? 'SAVING' :
+                 modalCloseState === 'saved' ? <><Check size={16} className="mr-1" /> SAVED</> :
+                 'SAVE'
+                }
+              </Button>
             </div>
           </div>
         </div>
@@ -2471,230 +1515,266 @@ border-bottom: 1px solid rgba(75, 85, 99, 1);
 
       {/* Share Modal */}
       {showShareModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div
-            ref={shareModalRef}
-            className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl"
-          >
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <div className="w-4"></div> {/* Spacer for centering */}
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
-                  SHARE CALENDAR
-                </h3>
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowShareModal(false);
+              setShareCopied(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-sm p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4 font-mono">Share Calendar Link</h3>
+            <div className="flex gap-2">
+              <input
+                ref={shareInputRef}
+                type="text"
+                value={shareUrl}
+                readOnly
+                className="flex-1 px-3 py-2 border rounded-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-black font-mono"
+              />
+              <button
+                id="copy-button"
+                onClick={() => {
+                  if (shareInputRef.current) {
+                    shareInputRef.current.select();
+                    navigator.clipboard.writeText(shareInputRef.current.value)
+                      .then(() => {
+                        setShareCopied(true);
+                        setTimeout(() => setShareCopied(false), 2000);
+                      })
+                      .catch(err => console.error('Copy failed', err));
+                  }
+                }}
+                className="px-4 py-2 bg-black text-white rounded-sm hover:bg-gray-800 text-sm font-mono w-24 text-center transition-colors"
+              >
+                {shareCopied ? 'Copied!' : 'Copy'}
+              </button>
             </div>
-            <div className="p-4 sm:p-6">
-              <label htmlFor="share-url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                SHAREABLE URL
-              </label>
-              <div className="flex rounded-md shadow-sm">
-                <div className="relative flex items-stretch flex-grow focus-within:z-10">
-                  <input
-                    type="text"
-                    id="share-url"
-                    className="block w-full rounded-none rounded-l-md border-gray-300 shadow-sm focus:border-black focus:ring-black dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
-                    value={shareUrl}
-                    readOnly
-                    ref={shareInputRef}
-                    onClick={(e) => {
-                      ;(e.target as HTMLInputElement).select()
-                    }}
-                  />
-                </div>
-                <button
-                  type="button"
-                  id="copy-button"
-                  onClick={copyShareUrl}
-                  className="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-100 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
-                >
-                  <span>COPY</span>
-                </button>
-              </div>
-              <div className="mt-5 flex justify-end">
-                <button
-                  onClick={() => setShowShareModal(false)}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CLOSE
-                </button>
-              </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => {setShowShareModal(false); setShareCopied(false);}}
+                className="px-4 py-2 text-sm hover:bg-gray-100 rounded-sm font-mono"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
-      {showExportTagsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <div className="w-4"></div> {/* Spacer for centering */}
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
-                  SELECT TAGS TO EXPORT
-                </h3>
-                <button
-                  onClick={() => setShowExportTagsModal(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                Select which tags to include in your {exportTarget === "ical" ? "iCal" : "Google Calendar"} export.
-              </p>
 
-              <div className="space-y-2 mb-6">
-                {projectGroups.map((group) => (
-                  <div key={group.id} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={`export-tag-${group.id}`}
-                      checked={selectedExportTags.includes(group.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedExportTags([...selectedExportTags, group.id])
-                        } else {
-                          setSelectedExportTags(selectedExportTags.filter((id) => id !== group.id))
-                        }
-                      }}
-                      className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                    />
-                    <label
-                      htmlFor={`export-tag-${group.id}`}
-                      className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-                    >
-                      {group.name}
-                    </label>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowExportTagsModal(false)}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CANCEL
-                </button>
-                <button
-                  onClick={handleExportWithTags}
-                  className="rounded-md border border-transparent bg-black dark:bg-white py-2 px-4 text-sm font-medium text-white dark:text-black shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none"
-                >
-                  EXPORT
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Google Calendar Instructions Modal */}
       {showGoogleInstructionsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-xl">
-            <div className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-2 sm:p-3">
-              <div className="flex items-center justify-between">
-                <div className="w-4"></div> {/* Spacer for centering */}
-                <h3 className="font-mono text-sm font-light tracking-tight dark:text-white text-center">
-                  IMPORT TO GOOGLE CALENDAR
-                </h3>
-                <button
-                  onClick={() => setShowGoogleInstructionsModal(false)}
-                  className="rounded-full p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6">
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                Your calendar file has been downloaded. To import it into Google Calendar:
-              </p>
-
-              <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-700 dark:text-gray-300 mb-4">
-                <li>
-                  Go to{" "}
-                  <a
-                    href="https://calendar.google.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 underline"
-                  >
-                    Google Calendar
-                  </a>
-                </li>
-                <li>Click the gear icon (⚙️) in the top right and select "Settings"</li>
-                <li>Click "Import & export" on the left sidebar</li>
-                <li>Click "Select file from your computer" and choose the downloaded .ics file</li>
-                <li>Select which calendar to add the events to</li>
-                <li>Click "Import"</li>
-              </ol>
-
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                Note: This is a one-time import. If you make changes to your calendar, you'll need to export and import
-                again.
-              </p>
-
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowGoogleInstructionsModal(false)}
-                  className="rounded-md border border-gray-300 bg-white dark:bg-gray-800 py-2 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none"
-                >
-                  CLOSE
-                </button>
-              </div>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowGoogleInstructionsModal(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-sm p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4 font-mono">Import to Google Calendar</h3>
+            <ol className="list-decimal ml-4 space-y-2 text-sm text-gray-600 font-mono">
+              <li>Go to <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">calendar.google.com</a></li>
+              <li>Click the gear icon (Settings)</li>
+              <li>Click "Import & Export"</li>
+              <li>Upload the downloaded .ics file</li>
+              <li>Click "Import"</li>
+            </ol>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowGoogleInstructionsModal(false)}
+                className="px-4 py-2 text-sm hover:bg-gray-100 rounded-sm font-mono"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowResetConfirm(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-sm w-full max-w-sm p-6">
+            <h4 className="text-md font-mono mb-2 text-center">RESET CALENDAR</h4>
+            <p className="text-xs font-mono text-gray-600 mb-6 text-center">Are you sure? This will remove all events and tags.</p>
+            <div className="flex justify-center gap-3">
+              <button
+                ref={cancelResetButtonRef}
+                onClick={() => setShowResetConfirm(false)}
+                className="px-4 py-2 text-xs font-mono hover:bg-gray-100 rounded-sm border border-gray-300"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleResetData}
+                className="px-4 py-2 text-xs font-mono bg-red-600 text-white rounded-sm hover:bg-red-700 transition-colors"
+              >
+                RESET
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirmId && (
+         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 p-4">
+           <div ref={deleteConfirmRef} className="bg-white p-6 rounded-sm max-w-sm w-full shadow-xl">
+             <h4 className="text-md font-mono mb-2 text-center">DELETE</h4>
+             <p className="text-xs font-mono text-gray-600 mb-6 text-center">
+               Are you sure you want to delete the tag "{projectGroups.find(g => g.id === showDeleteConfirmId)?.name}"? Events using this tag will revert to default.
+             </p>
+             <div className="flex justify-center gap-3">
+               <button
+                 onClick={() => setShowDeleteConfirmId(null)}
+                 className="px-4 py-2 text-xs font-mono hover:bg-gray-100 rounded-sm border border-gray-300"
+               >
+                 CANCEL
+               </button>
+               <button
+                 onClick={handleDeleteGroup}
+                 className="px-4 py-2 text-xs font-mono bg-red-600 text-white rounded-sm hover:bg-red-700 transition-colors"
+               >
+                 DELETE
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
+
+      {/* Export Options Modal */}
+      {showExportOptionsModal && (
+         <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowExportOptionsModal(false);
+              setSelectedExportTags([]);
+            }
+          }}
+         >
+           <div className="bg-white rounded-sm w-full max-w-lg p-6 shadow-xl">
+             {/* Header */}
+             <div className="flex justify-between items-center border-b pb-3 mb-4">
+               <h3 className="text-sm font-mono uppercase tracking-wider">Export Options</h3>
+               <button
+                 onClick={() => {
+                   setShowExportOptionsModal(false);
+                   setSelectedExportTags([]);
+                 }}
+                 className="text-gray-400 hover:text-gray-600"
+               >
+                 <X size={20}/>
+               </button>
+             </div>
+
+             {/* Export Target Selection */}
+             <div className="mb-5 pt-1">
+               <label className="block text-xs font-mono mb-2 uppercase tracking-wider">Format</label>
+               <div className="space-y-2">
+                 <label className="flex items-center gap-2 text-sm font-mono cursor-pointer">
+                   <input
+                     type="radio"
+                     name="exportTarget"
+                     value="ical"
+                     checked={exportTarget === 'ical'}
+                     onChange={(e) => setExportTarget(e.target.value as "ical" | "google")}
+                     className="form-radio text-black focus:ring-black"
+                   />
+                   Apple Calendar (.ics)
+                 </label>
+                 <div>
+                   <label className="flex items-center gap-2 text-sm font-mono cursor-pointer">
+                     <input
+                       type="radio"
+                       name="exportTarget"
+                       value="google"
+                       checked={exportTarget === 'google'}
+                       onChange={(e) => setExportTarget(e.target.value as "ical" | "google")}
+                       className="form-radio text-black focus:ring-black"
+                     />
+                     Google Calendar (.ics)
+                   </label>
+                   {exportTarget === 'google' && (
+                     <p className="text-xs text-gray-500 font-mono mt-1 ml-6">Note: An .ics file will be downloaded. You'll need to import it into Google Calendar manually.</p>
+                   )}
+                 </div>
+               </div>
+             </div>
+
+             {/* Tag Selection */}
+             <div className="mb-6 pt-4 border-t">
+               <label className="block text-xs font-mono mb-2 uppercase tracking-wider">Tags to Include</label>
+               <div className="flex justify-between items-center mb-2">
+                 <button
+                   onClick={() => setSelectedExportTags(projectGroups.map(g => g.id))}
+                   className="text-xs font-mono text-blue-600 hover:underline"
+                 >
+                   Select All
+                 </button>
+                 <button
+                   onClick={() => setSelectedExportTags([])}
+                   className="text-xs font-mono text-blue-600 hover:underline"
+                 >
+                   Deselect All
+                 </button>
+               </div>
+               <div className="max-h-40 overflow-y-auto border rounded-sm p-2 space-y-1">
+                 {projectGroups.map(group => (
+                   <label key={group.id} className="flex items-center gap-2 text-sm font-mono cursor-pointer">
+                     <input
+                       type="checkbox"
+                       value={group.id}
+                       checked={selectedExportTags.includes(group.id)}
+                       onChange={(e) => {
+                         const id = e.target.value;
+                         setSelectedExportTags(prev =>
+                           e.target.checked ? [...prev, id] : prev.filter(tagId => tagId !== id)
+                         );
+                       }}
+                       className="form-checkbox rounded-sm text-black focus:ring-black"
+                     />
+                     <span className={`px-1.5 py-0.5 text-xs rounded-sm ${getBgFromTextColor(group.color)} text-white`}>{group.name}</span>
+                   </label>
+                 ))}
+               </div>
+             </div>
+
+             {/* Action Buttons */}
+             <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+               <button
+                 onClick={() => {
+                   setShowExportOptionsModal(false);
+                   setSelectedExportTags([]);
+                 }}
+                 className="px-4 py-2 text-xs font-mono hover:bg-gray-100 rounded-sm border border-gray-300"
+               >
+                 Cancel
+               </button>
+               <button
+                 onClick={handleExportWithTags}
+                 disabled={selectedExportTags.length === 0}
+                 className="px-6 py-2 text-xs bg-black text-white rounded-sm font-mono hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+               >
+                 Export
+               </button>
+             </div> {/* End Action Buttons */}
+           </div> {/* End Modal Content */}
+         </div>
+      )}
+
     </div>
   )
 }
+

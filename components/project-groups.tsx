@@ -117,7 +117,7 @@ export default function ProjectGroups({
           {groups.map((group) => {
             const isActive = group.active;
             const bgColorClass = getBgFromTextColor(group.color);
-            const textColorClass = getTextForBg(group.color); 
+            const textColorClass = getTextForBg(group.color);
             const displayColor = isActive ? bgColorClass : 'bg-gray-200';
             const displayTextColor = isActive ? textColorClass : 'text-gray-500';
 
@@ -133,8 +133,8 @@ export default function ProjectGroups({
                   )}
                 >
                   <Tag size={12} className="hover:underline" />
-                  <span 
-                    onClick={(e) => handleProjectNameClick(group, e)} 
+                  <span
+                    onClick={(e) => handleProjectNameClick(group, e)}
                     className="cursor-pointer hover:underline"
                   >
                     {group.name}
@@ -247,4 +247,6 @@ export default function ProjectGroups({
     </div>
   )
 }
+
+
 

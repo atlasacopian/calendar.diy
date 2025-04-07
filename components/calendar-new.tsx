@@ -205,6 +205,10 @@ export default function CalendarNew() {
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [newlyAddedEventId, setNewlyAddedEventId] = useState<string | null>(null);
   const [modalCloseState, setModalCloseState] = useState<'idle' | 'saving' | 'saved' | 'canceling'>('idle');
+  const [hoveredSingleEventDate, setHoveredSingleEventDate] = useState<Date | null>(null);
+  const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
+  const [draggedEventIndex, setDraggedEventIndex] = useState<number | null>(null);
+  const [dropTargetEventId, setDropTargetEventId] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -231,6 +235,9 @@ export default function CalendarNew() {
       window.addEventListener("resize", checkIfMobile)
 
       const handleKeyDown = (e: KeyboardEvent) => {
+        // --- Update check for modal state --- 
+        if (showModal || showAddDialog) return; // Do nothing if event modal OR tag dialog is open
+
         if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
           if (e.key === "ArrowLeft") {
             e.preventDefault();
@@ -269,7 +276,7 @@ export default function CalendarNew() {
     } catch (error) {
       console.error("Error initializing calendar listeners:", error)
     }
-  }, []);
+  }, [showModal, showAddDialog]); // Added showAddDialog to dependency array
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -467,7 +474,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     setShowDeleteConfirmId(null);
   };
 
-  const handleDayClick = (day: Date) => {
+  const handleDayClick = useCallback((day: Date) => {
     setSelectedDate(day)
     const existingEvents = events.filter((event) => isSameDay(event.date, day))
     setEventsForSelectedDate(existingEvents)
@@ -494,7 +501,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         }
       }, 50)
     }
-  }
+  }, [events, holidays, setSelectedDate, setEventsForSelectedDate, setActiveEventIndex, setHolidayForSelectedDate, setShowModal, firstEventInputRef]);
 
   const handleCancelEdit = () => {
     setModalCloseState('canceling');
@@ -606,9 +613,10 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     setShowResetConfirm(false)
   }
 
-  const handleDragStart = (event: Event, e: React.DragEvent) => {
+  const handleDragStart = useCallback((event: Event, e: React.DragEvent, index: number | null = null) => {
     e.stopPropagation()
     setDraggedEvent(event)
+    setDraggedEventIndex(index);
 
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = "move"
@@ -637,17 +645,17 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         }
       }, 100)
     }
-  }
+  }, [setDraggedEvent, setDraggedEventIndex]);
 
-  const handleDragOver = (day: Date, e: React.DragEvent) => {
+  const handleDragOver = useCallback((day: Date, e: React.DragEvent) => {
     e.preventDefault()
     if (e.dataTransfer) {
         e.dataTransfer.dropEffect = "move"
     }
     setDragOverDate(day)
-  }
+  }, [setDragOverDate]);
 
-  const handleDrop = (e: React.DragEvent, date: Date) => {
+  const handleDrop = useCallback((e: React.DragEvent, date: Date) => {
     e.preventDefault()
     if (!draggedEvent) return
 
@@ -657,7 +665,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     setEvents(updatedEvents)
     setDraggedEvent(null)
     setDragOverDate(null)
-  }
+  }, [draggedEvent, events, setEvents, setDraggedEvent, setDragOverDate]);
 
   const handleDragEnd = (e: React.DragEvent) => {
     e.preventDefault()
@@ -713,13 +721,43 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         logging: false,
         imageTimeout: 0,
         onclone: (clonedDoc) => {
-            // Remove styling from 'today' marker
-            const todayElement = clonedDoc.querySelector('.bg-black.text-white.rounded-full');
-            if (todayElement) {
-                todayElement.classList.remove('bg-black', 'text-white', 'rounded-full', 'w-5', 'h-5', 'flex', 'items-center', 'justify-center', 'text-[9px]');
-                todayElement.classList.add('text-gray-600', 'text-xs', 'sm:text-sm');
-            }
-            // Hide left/right arrow buttons by ID
+            // --- Refined Today Highlight Removal ---
+            // Find the element that typically contains the day number and has the highlight style
+            const todayElements = clonedDoc.querySelectorAll('.bg-gray-900.text-white.rounded-full');
+            todayElements.forEach((el) => {
+                const todayEl = el as HTMLElement;
+                // Reset specific styles instead of just removing classes
+                todayEl.style.backgroundColor = 'transparent';
+                todayEl.style.color = '#4b5563'; // Tailwind gray-600
+                todayEl.style.borderRadius = '0';
+                todayEl.style.width = 'auto';
+                todayEl.style.height = 'auto';
+                todayEl.style.display = 'inline'; // Reset display from flex
+                todayEl.classList.remove('bg-gray-900', 'text-white', 'rounded-full', 'w-5', 'h-5', 'flex', 'items-center', 'justify-center', 'text-[9px]');
+                todayEl.classList.add('text-gray-600', 'text-xs', 'sm:text-sm'); // Add back default text styles
+            });
+
+            // --- Fix Text Cutoff ---
+            // Allow event container to show overflow
+            const eventContainers = clonedDoc.querySelectorAll('.flex-1.overflow-hidden.flex.flex-col');
+            eventContainers.forEach(container => {
+              const el = container as HTMLElement;
+              el.style.overflow = 'visible';
+            });
+
+            // Remove line-clamp and overflow hidden from event text spans
+            const eventTextSpans = clonedDoc.querySelectorAll('.break-words.overflow-hidden');
+            eventTextSpans.forEach(span => {
+              const el = span as HTMLElement;
+              el.classList.remove('overflow-hidden', 'line-clamp-1', 'line-clamp-2', 'line-clamp-3', 'line-clamp-4');
+              el.style.overflow = 'visible';
+              el.style.whiteSpace = 'normal'; // Allow text to wrap
+              el.style.webkitLineClamp = 'none'; // Explicitly remove webkit line clamp
+              el.style.display = '-webkit-box'; // Remove this if it causes issues
+              el.style.webkitBoxOrient = 'vertical'; // Remove this if it causes issues
+            });
+
+            // Hide left/right arrow buttons by ID (Existing)
             const leftArrow = clonedDoc.getElementById('calendar-nav-left') as HTMLElement | null;
             const rightArrow = clonedDoc.getElementById('calendar-nav-right') as HTMLElement | null;
             if (leftArrow) {
@@ -1041,6 +1079,94 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     }
   }, [showModal]);
 
+  const handleEventDragOver = (e: React.DragEvent, targetEventId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedEvent && draggedEvent.id !== targetEventId) {
+        setDropTargetEventId(targetEventId);
+        e.dataTransfer.dropEffect = "move";
+    }
+  };
+
+  const handleEventDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropTargetEventId(null);
+  };
+
+  const handleEventDrop = (e: React.DragEvent, targetEvent: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropTargetEventId(null);
+
+    // Basic checks
+    if (!draggedEvent || !isSameDay(draggedEvent.date, targetEvent.date)) {
+      console.log(`Drop condition not met (inter-day or no dragged event)`);
+      handleDrop(e, targetEvent.date); // Fallback to inter-day drop
+      return;
+    }
+    if (draggedEvent.id === targetEvent.id) {
+      console.log("Dropped event onto itself. No reorder needed.");
+      setDraggedEvent(null);
+      setDraggedEventIndex(null);
+      return;
+    }
+
+    console.log("Performing intra-day reorder...");
+
+    // --- Refined Reorder Logic v7 --- //
+    const currentEvents = [...events]; // Work on a copy of the full events array
+
+    const draggedIdx = currentEvents.findIndex(ev => ev.id === draggedEvent.id);
+    let targetIdx = currentEvents.findIndex(ev => ev.id === targetEvent.id);
+
+    if (draggedIdx === -1 || targetIdx === -1) {
+      console.error("Could not find dragged or target event in currentEvents. Aborting reorder.");
+      setDraggedEvent(null);
+      setDraggedEventIndex(null);
+      return;
+    }
+
+    console.log(`Original indices: Dragged=${draggedIdx}, Target=${targetIdx}`);
+
+    // Remove the dragged item from the array copy
+    const [itemToMove] = currentEvents.splice(draggedIdx, 1);
+
+    // After removing, the target index might have shifted if the dragged item was before it
+    // We need to find the target index *again* in the modified array
+    const newTargetIdx = currentEvents.findIndex(ev => ev.id === targetEvent.id);
+
+    if (newTargetIdx === -1) {
+        console.error("Target disappeared after removing dragged item? Aborting.")
+        // Revert splice?
+        setDraggedEvent(null);
+        setDraggedEventIndex(null);
+        return;
+    }
+
+    console.log(`Target index after removal: ${newTargetIdx}`);
+
+    // Insert the item at the target's index in the modified array
+    currentEvents.splice(newTargetIdx, 0, itemToMove);
+
+    console.log("Attempting setEvents with new order (v7):", currentEvents);
+    setEvents(currentEvents);
+    // --- End Refined Reorder Logic v7 --- //
+
+    setDraggedEvent(null);
+    setDraggedEventIndex(null);
+  };
+
+  // --- New Handler Start ---
+  const handleDeleteAllEventsForDay = () => {
+    if (!selectedDate) return;
+
+    const updatedEvents = events.filter(event => !isSameDay(event.date, selectedDate));
+    setEvents(updatedEvents);
+    handleCancelEdit(); // Close modal after deleting
+  };
+  // --- New Handler End ---
+
   const renderCalendar = useCallback(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
@@ -1068,6 +1194,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       const limitedEvents = dayEvents.slice(0, 4);
       const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, currentDateInLoop));
 
+      const isSingleEventDay = isCurrentMonth && limitedEvents.length === 1;
+      const isHoveringSingleEventCell = isSingleEventDay && hoveredSingleEventDate && isSameDay(hoveredSingleEventDate, currentDateInLoop);
+
       const rowIndex = Math.floor(cellIndex / 7);
       const colIndex = cellIndex % 7;
       const borderClasses = cn(
@@ -1080,20 +1209,25 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         <div
           key={currentDateInLoop.toString()}
           className={cn(
-            'h-16 sm:h-20 md:h-24 transition-colors duration-100 ease-in-out bg-white overflow-hidden', // Added overflow-hidden
-            'flex flex-col p-0.5 sm:p-1.5 min-w-0', // Reduced padding, added min-w-0
+            'h-16 sm:h-20 md:h-24 transition-colors duration-100 ease-in-out bg-white overflow-hidden',
+            'flex flex-col p-0.5 sm:p-1.5 min-w-0',
             borderClasses,
-            isCurrentMonth ? 'hover:bg-gray-100' : '', // Ensure all current month days, including today, turn gray on hover
+            isCurrentMonth ? 'hover:bg-gray-100' : '',
             !isCurrentMonth ? 'bg-gray-50' : '',
-            isDragging ? 'cursor-grabbing' : (isCurrentMonth ? 'cursor-pointer' : 'cursor-default')
+            isDragging ? 'cursor-grabbing' : (isCurrentMonth ? 'cursor-pointer' : 'cursor-default'),
+            isSingleEventDay ? 'cursor-pointer' : 'cursor-default'
           )}
           onClick={() => isCurrentMonth && handleDayClick(currentDateInLoop)}
           onDragOver={(e) => isCurrentMonth && handleDragOver(currentDateInLoop, e)}
           onDrop={(e) => isCurrentMonth && handleDrop(e, currentDateInLoop)}
+          onMouseEnter={isSingleEventDay ? () => setHoveredSingleEventDate(currentDateInLoop) : undefined}
+          onMouseLeave={isSingleEventDay ? () => setHoveredSingleEventDate(null) : undefined}
+          draggable={isSingleEventDay}
+          onDragStart={isSingleEventDay ? (e) => handleDragStart(limitedEvents[0], e, 0) : undefined}
         >
           {isCurrentMonth && (
             <div className="flex justify-between items-start w-full min-h-[18px]">
-              <div className="text-[9px] uppercase tracking-wider font-mono text-gray-500 pr-1"> {/* Removed truncation/shrinking */}
+              <div className="text-[9px] uppercase tracking-wider font-mono text-gray-500 pr-1">
                  {dayHolidays.length > 0 ? dayHolidays[0].name : <span>&nbsp;</span>}
               </div>
 
@@ -1117,21 +1251,31 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                    if (group) {
                       eventTextColor = group.color;
                    }
-                } else {
+    } else {
                    eventTextColor = 'text-black';
                 }
 
                 return (
                   <div
                     key={event.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(event, e)}
+                    draggable={!isSingleEventDay}
+                    onDragStart={!isSingleEventDay ? (e) => handleDragStart(event, e, index) : undefined}
+                    onMouseEnter={() => setHoveredEventId(event.id)}
+                    onMouseLeave={() => {
+                      setHoveredEventId(null);
+                      setDropTargetEventId(null);
+                    }}
+                    onDragOver={(e) => handleEventDragOver(e, event.id)}
+                    onDrop={(e) => handleEventDrop(e, event)}
                     className={cn(
-                      'block text-[9px] sm:text-[10px] font-medium rounded-[2px] cursor-grab',
+                      'block text-[9px] sm:text-[10px] font-medium rounded-[2px] relative',
+                      !isSingleEventDay ? 'cursor-grab' : 'cursor-pointer',
                       eventTextColor,
                        event.projectId && projectGroups.find(g => g.id === event.projectId)
                           ? `${getBgFromTextColor(eventTextColor)}/15`
-                          : ''
+                          : '',
+                      (isHoveringSingleEventCell || hoveredEventId === event.id) ? 'underline' : ''
+                      // Removed visual indicator: dropTargetEventId === event.id && 'border-t-2 border-black'
                     )}
                     title={event.content}
                   >
@@ -1175,7 +1319,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         <div
           key={`empty-end-${i}`}
           className={cn(
-            'h-16 sm:h-20 md:h-24 bg-white', // Match reverted base height
+            'h-16 sm:h-20 md:h-24 bg-white',
             borderClasses
             )}
           onDragOver={handleDragOverEmpty}
@@ -1185,7 +1329,15 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     }
 
     return days;
-  }, [currentDate, events, projectGroups, holidays, isDragging, handleDragStart, handleDayClick, handleDrop, handleDragOver]);
+  }, [
+    currentDate, events, projectGroups, holidays, isDragging,
+    handleDragStart, handleDayClick, handleDrop, handleDragOver,
+    hoveredSingleEventDate, setHoveredSingleEventDate,
+    hoveredEventId, setHoveredEventId,
+    draggedEvent, draggedEventIndex, setDraggedEventIndex,
+    dropTargetEventId, setDropTargetEventId,
+    handleEventDrop, handleEventDragOver, handleEventDragLeave
+  ]);
 
   return (
     <div className={cn(
@@ -1237,7 +1389,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         {/* Calendar Header */}
         <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 bg-gray-50 border-b border-gray-300">
           <button
-            id="calendar-nav-left" // Correct ID for left arrow
+            id="calendar-nav-left"
             onClick={() => setCurrentDate(subMonths(currentDate, 1))}
             className="text-sm text-gray-400 hover:bg-gray-100 active:bg-gray-200 p-1 sm:p-1.5 rounded-sm w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center transition-colors"
           >
@@ -1303,7 +1455,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           </div>
 
           <button
-            id="calendar-nav-right" // ID for right arrow
+            id="calendar-nav-right"
             onClick={() => setCurrentDate(addMonths(currentDate, 1))}
             className="text-sm text-gray-400 hover:bg-gray-100 active:bg-gray-200 p-1 sm:p-1.5 rounded-sm w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center transition-colors"
           >
@@ -1367,10 +1519,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           }}
         >
            <div ref={eventModalRef} className="bg-white rounded-sm w-full max-w-md">
-            {/* Modal Header - Removed border */} 
-            <div className="p-6"> {/* Removed border-b border-gray-200 */} 
-              <div className="flex items-center justify-center"> 
-                <div> 
+            <div className="p-6">
+              <div className="flex items-center justify-center">
+                <div>
                   <h3 className="text-lg font-mono">EDIT {format(selectedDate, "MMMM d, yyyy").toUpperCase()}</h3>
                   {holidayForSelectedDate && (
                     <p className="text-xs text-gray-500 font-mono mt-1 text-center">{holidayForSelectedDate.toUpperCase()}</p>)}
@@ -1378,8 +1529,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
               </div>
             </div>
 
-            {/* Modal Content */} 
-            <div className="p-6"> {/* Removed border-t */} 
+            <div className="p-6">
               {eventsForSelectedDate.map((event, index) => (
                 <div
                   key={event.id}
@@ -1403,7 +1553,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                     />
                   </div>
 
-                  {/* Tag Selection and Delete Button Container with transition */}
                   <div
                     className={cn(
                       "flex flex-wrap gap-2 items-center transition-all duration-300 ease-in-out overflow-hidden",
@@ -1458,10 +1607,10 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                           setEventsForSelectedDate(updatedEvents);
                         } else {
                           const updatedEvents = [...eventsForSelectedDate];
-                          updatedEvents[index].content = ""; 
+                          updatedEvents[index].content = "";
                           setEventsForSelectedDate(updatedEvents);
                         }
-                        setTimeout(() => firstEventInputRef.current?.focus(), 0); 
+                        setTimeout(() => firstEventInputRef.current?.focus(), 0);
                       }}
                       className="text-red-600 hover:text-red-600 hover:underline self-start bg-transparent focus:outline-none border-none hover:bg-transparent"
                     >
@@ -1472,8 +1621,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
               ))}
             </div>
 
-            {/* Modal Footer - Stacked layout */}
-            <div className="p-0">
+            {/* Container for ADD ANOTHER EVENT Button */}
+            <div className="p-0"> 
               <Button
                 variant="ghost"
                 onClick={handleAddEvent}
@@ -1483,34 +1632,55 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 ADD ANOTHER EVENT
               </Button>
             </div>
-            <div className="flex justify-end gap-2 p-4">
-              <Button
-                variant="ghost"
-                onClick={handleCancelEdit}
-                disabled={modalCloseState !== 'idle'}
-                className={cn(
-                   "disabled:opacity-50",
-                   modalCloseState === 'canceling' && "opacity-75"
-                )}
-              >
-                CANCEL
-              </Button>
-              <Button
-                onClick={handleSaveAndClose}
-                disabled={modalCloseState !== 'idle'}
-                className={cn("w-[90px]",
-                   "disabled:opacity-50"
-                )}
-              >
-                {modalCloseState === 'saving' && <Loader2 size={16} className="animate-spin mr-1" />}
-                {modalCloseState === 'saving' ? 'SAVING' :
-                 modalCloseState === 'saved' ? <><Check size={16} className="mr-1" /> SAVED</> :
-                 'SAVE'
-                }
-              </Button>
-            </div>
-          </div>
-        </div>
+
+            {/* Modal Footer - Separate div for actions */}
+            <div className="flex justify-between items-center p-4 border-t border-gray-200">
+                {/* --- New Delete All Button --- */}
+                <div className="flex-shrink-0">
+                  {/* Updated visibility condition */}
+                  {eventsForSelectedDate.length >= 2 && eventsForSelectedDate[1]?.content?.trim() !== '' && (
+                    <Button
+                      onClick={handleDeleteAllEventsForDay}
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-600 hover:underline p-0 font-mono bg-transparent focus:outline-none border-none hover:bg-transparent"
+                      disabled={modalCloseState !== 'idle'}
+                    >
+                      DELETE ALL
+                    </Button>
+                  )}
+                </div>
+                {/* --- End New Delete All Button --- */}
+
+                {/* Cancel/Save on the right */}
+                <div className="flex gap-2 flex-grow justify-end">
+                  <Button
+                    variant="ghost"
+                    onClick={handleCancelEdit}
+                    disabled={modalCloseState !== 'idle'}
+                    className={cn(
+                       "disabled:opacity-50",
+                       modalCloseState === 'canceling' && "opacity-75"
+                    )}
+                  >
+                    CANCEL
+                  </Button>
+                  <Button
+                    onClick={handleSaveAndClose}
+                    disabled={modalCloseState !== 'idle'}
+                    className={cn("w-[90px]",
+                       "disabled:opacity-50"
+                    )}
+                  >
+                    {modalCloseState === 'saving' && <Loader2 size={16} className="animate-spin mr-1" />}
+                    {modalCloseState === 'saving' ? 'SAVING' :
+                     modalCloseState === 'saved' ? <><Check size={16} className="mr-1" /> SAVED</> :
+                     'SAVE'
+                    }
+                  </Button>
+                </div> 
+            </div> {/* Closing tag for Modal Footer div */} 
+           </div> {/* Closing tag for eventModalRef div */}
+        </div> 
       )}
 
       {/* Share Modal */}
@@ -1579,9 +1749,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             <ol className="list-decimal ml-4 space-y-2 text-sm text-gray-600 font-mono">
               <li>Go to <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">calendar.google.com</a></li>
               <li>Click the gear icon (Settings)</li>
-              <li>Click "Import & Export"</li>
+              <li>Click &quot;Import &amp; Export&quot;</li>
               <li>Upload the downloaded .ics file</li>
-              <li>Click "Import"</li>
+              <li>Click &quot;Import&quot;</li>
             </ol>
             <div className="flex justify-end mt-6">
               <button
@@ -1633,7 +1803,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
            <div ref={deleteConfirmRef} className="bg-white p-6 rounded-sm max-w-sm w-full shadow-xl">
              <h4 className="text-md font-mono mb-2 text-center">DELETE</h4>
              <p className="text-xs font-mono text-gray-600 mb-6 text-center">
-               Are you sure you want to delete the tag "{projectGroups.find(g => g.id === showDeleteConfirmId)?.name}"? Events using this tag will revert to default.
+               Are you sure you want to delete the tag &quot;{projectGroups.find(g => g.id === showDeleteConfirmId)?.name}&quot;? Events using this tag will revert to default.
              </p>
              <div className="flex justify-center gap-3">
                <button
@@ -1665,7 +1835,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           }}
          >
            <div className="bg-white rounded-sm w-full max-w-lg p-6 shadow-xl">
-             {/* Header */}
              <div className="flex justify-between items-center border-b pb-3 mb-4">
                <h3 className="text-sm font-mono uppercase tracking-wider">Export Options</h3>
                <button
@@ -1679,7 +1848,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                </button>
              </div>
 
-             {/* Export Target Selection */}
              <div className="mb-5 pt-1">
                <label className="block text-xs font-mono mb-2 uppercase tracking-wider">Format</label>
                <div className="space-y-2">
@@ -1707,13 +1875,12 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                      Google Calendar (.ics)
                    </label>
                    {exportTarget === 'google' && (
-                     <p className="text-xs text-gray-500 font-mono mt-1 ml-6">Note: An .ics file will be downloaded. You'll need to import it into Google Calendar manually.</p>
+                     <p className="text-xs text-gray-500 font-mono mt-1 ml-6">Note: An .ics file will be downloaded. You&apos;ll need to import it into Google Calendar manually.</p>
                    )}
                  </div>
                </div>
              </div>
 
-             {/* Tag Selection */}
              <div className="mb-6 pt-4 border-t">
                <label className="block text-xs font-mono mb-2 uppercase tracking-wider">Tags to Include</label>
                <div className="flex justify-between items-center mb-2">
@@ -1751,7 +1918,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                </div>
              </div>
 
-             {/* Action Buttons */}
              <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
                <button
                  onClick={() => {
@@ -1769,12 +1935,11 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                >
                  Export
                </button>
-             </div> {/* End Action Buttons */}
-           </div> {/* End Modal Content */}
+             </div>
+           </div>
          </div>
       )}
 
     </div>
   )
 }
-

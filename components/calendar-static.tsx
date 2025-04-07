@@ -114,7 +114,7 @@ export default function Calendar() {
                       {hasHoliday && (
                         <div className="mt-3 md:mt-3.5 space-y-0.5 overflow-hidden">
                           <div className="font-mono text-[8px] md:text-[9px] uppercase tracking-wider text-gray-500 whitespace-normal break-words truncate">
-                            ST. PATRICK'S DAY
+                            ST. PATRICK&apos;S DAY
                           </div>
                         </div>
                       )}

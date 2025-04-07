@@ -15,11 +15,63 @@ export type CalendarEvent = {
   projectId?: string
 }
 
+const isDate = (date: Date | string): date is Date => {
+  return date instanceof Date
+}
+
 export type ProjectGroup = {
   id: string
   name: string
   color: string
   active: boolean
+}
+
+// Function to save events to localStorage
+export const saveEvents = (events: CalendarEvent[]) => {
+  if (typeof window === 'undefined') return
+  const eventsToSave = events.map(event => ({
+    ...event,
+    date: formatDate(event.date)
+  }))
+  localStorage.setItem('calendarEvents', JSON.stringify(eventsToSave))
+}
+
+// Function to save project groups to localStorage
+export const saveProjectGroups = (groups: ProjectGroup[]) => {
+  if (typeof window === 'undefined') return
+  localStorage.setItem('projectGroups', JSON.stringify(groups))
+}
+
+// Function to load events from localStorage
+export const loadEvents = (): CalendarEvent[] => {
+  if (typeof window === 'undefined') return []
+  const savedEvents = localStorage.getItem('calendarEvents')
+  if (!savedEvents) return []
+  
+  try {
+    const events = JSON.parse(savedEvents)
+    return events.map((event: any) => ({
+      ...event,
+      date: new Date(event.date)
+    }))
+  } catch (error) {
+    console.error('Error loading events:', error)
+    return []
+  }
+}
+
+// Function to load project groups from localStorage
+export const loadProjectGroups = (): ProjectGroup[] => {
+  if (typeof window === 'undefined') return []
+  const savedGroups = localStorage.getItem('projectGroups')
+  if (!savedGroups) return []
+  
+  try {
+    return JSON.parse(savedGroups)
+  } catch (error) {
+    console.error('Error loading project groups:', error)
+    return []
+  }
 }
 
 // Function to save events to Supabase
@@ -29,7 +81,7 @@ export const saveEventsToSupabase = async (events: CalendarEvent[], user: User) 
   // Convert Date objects to ISO strings for storage
   const eventsToSave = events.map((event) => ({
     ...event,
-    date: event.date instanceof Date ? event.date.toISOString() : event.date,
+    date: formatDate(event.date),
     user_id: user.id,
   }))
 
@@ -94,5 +146,12 @@ export const loadProjectGroupsFromSupabase = async (user: User): Promise<Project
   }
 
   return data
+}
+
+const formatDate = (date: Date | string) => {
+  if (isDate(date)) {
+    return date.toISOString()
+  }
+  return date
 }
 

@@ -58,6 +58,7 @@ export default function ProjectGroups({
   getTextForBg,
 }: ProjectGroupsProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleToggleClick = (groupId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -85,11 +86,10 @@ export default function ProjectGroups({
   useEffect(() => {
     if (showDialog) {
       const timer = setTimeout(() => {
-        const input = document.getElementById("tag-dialog-name-input") as HTMLInputElement
-        if (input) {
-          input.focus()
-          const length = input.value.length
-          input.setSelectionRange(length, length)
+        if (inputRef.current) {
+          inputRef.current.focus()
+          const length = inputRef.current.value.length
+          inputRef.current.setSelectionRange(length, length)
         }
       }, 50)
       return () => clearTimeout(timer)
@@ -117,7 +117,7 @@ export default function ProjectGroups({
           {groups.map((group) => {
             const isActive = group.active;
             const bgColorClass = getBgFromTextColor(group.color);
-            const textColorClass = getTextForBg(group.color);
+            const textColorClass = getTextForBg(group.color); 
             const displayColor = isActive ? bgColorClass : 'bg-gray-200';
             const displayTextColor = isActive ? textColorClass : 'text-gray-500';
 
@@ -133,8 +133,8 @@ export default function ProjectGroups({
                   )}
                 >
                   <Tag size={12} className="hover:underline" />
-                  <span
-                    onClick={(e) => handleProjectNameClick(group, e)}
+                  <span 
+                    onClick={(e) => handleProjectNameClick(group, e)} 
                     className="cursor-pointer hover:underline"
                   >
                     {group.name}
@@ -166,8 +166,8 @@ export default function ProjectGroups({
             )}
 
             <div className="mb-4">
-              <label htmlFor="tagName" className={cn("block text-xs font-mono mb-1 uppercase tracking-wider")}>Name</label>
               <input
+                ref={inputRef}
                 id="tagName"
                 type="text"
                 value={dialogName}
@@ -178,7 +178,8 @@ export default function ProjectGroups({
                     onSaveDialog();
                   }
                 }}
-                maxLength={10}
+                maxLength={15}
+                placeholder="NAME"
                 className={cn(
                   "w-full p-2 border rounded-sm font-mono text-sm border-gray-200",
                   "focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
@@ -187,9 +188,8 @@ export default function ProjectGroups({
             </div>
 
             <div className="mb-6">
-              <label className={cn("block text-xs font-mono mb-2 uppercase tracking-wider")}>Color</label>
               <div className="flex flex-wrap gap-2">
-                {colorOptions.filter(c => c.value !== 'text-black').map((option) => {
+                {colorOptions.map((option) => {
                   const isSelected = dialogColor === option.value;
                   return (
                     <button
@@ -247,6 +247,5 @@ export default function ProjectGroups({
     </div>
   )
 }
-
 
 

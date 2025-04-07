@@ -135,7 +135,7 @@ export function SyncModal({ isOpen, onOpenChange, events, selectedEvent }: SyncM
           </div>
 
           <p className="mt-2 font-mono text-xs text-gray-400">
-            Note: For Google Calendar, you'll be redirected to add the event(s). For Apple Calendar and Outlook, an ICS
+            Note: For Google Calendar, you&apos;ll be redirected to add the event(s). For Apple Calendar and Outlook, an ICS
             file will be downloaded that you can import.
           </p>
         </div>

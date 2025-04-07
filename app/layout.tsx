@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/auth-context"
 import { JetBrains_Mono } from "next/font/google"
+import Script from 'next/script'
 
 const jetBrainsMono = JetBrains_Mono({ subsets: ["latin"] })
 
@@ -75,7 +76,7 @@ export default function RootLayout({
         <title>Free Calendar Template</title>
 
         {/* Add direct meta tags for social sharing with calendar emoji */}
-        <meta property="og:title" content="calendar.diy — Your Free Calendar" />
+        <meta property="og:title" content="Free Calendar Template" />
         <meta
           property="og:description"
           content="Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account needed."
@@ -90,7 +91,6 @@ export default function RootLayout({
         <meta name="apple-signin-scope" content="name email" />
         <meta name="apple-signin-redirect-uri" content="https://your-domain.com/callback" />
         <meta name="apple-signin-state" content="origin:web" />
-        <script type="text/javascript" src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"></script>
       </head>
       <body className="bg-white transition-colors duration-200">
         {/* Visually hidden content for SEO */}
@@ -102,6 +102,7 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </AuthProvider>
+        <Script src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js" strategy="afterInteractive" />
       </body>
     </html>
   )

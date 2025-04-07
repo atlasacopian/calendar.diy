@@ -12,7 +12,6 @@ body {
   background: rgb(var(--background-rgb));
   font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
   -webkit-tap-highlight-color: transparent;
-  text-transform: uppercase;
 }
 
 .dark body {
@@ -90,7 +89,13 @@ html {
 
 /* Custom selection color */
 ::selection {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 0, 0, 0.1);
+  color: inherit;
+}
+
+::-moz-selection {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: inherit;
 }
 
 .dark ::selection {
@@ -163,8 +168,9 @@ html {
 @media (max-width: 640px) {
   .calendar-day {
     height: auto !important;
-    min-height: 4rem;
-    max-height: 4.5rem; /* Limit height on mobile */
+    min-height: 3.5rem;
+    max-height: 4rem;
+    padding: 0.25rem !important;
     overflow: hidden;
   }
 
@@ -191,27 +197,48 @@ html {
     max-height: 70vh;
     overflow-y: auto;
   }
+
+  /* Adjust grid layout for mobile */
+  .grid-cols-7 {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    width: 100%;
+  }
+
+  .grid-cols-7 > div {
+    min-height: 3.5rem;
+    height: 3.5rem;
+    border-right: 1px solid rgba(229, 231, 235, 1);
+    border-bottom: 1px solid rgba(229, 231, 235, 1);
+  }
+
+  .dark .grid-cols-7 > div {
+    border-right: 1px solid rgba(75, 85, 99, 1);
+    border-bottom: 1px solid rgba(75, 85, 99, 1);
+  }
+
+  /* Make the day header row more compact */
+  .day-header {
+    height: 1.5rem !important;
+    min-height: 1.5rem !important;
+    padding: 0.25rem !important;
+    font-size: 0.625rem !important;
+  }
 }
 
-/* Make all text uppercase */
+/* Remove the global uppercase transformation */
 button,
-input,
-textarea,
-label,
 h1,
 h2,
 h3,
 h4,
 h5,
 h6,
-p,
-span,
-div,
-a {
-  text-transform: uppercase !important;
+label {
+  text-transform: uppercase;
 }
 
-/* Add this to ensure text is not automatically capitalized in inputs and textareas */
+/* Ensure inputs and textareas preserve case */
 input,
 textarea {
   text-transform: none !important;
@@ -236,4 +263,9 @@ textarea {
 
 .cursor-move:active {
   cursor: grabbing;
+}
+
+/* Remove default focus outline color */
+:focus {
+  outline-color: black;
 }

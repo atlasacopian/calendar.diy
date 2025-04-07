@@ -1468,7 +1468,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             <div className="grid grid-cols-7 bg-gray-50">
               {weekDays.map((day, index) => (
                 <div
-                  key={day}
+                  key={index} // Use index as key for static list
                   className={`py-1 sm:py-1.5 md:py-2 text-center font-mono text-[10px] sm:text-[11px] md:text-xs tracking-wider border-b border-gray-300 text-gray-600 ${
                     index < weekDays.length - 1 ? 'border-r border-gray-300' : ''
                   }`}

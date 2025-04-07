@@ -1,18 +1,20 @@
 import type { Metadata } from "next"
-import dynamic from "next/dynamic"
+// Remove the old dynamic import
+// import dynamic from "next/dynamic"
+import ClientCalendarWrapper from "@/components/ClientCalendarWrapper"; // Import the new wrapper
 
-// Dynamically import the Calendar component with no SSR
-const Calendar = dynamic(() => import("@/components/calendar-new"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-screen w-full flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-2xl mb-2">Loading calendar...</div>
-        <div className="text-sm text-gray-500">Please wait while we set up your calendar</div>
-      </div>
-    </div>
-  ),
-})
+// Remove the old dynamic import definition
+// const Calendar = dynamic(() => import("@/components/calendar-new"), {
+//   ssr: false,
+//   loading: () => (
+//     <div className="h-screen w-full flex items-center justify-center">
+//       <div className="text-center">
+//         <div className="text-2xl mb-2">Loading calendar...</div>
+//         <div className="text-sm text-gray-500">Please wait while we set up your calendar</div>
+//       </div>
+//     </div>
+//   ),
+// })
 
 export const metadata: Metadata = {
   title: "Free Calendar Template",
@@ -26,7 +28,8 @@ export default function Home() {
       <div className="w-full max-w-[1400px] mx-auto">
         {/* Client-side rendered calendar */}
         <div className="calendar-wrapper">
-          <Calendar />
+          {/* Use the new wrapper component */}
+          <ClientCalendarWrapper />
         </div>
 
         {/* Visually hidden content for SEO */}

@@ -179,7 +179,7 @@ export default function ProjectGroups({
                   }
                 }}
                 maxLength={15}
-                placeholder="NAME"
+                placeholder="Tag name"
                 className={cn(
                   "w-full p-2 border rounded-sm font-mono text-sm border-gray-200",
                   "focus:outline-none focus:border-black focus:ring-1 focus:ring-black"

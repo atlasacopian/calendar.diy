@@ -21,6 +21,7 @@ interface Event {
   formattedContent?: string;
   color?: string;
   projectId?: string;
+  isDeleted?: boolean; // Flag for temporary deletion in modal
 }
 
 interface ProjectGroup {
@@ -209,6 +210,7 @@ export default function CalendarNew() {
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
   const [draggedEventIndex, setDraggedEventIndex] = useState<number | null>(null);
   const [dropTargetEventId, setDropTargetEventId] = useState<string | null>(null);
+  const [originalModalEvents, setOriginalModalEvents] = useState<Event[]>([]); // Added state for original modal events
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -336,6 +338,23 @@ export default function CalendarNew() {
     };
     fetchHolidays();
   }, [currentDate]);
+
+  // --- Effect to handle clicks outside the date selector --- 
+  useEffect(() => {
+    if (!showDateSelector) return;
+
+    function handleClickOutside(event: MouseEvent) {
+      if (dateSelectorRef.current && !dateSelectorRef.current.contains(event.target as Node)) {
+        setShowDateSelector(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDateSelector]); // Re-run effect if showDateSelector changes
+  // ---------------------------------------------------------
 
   const handleExportWithTags = () => {
     if (selectedExportTags.length === 0) {
@@ -476,8 +495,12 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
   const handleDayClick = useCallback((day: Date) => {
     setSelectedDate(day)
-    const existingEvents = events.filter((event) => isSameDay(event.date, day))
-    setEventsForSelectedDate(existingEvents)
+    const existingEventsRaw = events.filter((event) => isSameDay(event.date, day));
+    // --- Create a deep copy to prevent modifying original state --- 
+    const existingEventsDeepCopy = JSON.parse(JSON.stringify(existingEventsRaw));
+    setEventsForSelectedDate(existingEventsDeepCopy); // Use deep copy for modal display
+    setOriginalModalEvents(existingEventsDeepCopy);   // Store deep copy as original state
+    // --------------------------------------------------------------
     setActiveEventIndex(0)
 
     const dayHoliday = holidays.find((holiday) => isSameDay(holiday.date, day));
@@ -485,7 +508,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
     setShowModal(true)
 
-    if (existingEvents.length === 0) {
+    if (existingEventsRaw.length === 0) {
       const newEvent = {
         id: Math.random().toString(36).substring(2, 11),
         date: day,
@@ -504,12 +527,19 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   }, [events, holidays, setSelectedDate, setEventsForSelectedDate, setActiveEventIndex, setHolidayForSelectedDate, setShowModal, firstEventInputRef]);
 
   const handleCancelEdit = () => {
+    // --- Explicitly revert temporary state FIRST using stored original state --- 
+    setEventsForSelectedDate(originalModalEvents);
+    // -------------------------------------------------------------------------
+
+    // Now proceed with closing the modal
     setModalCloseState('canceling');
     setTimeout(() => {
       setShowModal(false)
-      setSelectedDate(null)
-      setActiveEventIndex(0)
-    }, 150);
+      setSelectedDate(null);
+      setActiveEventIndex(0);
+      setOriginalModalEvents([]); // Clear original state
+      setModalCloseState('idle');
+    }, 150); // Short delay for potential animation
   }
 
   const handleSaveAndClose = () => {
@@ -907,7 +937,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         if (match) {
             acc[opt.value] = `#${match[1]}`;
         }
-        return acc;
+        return acc as Record<string, string>
       }, {} as Record<string, string>);
 
 
@@ -1209,7 +1239,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         <div
           key={currentDateInLoop.toString()}
           className={cn(
-            'h-16 sm:h-20 md:h-24 transition-colors duration-100 ease-in-out bg-white overflow-hidden',
+            // --- Reduced height for wider cells ---
+            'h-20 sm:h-24 md:h-28 transition-colors duration-100 ease-in-out bg-white overflow-hidden', // Reduced height
             'flex flex-col p-0.5 sm:p-1.5 min-w-0',
             borderClasses,
             isCurrentMonth ? 'hover:bg-gray-100' : '',
@@ -1226,7 +1257,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           onDragStart={isSingleEventDay ? (e) => handleDragStart(limitedEvents[0], e, 0) : undefined}
         >
           {isCurrentMonth && (
-            <div className="flex justify-between items-start w-full min-h-[18px]">
+            <div className="flex justify-between items-center w-full min-h-[18px]"> {/* Changed items-start to items-center */} 
               <div className="text-[9px] uppercase tracking-wider font-mono text-gray-500 pr-1">
                  {dayHolidays.length > 0 ? dayHolidays[0].name : <span>&nbsp;</span>}
               </div>
@@ -1282,10 +1313,14 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                     <div className="flex items-start">
                       <span className="mr-1">▪</span>
                       <span className={cn(
-                         'break-words overflow-hidden',
-                         limitedEvents.length === 1 ? 'line-clamp-4' :
-                         limitedEvents.length === 2 ? 'line-clamp-2' :
-                         'line-clamp-1'
+                         'break-words', // Keep break-words
+                         // Mobile: Use truncate for single line + ellipsis
+                         'truncate', 
+                         // Desktop (md+): Use original multi-line clamp logic
+                         'md:whitespace-normal', // Allow wrapping on desktop
+                         limitedEvents.length === 1 ? 'md:line-clamp-4' :
+                         limitedEvents.length === 2 ? 'md:line-clamp-2' :
+                         'md:line-clamp-1'
                        )}>
                         {event.content}
                       </span>
@@ -1319,7 +1354,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         <div
           key={`empty-end-${i}`}
           className={cn(
-            'h-16 sm:h-20 md:h-24 bg-white',
+            // --- Reduced height to match main cells ---
+            'h-20 sm:h-24 md:h-28 bg-white overflow-hidden', // Reduced height
+            'flex flex-col p-0.5 sm:p-1.5 min-w-0',
             borderClasses
             )}
           onDragOver={handleDragOverEmpty}
@@ -1340,175 +1377,191 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   ]);
 
   return (
-    <div className={cn(
-      "flex flex-col h-full max-w-5xl mx-auto font-mono pt-8 pb-4",
-      "bg-white"
-    )}>
-      {/* Top Buttons */}
+    <>
+      {/* This is the main scaled container */}
+      <div 
+        className={cn(
+          "flex flex-col h-full max-w-5xl mx-auto font-mono pt-8 pb-4 origin-top",
+          "bg-white"
+        )}
+        style={{ transform: 'scale(0.85)' }}
+      >
+        {/* Top Buttons */} 
         <div className="mx-1 sm:mx-6 md:mx-12">
-          <div className="flex flex-row flex-nowrap justify-between w-full mb-4 items-center gap-2 sm:gap-4">
-            {/* Right Aligned Button Group */}
-            <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center">
-              <button
-                onClick={downloadCalendarAsImage}
-                disabled={isDownloading}
-                className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isDownloading ? '...' : <Camera size={14} />} {isDownloading ? 'GENERATING' : 'SCREENSHOT'}
-              </button>
-              <div className="relative">
-                <button
-                    onClick={() => {
-                        setSelectedExportTags(projectGroups.map(g => g.id));
-                        setShowExportOptionsModal(true);
-                    }}
-                    className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+           {/* ... buttons content ... */}
+           <div className="flex flex-row flex-nowrap justify-between w-full mb-4 items-center gap-2 sm:gap-4">
+             <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center">
+               <button
+                  onClick={downloadCalendarAsImage}
+                  disabled={isDownloading}
+                  className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <CalendarIcon size={14} /> EXPORT
+                  {isDownloading ? '...' : <Camera size={14} />} {isDownloading ? 'GENERATING' : 'SCREENSHOT'}
+                </button>
+                <div className="relative">
+                  <button
+                      onClick={() => {
+                          setSelectedExportTags(projectGroups.map(g => g.id));
+                          setShowExportOptionsModal(true);
+                      }}
+                      className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+                  >
+                    <CalendarIcon size={14} /> EXPORT
+                  </button>
+                </div>
+                <button
+                  onClick={handleShare}
+                  className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+                >
+                  <Link size={14} /> SHARE
                 </button>
               </div>
               <button
-                onClick={handleShare}
+                onClick={handleReset}
                 className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
               >
-                <Link size={14} /> SHARE
+                <RefreshCcw size={14} /> RESET
               </button>
             </div>
-            <button
-              onClick={handleReset}
-              className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
-            >
-              <RefreshCcw size={14} /> RESET
-            </button>
-          </div>
         </div>
 
-
-      {/* Calendar Container */}
-      <div ref={calendarScreenshotContainerRef} className="bg-white border border-gray-300 shadow-sm mx-1 sm:mx-6 md:mx-12 overflow-hidden rounded-sm">
-        {/* Calendar Header */}
-        <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 bg-gray-50 border-b border-gray-300">
-          <button
-            id="calendar-nav-left"
-            onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-            className="text-sm text-gray-400 hover:bg-gray-100 active:bg-gray-200 p-1 sm:p-1.5 rounded-sm w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center transition-colors"
-          >
-            <ChevronLeft size={14} />
-          </button>
-
-          <div className="relative date-selector-container">
-            <button
-              onClick={() => setShowDateSelector(!showDateSelector)}
-              className="text-base sm:text-lg font-bold font-mono tracking-tight hover:cursor-pointer hover:underline text-black"
+        {/* Calendar Container */} 
+        <div 
+          ref={calendarScreenshotContainerRef} 
+          className="bg-white border border-gray-300 shadow-sm overflow-hidden rounded-sm mx-1 sm:mx-6 md:mx-12"
+        >
+          {/* Calendar Header */}
+          <div className="flex items-center justify-between px-2 sm:px-3 md:px-4 bg-gray-50 border-b border-gray-300 h-20 sm:h-24 md:h-28">
+             {/* ... header content ... */}
+             <button
+              id="calendar-nav-left"
+              onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+              className="text-sm text-gray-400 hover:bg-gray-100 active:bg-gray-200 p-1 sm:p-1.5 rounded-sm w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center transition-colors"
             >
-            <div className="text-xl font-mono tracking-tight text-center">
-              {format(currentDate, "MMMM yyyy").toUpperCase()}
-            </div>
+              <ChevronLeft size={14} />
             </button>
 
-            {showDateSelector && (
-              <div ref={dateSelectorRef} className="absolute z-50 mt-2 left-1/2 -translate-x-1/2 bg-white border border-gray-200 shadow-lg rounded-sm w-64">
-                <div className="p-2 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentDate(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1));
-                      }}
-                      className="p-1 hover:bg-gray-100 rounded-sm text-gray-600"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <span className="text-sm font-mono text-gray-700">{currentDate.getFullYear()}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1));
-                      }}
-                      className="p-1 hover:bg-gray-100 rounded-sm text-gray-600"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
+            <div className="relative date-selector-container">
+              <button
+                onClick={() => setShowDateSelector(!showDateSelector)}
+                className="font-mono tracking-tight hover:cursor-pointer hover:underline text-black"
+              >
+              <div className="text-4xl font-mono tracking-tight text-center">
+                {format(currentDate, "MMMM yyyy").toUpperCase()}
+              </div>
+              </button>
+
+              {showDateSelector && (
+                <div ref={dateSelectorRef} className="absolute z-50 mt-2 left-1/2 -translate-x-1/2 bg-white border border-gray-200 shadow-lg rounded-sm w-64">
+                  {/* ... date selector content ... */}
+                   <div className="p-2 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentDate(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1));
+                        }}
+                        className="p-1 hover:bg-gray-100 rounded-sm text-gray-600"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span className="text-sm font-mono text-gray-700">{currentDate.getFullYear()}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1));
+                        }}
+                        className="p-1 hover:bg-gray-100 rounded-sm text-gray-600"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 p-2">
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const date = new Date(currentDate.getFullYear(), i, 1);
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setCurrentDate(new Date(currentDate.getFullYear(), i, 1));
+                            setShowDateSelector(false);
+                          }}
+                          className={`p-1 text-xs font-mono rounded-sm ${
+                            currentDate.getMonth() === i ? 'bg-black text-white hover:bg-black' : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          {format(date, 'MMM').toUpperCase()}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-1 p-2">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const date = new Date(currentDate.getFullYear(), i, 1);
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          setCurrentDate(new Date(currentDate.getFullYear(), i, 1));
-                          setShowDateSelector(false);
-                        }}
-                        className={`p-1 text-xs font-mono rounded-sm ${
-                          currentDate.getMonth() === i ? 'bg-black text-white hover:bg-black' : 'text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        {format(date, 'MMM').toUpperCase()}
-                      </button>
-                    );
-                  })}
-                </div>
+              )}
+            </div>
+
+            <button
+              id="calendar-nav-right"
+              onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+              className="text-sm text-gray-400 hover:bg-gray-100 active:bg-gray-200 p-1 sm:p-1.5 rounded-sm w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center transition-colors"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          {/* Calendar Grid */} 
+          <div className="w-full" style={{ textTransform: 'none' }}>
+            <div ref={calendarContentRef} style={{ textTransform: 'none' }}>
+              <div className="grid grid-cols-7 bg-gray-50">
+                 {/* ... weekday headers ... */}
+                 {weekDays.map((day, index) => (
+                  <div
+                    key={index} 
+                    className={`py-1 sm:py-1.5 md:py-2 text-center font-mono text-[10px] sm:text-[11px] md:text-xs tracking-wider border-b border-gray-300 text-gray-600 ${
+                      index < weekDays.length - 1 ? 'border-r border-gray-300' : ''
+                    }`}
+                  >
+                    {day}
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-
-          <button
-            id="calendar-nav-right"
-            onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-            className="text-sm text-gray-400 hover:bg-gray-100 active:bg-gray-200 p-1 sm:p-1.5 rounded-sm w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center transition-colors"
-          >
-            <ChevronRight size={14} />
-          </button>
-        </div>
-
-        <div className="w-full" style={{ textTransform: 'none' }}>
-          <div ref={calendarContentRef} style={{ textTransform: 'none' }}>
-            <div className="grid grid-cols-7 bg-gray-50">
-              {weekDays.map((day, index) => (
-                <div
-                  key={index} // Use index as key for static list
-                  className={`py-1 sm:py-1.5 md:py-2 text-center font-mono text-[10px] sm:text-[11px] md:text-xs tracking-wider border-b border-gray-300 text-gray-600 ${
-                    index < weekDays.length - 1 ? 'border-r border-gray-300' : ''
-                  }`}
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7" style={{ textTransform: 'none' }}>
-              {renderCalendar()}
+              <div className="grid grid-cols-7" style={{ textTransform: 'none' }}>
+                {renderCalendar()}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Project Groups Panel */}
-      <div className="w-full flex justify-center px-2 sm:px-0">
-         <ProjectGroups
-            groups={projectGroups}
-            onToggleGroup={handleToggleProjectGroup}
-            showDialog={showAddDialog}
-            editingGroupId={editingGroupId}
-            dialogName={newProjectName}
-            dialogColor={newProjectColor}
-            setDialogName={(name) => setNewProjectName(name)}
-            setDialogColor={(color) => setNewProjectColor(color)}
-            onCloseDialog={handleCloseDialog}
-            onSaveDialog={handleSaveDialog}
-            onRequestDelete={handleRequestDelete}
-            onShowAddRequest={handleShowAddDialog}
-            onShowEditRequest={handleShowEditDialog}
-            dialogError={dialogError}
-            colorOptions={colorOptions}
-            getBgFromTextColor={getBgFromTextColor}
-            getTextForBg={getTextForBg}
-         />
-      </div>
+        {/* Project Groups Panel */} 
+        <div 
+          className="w-full flex justify-center px-2 sm:px-0 mx-1 sm:mx-6 md:mx-12"
+        >
+          <ProjectGroups
+             groups={projectGroups}
+              onToggleGroup={handleToggleProjectGroup}
+              showDialog={showAddDialog}
+              editingGroupId={editingGroupId}
+              dialogName={newProjectName}
+              dialogColor={newProjectColor}
+              setDialogName={(name) => setNewProjectName(name)}
+              setDialogColor={(color) => setNewProjectColor(color)}
+              onCloseDialog={handleCloseDialog}
+              onSaveDialog={handleSaveDialog}
+              onRequestDelete={handleRequestDelete}
+              onShowAddRequest={handleShowAddDialog}
+              onShowEditRequest={handleShowEditDialog}
+              dialogError={dialogError}
+              colorOptions={colorOptions}
+              getBgFromTextColor={getBgFromTextColor}
+              getTextForBg={getTextForBg}
+          />
+        </div>
 
-      {/* Event Modal */}
+      </div> {/* <<< Closing tag of the scaled container */} 
+
+      {/* --- Modals START (Moved Outside Scaled Container) --- */} {/* Fixed comment syntax */}
+
+      {/* Event Modal */} 
       {selectedDate && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40"
@@ -1519,7 +1572,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           }}
         >
            <div ref={eventModalRef} className="bg-white rounded-sm w-full max-w-md">
-            <div className="p-6">
+             {/* ... Event Modal content ... */} 
+             <div className="p-6">
               <div className="flex items-center justify-center">
                 <div>
                   <h3 className="text-lg font-mono">EDIT {format(selectedDate, "MMMM d, yyyy").toUpperCase()}</h3>
@@ -1528,7 +1582,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 </div>
               </div>
             </div>
-
             <div className="p-6">
               {eventsForSelectedDate.map((event, index) => (
                 <div
@@ -1547,12 +1600,11 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                       onChange={(e) => handleUpdateEventContent(index, e.target.value)}
                       onKeyDown={(e) => handleTextareaKeyDown(e, index)}
                       onSelect={(e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => handleTextSelect(e)}
-                      placeholder="event"
+                      placeholder="Event name"
                       className={`w-full p-3 border rounded-sm ${getTextColorClass(event.color)} focus:outline-none focus:border-black font-mono resize-none h-[72px] pr-8`}
                       style={{ textTransform: 'none', fontFamily: 'inherit' }}
                     />
                   </div>
-
                   <div
                     className={cn(
                       "flex flex-wrap gap-2 items-center transition-all duration-300 ease-in-out overflow-hidden",
@@ -1561,7 +1613,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                         : "opacity-0 max-h-0 mb-0 pointer-events-none"
                     )}
                   >
-                    <div className="flex-1 flex flex-wrap gap-2">
+                     <div className="flex-1 flex flex-wrap gap-2">
                       {projectGroups.map((group) => {
                         const currentEvent = eventsForSelectedDate[index];
                         const currentProjectId = currentEvent?.projectId ?? 'default';
@@ -1620,8 +1672,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 </div>
               ))}
             </div>
-
-            {/* Container for ADD ANOTHER EVENT Button */}
             <div className="p-0"> 
               <Button
                 variant="ghost"
@@ -1632,12 +1682,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 ADD ANOTHER EVENT
               </Button>
             </div>
-
-            {/* Modal Footer - Separate div for actions */}
-            <div className="flex justify-between items-center p-4 border-t border-gray-200">
-                {/* --- New Delete All Button --- */}
+             <div className="flex justify-between items-center p-4 border-t border-gray-200">
                 <div className="flex-shrink-0">
-                  {/* Updated visibility condition */}
                   {eventsForSelectedDate.length >= 2 && eventsForSelectedDate[1]?.content?.trim() !== '' && (
                     <Button
                       onClick={handleDeleteAllEventsForDay}
@@ -1649,9 +1695,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                     </Button>
                   )}
                 </div>
-                {/* --- End New Delete All Button --- */}
-
-                {/* Cancel/Save on the right */}
                 <div className="flex gap-2 flex-grow justify-end">
                   <Button
                     variant="ghost"
@@ -1678,14 +1721,14 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                     }
                   </Button>
                 </div> 
-            </div> {/* Closing tag for Modal Footer div */} 
-           </div> {/* Closing tag for eventModalRef div */}
-        </div> 
+            </div>
+           </div>
+        </div>
       )}
 
-      {/* Share Modal */}
+      {/* Share Modal */} 
       {showShareModal && (
-        <div
+         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -1695,7 +1738,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           }}
         >
           <div className="bg-white rounded-sm p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium mb-4 font-mono">Share Calendar Link</h3>
+            {/* ... Share Modal content ... */} 
+             <h3 className="text-lg font-medium mb-4 font-mono">Share Calendar Link</h3>
             <div className="flex gap-2">
               <input
                 ref={shareInputRef}
@@ -1734,9 +1778,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         </div>
       )}
 
-      {/* Google Calendar Instructions Modal */}
+      {/* Google Calendar Instructions Modal */} 
       {showGoogleInstructionsModal && (
-        <div
+         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -1745,7 +1789,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           }}
         >
           <div className="bg-white rounded-sm p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium mb-4 font-mono">Import to Google Calendar</h3>
+             {/* ... Google Instructions Modal content ... */}
+             <h3 className="text-lg font-medium mb-4 font-mono">Import to Google Calendar</h3>
             <ol className="list-decimal ml-4 space-y-2 text-sm text-gray-600 font-mono">
               <li>Go to <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">calendar.google.com</a></li>
               <li>Click the gear icon (Settings)</li>
@@ -1765,7 +1810,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         </div>
       )}
 
-      {/* Reset Confirmation Modal */}
+      {/* Reset Confirmation Modal */} 
       {showResetConfirm && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -1775,8 +1820,17 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             }
           }}
         >
-          <div className="bg-white rounded-sm w-full max-w-sm p-6">
-            <h4 className="text-md font-mono mb-2 text-center">RESET CALENDAR</h4>
+          <div 
+            className="bg-white rounded-sm w-full max-w-sm p-6"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
+          >
+             {/* ... Reset Modal content ... */} 
+              <h4 className="text-md font-mono mb-2 text-center">RESET CALENDAR</h4>
             <p className="text-xs font-mono text-gray-600 mb-6 text-center">Are you sure? This will remove all events and tags.</p>
             <div className="flex justify-center gap-3">
               <button
@@ -1797,10 +1851,11 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      {showDeleteConfirmId && (
+      {/* Delete Confirmation Dialog */} 
+       {showDeleteConfirmId && (
          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 p-4">
            <div ref={deleteConfirmRef} className="bg-white p-6 rounded-sm max-w-sm w-full shadow-xl">
+             {/* ... Delete Confirm Dialog content ... */}
              <h4 className="text-md font-mono mb-2 text-center">DELETE</h4>
              <p className="text-xs font-mono text-gray-600 mb-6 text-center">
                Are you sure you want to delete the tag &quot;{projectGroups.find(g => g.id === showDeleteConfirmId)?.name}&quot;? Events using this tag will revert to default.
@@ -1823,7 +1878,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
          </div>
        )}
 
-      {/* Export Options Modal */}
+      {/* Export Options Modal */} 
       {showExportOptionsModal && (
          <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
@@ -1835,21 +1890,21 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           }}
          >
            <div className="bg-white rounded-sm w-full max-w-lg p-6 shadow-xl">
-             <div className="flex justify-between items-center border-b pb-3 mb-4">
-               <h3 className="text-sm font-mono uppercase tracking-wider">Export Options</h3>
-               <button
-                 onClick={() => {
-                   setShowExportOptionsModal(false);
-                   setSelectedExportTags([]);
-                 }}
-                 className="text-gray-400 hover:text-gray-600"
-               >
-                 <X size={20}/>
-               </button>
-             </div>
-
-             <div className="mb-5 pt-1">
-               <label className="block text-xs font-mono mb-2 uppercase tracking-wider">Format</label>
+             {/* ... Export Options Modal content ... */} 
+               <div className="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 className="text-sm font-mono uppercase tracking-wider">Export Options</h3>
+                <button
+                  onClick={() => {
+                    setShowExportOptionsModal(false);
+                    setSelectedExportTags([]);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={20}/>
+                </button>
+              </div>
+              <div className="mb-5 pt-1">
+                 <label className="block text-xs font-mono mb-2 uppercase tracking-wider">Format</label>
                <div className="space-y-2">
                  <label className="flex items-center gap-2 text-sm font-mono cursor-pointer">
                    <input
@@ -1879,10 +1934,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                    )}
                  </div>
                </div>
-             </div>
-
-             <div className="mb-6 pt-4 border-t">
-               <label className="block text-xs font-mono mb-2 uppercase tracking-wider">Tags to Include</label>
+              </div>
+              <div className="mb-6 pt-4 border-t">
+                 <label className="block text-xs font-mono mb-2 uppercase tracking-wider">Tags to Include</label>
                <div className="flex justify-between items-center mb-2">
                  <button
                    onClick={() => setSelectedExportTags(projectGroups.map(g => g.id))}
@@ -1916,30 +1970,29 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                    </label>
                  ))}
                </div>
-             </div>
-
-             <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-               <button
-                 onClick={() => {
-                   setShowExportOptionsModal(false);
-                   setSelectedExportTags([]);
-                 }}
-                 className="px-4 py-2 text-xs font-mono hover:bg-gray-100 rounded-sm border border-gray-300"
-               >
-                 Cancel
-               </button>
-               <button
-                 onClick={handleExportWithTags}
-                 disabled={selectedExportTags.length === 0}
-                 className="px-6 py-2 text-xs bg-black text-white rounded-sm font-mono hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-               >
-                 Export
-               </button>
-             </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                 <button
+                  onClick={() => {
+                    setShowExportOptionsModal(false);
+                    setSelectedExportTags([]);
+                  }}
+                  className="px-4 py-2 text-xs font-mono hover:bg-gray-100 rounded-sm border border-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleExportWithTags}
+                  disabled={selectedExportTags.length === 0}
+                  className="px-6 py-2 text-xs bg-black text-white rounded-sm font-mono hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Export
+                </button>
+              </div>
            </div>
          </div>
       )}
-
-    </div>
+      {/* --- Modals END --- */}
+    </>
   )
 }

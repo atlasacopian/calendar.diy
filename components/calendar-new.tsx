@@ -1751,9 +1751,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             <ol className="list-decimal ml-4 space-y-2 text-sm text-gray-600 font-mono">
               <li>Go to <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">calendar.google.com</a></li>
               <li>Click the gear icon (Settings)</li>
-              <li>Click "Import &amp; Export"</li>
+              <li>Click &quot;Import &amp; Export&quot;</li>
               <li>Upload the downloaded .ics file</li>
-              <li>Click "Import"</li>
+              <li>Click &quot;Import&quot;</li>
             </ol>
             <div className="flex justify-end mt-6">
               <button
@@ -1812,7 +1812,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
            <div ref={deleteConfirmRef} className="bg-white p-6 rounded-sm max-w-sm w-full shadow-xl">
              <h4 className="text-md font-mono mb-2 text-center">DELETE</h4>
              <p className="text-xs font-mono text-gray-600 mb-6 text-center">
-               Are you sure you want to delete the tag "{projectGroups.find(g => g.id === showDeleteConfirmId)?.name}"? Events using this tag will revert to default.
+               Are you sure you want to delete the tag &quot;{projectGroups.find(g => g.id === showDeleteConfirmId)?.name}&quot;? Events using this tag will revert to default.
              </p>
              <div className="flex justify-center gap-3">
                <button

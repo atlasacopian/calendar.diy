@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { Tag, Minus, X as IconX, Plus, Pencil } from "lucide-react"
 import { subMonths, addMonths } from "date-fns"
+import { createPortal } from "react-dom"
 
 export type ProjectGroup = {
   id: string
@@ -152,7 +153,7 @@ export default function ProjectGroups({
         </div>
       </div>
 
-      {showDialog && (
+      {showDialog && typeof window !== 'undefined' && createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div ref={dialogRef} className="bg-white p-4 sm:p-6 rounded-sm max-w-xs w-full shadow-xl">
             <h4 className="text-sm sm:text-md font-mono mb-3 text-center uppercase tracking-wider">
@@ -242,7 +243,8 @@ export default function ProjectGroups({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

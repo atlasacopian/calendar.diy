@@ -1,36 +1,45 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
 
-// Define a very simple context type (can be expanded later)
 type AppContextType = {
-  // Placeholder for future context values if needed
+  user: any | null
 }
 
-// Create the context with a default value
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
-// Provider component (doesn't manage auth state anymore)
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // No user state or Supabase logic needed here for now
+  const [user, setUser] = useState<any | null>(null)
 
-  // Provide an empty context value (can add things later)
-  const value = {}
+  useEffect(() => {
+    // Get current user on mount
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user ?? null)
+    })
 
-  return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
-  )
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const value: AppContextType = {
+    user,
+  }
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }
 
-// Custom hook to use the context
 export const useAuth = () => {
   const context = useContext(AppContext)
   if (context === undefined) {
-    // Changed error message slightly as it's not just for Auth anymore
-    throw new Error('useAuth must be used within an AuthProvider') 
+    throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
 }

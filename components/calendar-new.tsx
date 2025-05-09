@@ -13,6 +13,9 @@ import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import ProjectGroups from './project-groups';
 import { Button } from '@/components/ui/button';
+import { saveEventsToSupabase, saveProjectGroupsToSupabase, loadEventsFromSupabase, loadProjectGroupsFromSupabase } from "@/lib/calendar-service";
+import { useAuth } from "@/lib/auth-context";
+import AuthButton from '@/components/AuthButton';
 
 interface Event {
   id: string;
@@ -71,6 +74,7 @@ function getTextColorFromBg(bgColor: string): string {
 
 export default function CalendarNew() {
   const searchParams = useSearchParams();
+  const { user } = useAuth();
 
   const [currentDate, setCurrentDate] = useState(() => {
     const dateParam = searchParams.get('date');
@@ -280,13 +284,39 @@ export default function CalendarNew() {
     }
   }, [showModal, showAddDialog, currentDate]); 
 
+  // Load data from Supabase once user is authenticated
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (!user) return;
+
+    (async () => {
+      try {
+        const [supabaseEvents, supabaseGroups] = await Promise.all([
+          loadEventsFromSupabase(user),
+          loadProjectGroupsFromSupabase(user),
+        ]);
+
+        if (supabaseGroups && supabaseGroups.length > 0) {
+          setProjectGroups(supabaseGroups as ProjectGroup[]);
+        }
+
+        if (supabaseEvents && supabaseEvents.length > 0) {
+          // Ensure date objects are Date instances
+          const normalized = supabaseEvents.map(ev => ({ ...ev, date: new Date(ev.date) })) as Event[];
+          setEvents(normalized);
+        }
+      } catch (err) {
+        console.error("Failed to load data from Supabase", err);
+      }
+    })();
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      saveEventsToSupabase(events as any, user as any);
+    } else if (typeof window !== 'undefined') {
       try {
         const eventsToSave = JSON.stringify(events, (key, value) => {
-          if (value instanceof Date) {
-            return value.toISOString();
-          }
+          if (value instanceof Date) return value.toISOString();
           return value;
         });
         localStorage.setItem('calendarEvents', eventsToSave);
@@ -294,17 +324,19 @@ export default function CalendarNew() {
         console.error("Failed to save events:", e);
       }
     }
-  }, [events]);
+  }, [events, user]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (user) {
+      saveProjectGroupsToSupabase(projectGroups as any, user as any);
+    } else if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
       } catch (e) {
         console.error("Failed to save groups:", e);
       }
     }
-  }, [projectGroups]);
+  }, [projectGroups, user]);
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -1385,6 +1417,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 >
                   <Link size={14} /> SHARE
                 </button>
+                <AuthButton />
               </div>
               <button
                 onClick={handleReset}

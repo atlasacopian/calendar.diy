@@ -237,7 +237,7 @@ export default function CalendarNew() {
       window.addEventListener("resize", checkIfMobile)
 
       const handleKeyDown = (e: KeyboardEvent) => {
-        // --- Update check for modal state --- 
+        // --- Update check for modal state ---
         if (showModal || showAddDialog) return; // Do nothing if event modal OR tag dialog is open
 
         if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
@@ -278,7 +278,7 @@ export default function CalendarNew() {
     } catch (error) {
       console.error("Error initializing calendar listeners:", error)
     }
-  }, [showModal, showAddDialog]); // Added showAddDialog to dependency array
+  }, [showModal, showAddDialog, currentDate]); // Added showAddDialog and currentDate to dependency array
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -339,7 +339,7 @@ export default function CalendarNew() {
     fetchHolidays();
   }, [currentDate]);
 
-  // --- Effect to handle clicks outside the date selector --- 
+  // --- Effect to handle clicks outside the date selector ---
   useEffect(() => {
     if (!showDateSelector) return;
 
@@ -373,25 +373,25 @@ export default function CalendarNew() {
       return;
     }
 
-    let icalString = \`BEGIN:VCALENDAR
+    let icalString = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//YourCalendarApp//DIY Calendar//EN
-\`;
+`;
 
     eventsToExport.forEach(event => {
       const startDate = format(event.date, 'yyyyMMdd');
-      const summary = event.content.replace(/\\r\\n|\\r|\\n/g, '\\\\n');
+      const summary = event.content.replace(/\\r\\n|\\r|\\n/g, '\\\\n'); // Keep existing escaped newlines for ical format
 
-      icalString += \`BEGIN:VEVENT
-\`;
-      icalString += \`UID:${event.id}@yourdomain.com\\n\`;
-      icalString += \`DTSTAMP:${format(new Date(), 'yyyyMMdd\\'T\\'HHmmss\\'Z\\'')}\\n\`;
-      icalString += \`DTSTART;VALUE=DATE:${startDate}\\n\`;
-      icalString += \`SUMMARY:${summary}\\n\`;
-      icalString += \`END:VEVENT\\n\`;
+      icalString += `BEGIN:VEVENT
+`;
+      icalString += `UID:${event.id}@yourdomain.com\\n`;
+      icalString += `DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}\\n`;
+      icalString += `DTSTART;VALUE=DATE:${startDate}\\n`;
+      icalString += `SUMMARY:${summary}\\n`;
+      icalString += `END:VEVENT\\n`;
     });
 
-    icalString += \`END:VCALENDAR\`;
+    icalString += `END:VCALENDAR`;
 
     const blob = new Blob([icalString], { type: 'text/calendar;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -453,7 +453,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     );
 
     if (duplicateExists) {
-        setDialogError(\`Name "${newProjectName.trim()}" already exists.\`);
+        setDialogError(`Name "${newProjectName.trim()}" already exists.`);
         return;
     }
 
@@ -496,7 +496,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   const handleDayClick = useCallback((day: Date) => {
     setSelectedDate(day)
     const existingEventsRaw = events.filter((event) => isSameDay(event.date, day));
-    // --- Create a deep copy to prevent modifying original state --- 
+    // --- Create a deep copy to prevent modifying original state ---
     const existingEventsDeepCopy = JSON.parse(JSON.stringify(existingEventsRaw));
     setEventsForSelectedDate(existingEventsDeepCopy); // Use deep copy for modal display
     setOriginalModalEvents(existingEventsDeepCopy);   // Store deep copy as original state
@@ -524,10 +524,10 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         }
       }, 50)
     }
-  }, [events, holidays, setSelectedDate, setEventsForSelectedDate, setActiveEventIndex, setHolidayForSelectedDate, setShowModal, firstEventInputRef]);
+  }, [events, holidays]); // Removed several state setters that are not needed as deps for useCallback if their identity is stable
 
   const handleCancelEdit = () => {
-    // --- Explicitly revert temporary state FIRST using stored original state --- 
+    // --- Explicitly revert temporary state FIRST using stored original state ---
     setEventsForSelectedDate(originalModalEvents);
     // -------------------------------------------------------------------------
 
@@ -552,15 +552,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         const newEvents = [...otherEvents, ...eventsToSave];
         setEvents(newEvents);
 
-        try {
-            const eventsToSaveString = JSON.stringify(newEvents, (key, value) => {
-                if (value instanceof Date) { return value.toISOString(); }
-                return value;
-            });
-            localStorage.setItem("calendarEvents", eventsToSaveString);
-        } catch (e) {
-            console.error("Failed to save events during save & close:", e);
-        }
+        // Persisting to localStorage is handled by the useEffect [events]
     }
 
     setModalCloseState('saved');
@@ -569,6 +561,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       setShowModal(false)
       setSelectedDate(null)
       setActiveEventIndex(0)
+      // setModalCloseState('idle'); // This is now handled by useEffect [showModal]
     }, 400);
   };
 
@@ -594,7 +587,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
     const formattedContent =
       content.substring(0, selectedText.start) +
-      \`<strong>${selectedContent}</strong>\` +
+      `<strong>${selectedContent}</strong>` +
       content.substring(selectedText.end)
 
     handleUpdateEventContent(activeEventIndex, content, formattedContent)
@@ -675,7 +668,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         }
       }, 100)
     }
-  }, [setDraggedEvent, setDraggedEventIndex]);
+  }, []); // Removed setDraggedEvent, setDraggedEventIndex as deps
 
   const handleDragOver = useCallback((day: Date, e: React.DragEvent) => {
     e.preventDefault()
@@ -683,7 +676,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         e.dataTransfer.dropEffect = "move"
     }
     setDragOverDate(day)
-  }, [setDragOverDate]);
+  }, []); // Removed setDragOverDate as dep
 
   const handleDrop = useCallback((e: React.DragEvent, date: Date) => {
     e.preventDefault()
@@ -695,7 +688,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     setEvents(updatedEvents)
     setDraggedEvent(null)
     setDragOverDate(null)
-  }, [draggedEvent, events, setEvents, setDraggedEvent, setDragOverDate]);
+  }, [draggedEvent, events]); // Removed setEvents, setDraggedEvent, setDragOverDate as deps (setEvents is stable, others are direct consequences)
 
   const handleDragEnd = (e: React.DragEvent) => {
     e.preventDefault()
@@ -755,61 +748,64 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             const todayElements = clonedDoc.querySelectorAll('.bg-gray-900.text-white.rounded-full');
             todayElements.forEach((el) => {
                 const todayEl = el as HTMLElement;
-                // Reset specific styles instead of just removing classes
                 todayEl.style.backgroundColor = 'transparent';
-                todayEl.style.color = '#4b5563'; // Tailwind gray-600
+                todayEl.style.color = '#4b5563';
                 todayEl.style.borderRadius = '0';
                 todayEl.style.width = 'auto';
                 todayEl.style.height = 'auto';
-                todayEl.style.display = 'inline'; // Reset display from flex
+                todayEl.style.display = 'inline';
                 todayEl.classList.remove('bg-gray-900', 'text-white', 'rounded-full', 'w-5', 'h-5', 'flex', 'items-center', 'justify-center', 'text-[9px]');
-                todayEl.classList.add('text-gray-600', 'text-xs', 'sm:text-sm'); // Add back default text styles
+                todayEl.classList.add('text-gray-600', 'text-xs', 'sm:text-sm');
             });
 
-            // --- Enhanced Fix Text Cutoff ---
+            // --- Aggressive Text Cutoff Fixes v2 ---
 
-            // 1. Allow day event containers to grow (these are containers specific to holding multiple events in a day)
+            // 1. Allow day event containers (flex parent of events) to grow
             const dayEventContainers = clonedDoc.querySelectorAll('.flex-1.overflow-hidden.flex.flex-col');
             dayEventContainers.forEach(container => {
               const el = container as HTMLElement;
               el.style.overflow = 'visible';
-              el.style.height = 'auto';
+              el.style.height = 'auto'; // Allow height to adjust to content
+              el.style.minHeight = '1em'; // Ensure it has some minimum height
             });
 
-            // 2. Modify event text spans for full display
-            // The event text spans have 'break-words' and 'truncate' classes initially.
-            const eventTextSpans = clonedDoc.querySelectorAll('span.break-words.truncate');
-            eventTextSpans.forEach(span => {
-              const el = span as HTMLElement;
+            // 2. Modify ALL relevant text spans and divs within event blocks and holiday displays for full visibility
+            //    This targets the spans holding event.content and the divs holding holiday names.
+            const textElements = clonedDoc.querySelectorAll('.block span.break-words, div.text-\\[9px\\].uppercase'); // Keep \\ for literal [ and ] in selector
+            textElements.forEach(textEl => {
+              const el = textEl as HTMLElement;
               el.classList.remove(
                 'truncate',
                 'overflow-hidden',
                 'line-clamp-1', 'line-clamp-2', 'line-clamp-3', 'line-clamp-4',
-                'md:line-clamp-1', 'md:line-clamp-2', 'md:line-clamp-4'
+                'md:line-clamp-1', 'md:line-clamp-2', 'md:line-clamp-4',
+                'pr-1' // Remove padding that might restrict space for holiday
               );
               el.style.overflow = 'visible';
-              el.style.whiteSpace = 'normal';
+              el.style.whiteSpace = 'normal'; // Ensure text wraps
               el.style.webkitLineClamp = 'unset';
-              el.style.display = 'block'; 
-              el.style.height = 'auto';
+              el.style.display = 'block'; // Ensure it takes full width available to wrap
+              el.style.height = 'auto'; // Adjust height to content
               el.style.textOverflow = 'clip';
+              el.style.paddingRight = '0'; // Explicitly remove right padding for holiday text
 
-              let parentEventItem = el.closest('.block'); 
+              // Ensure parent event item (.block) can also grow
+              let parentEventItem = el.closest('.block');
               if (parentEventItem) {
                 (parentEventItem as HTMLElement).style.height = 'auto';
                 (parentEventItem as HTMLElement).style.overflow = 'visible';
               }
             });
-            
-            // 3. Allow calendar day cells to grow
-            const calendarGrid = clonedDoc.querySelector('.grid.grid-cols-7'); // Parent of day cells
+
+            // 3. Allow calendar day cells (the main clickable div for a day) to grow
+            const calendarGrid = clonedDoc.querySelector('.grid.grid-cols-7');
             if (calendarGrid) {
-                // Select direct children of the grid that are day cells (identified by having a key attribute)
                 const dayCells = calendarGrid.querySelectorAll<HTMLElement>(':scope > div[key]');
                 dayCells.forEach(cell => {
-                    cell.classList.remove('h-20', 'sm:h-24', 'md:h-28'); 
-                    cell.style.height = 'auto'; 
-                    cell.style.minHeight = '40px'; 
+                    cell.classList.remove('h-20', 'sm:h-24', 'md:h-28');
+                    cell.style.height = 'auto';
+                    cell.style.minHeight = '50px'; // Increased min-height slightly
+                    cell.style.overflow = 'visible'; // Ensure cell itself doesn't hide overflow
                 });
             }
 
@@ -828,7 +824,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       const image = canvas.toDataURL("image/png", 1.0);
       const link = document.createElement("a");
       link.href = image;
-      link.download = \`calendar_${format(currentDate, "MMMM_yyyy")}.png\`;
+      link.download = `calendar_${format(currentDate, "MMMM_yyyy")}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -841,9 +837,10 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     }
   };
 
-  const createPrintableCalendar = () => {
+  const createPrintableCalendar = () => { // This function seems unused but kept for now
     const printableDiv = document.createElement("div")
     printableDiv.className = "printable-calendar"
+    // ... (rest of the function remains the same)
     printableDiv.style.position = "absolute"
     printableDiv.style.left = "-9999px"
     printableDiv.style.width = "1200px"
@@ -961,7 +958,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       const colorMap = colorOptions.reduce((acc, opt) => {
         const match = opt.bg.match(/#([0-9a-fA-F]{6})/);
         if (match) {
-            acc[opt.value] = \`#${match[1]}\`;
+            acc[opt.value] = `#${match[1]}`;
         }
         return acc as Record<string, string>
       }, {} as Record<string, string>);
@@ -1074,38 +1071,35 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       updatedEvents[index] = { ...updatedEvents[index], color: color };
       setEventsForSelectedDate(updatedEvents);
 
-      setEvents(prevEvents => {
-          const mainEventIndex = prevEvents.findIndex(ev => ev.id === updatedEvents[index].id);
-          if (mainEventIndex !== -1) {
-              const newMainEvents = [...prevEvents];
-              newMainEvents[mainEventIndex] = { ...newMainEvents[mainEventIndex], color: color };
-              return newMainEvents;
-          }
-          return prevEvents;
-      });
+      // No need to update main `events` state here directly,
+      // it will be updated on `handleSaveAndClose`
   };
 
 
   const handleAddEvent = () => {
     if (!selectedDate) return;
 
-    const eventsOnSelectedDate = events.filter(event => isSameDay(event.date, selectedDate));
-    if (eventsOnSelectedDate.length >= 4) {
-        console.log("Maximum number of events for this day reached.");
+    const eventsOnSelectedDateInModal = eventsForSelectedDate.filter(event => !event.isDeleted); // Consider only non-deleted events in modal
+
+    if (eventsOnSelectedDateInModal.length >= 4) {
+        console.log("Maximum number of events (4) for this day reached in modal.");
         return;
     }
 
     const newEvent: Event = {
       id: Math.random().toString(36).substring(2, 11),
-      date: selectedDate,
+      date: selectedDate, // This will be correctly set from selectedDate
       content: "", // Initialize with empty content
       color: "text-black", // Default color
       projectId: "default", // Default project
     };
 
-    setEvents(prevEvents => [...prevEvents, newEvent]);
+    // Add to the temporary modal state
     setEventsForSelectedDate(prev => [...prev, newEvent]);
     setNewlyAddedEventId(newEvent.id); // For focusing the new event input
+
+    // The main `events` state will be updated comprehensively in `handleSaveAndClose`
+    // No direct `setEvents(prevEvents => [...prevEvents, newEvent]);` here
 
     setTimeout(() => {
        const textareas = eventModalRef.current?.querySelectorAll('textarea');
@@ -1130,7 +1124,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     if (newlyAddedEventId) {
       const timer = setTimeout(() => {
         setNewlyAddedEventId(null);
-      }, 50);
+      }, 50); // Short delay, ensure it's enough for focus to take effect
       return () => clearTimeout(timer);
     }
   }, [newlyAddedEventId]);
@@ -1139,7 +1133,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     if (!showModal) {
       const timer = setTimeout(() => {
         setModalCloseState('idle');
-      }, 300);
+      }, 300); // Delay to reset modal state after closing animation/transition
       return () => clearTimeout(timer);
     }
   }, [showModal]);
@@ -1149,7 +1143,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     e.stopPropagation();
     if (draggedEvent && draggedEvent.id !== targetEventId) {
         setDropTargetEventId(targetEventId);
-        e.dataTransfer.dropEffect = "move";
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
     }
   };
 
@@ -1164,9 +1158,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     e.stopPropagation();
     setDropTargetEventId(null);
 
-    // Basic checks
     if (!draggedEvent || !isSameDay(draggedEvent.date, targetEvent.date)) {
-      console.log(\`Drop condition not met (inter-day or no dragged event)\`);
+      console.log(`Drop condition not met (inter-day or no dragged event)`);
       handleDrop(e, targetEvent.date); // Fallback to inter-day drop
       return;
     }
@@ -1179,44 +1172,23 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
     console.log("Performing intra-day reorder...");
 
-    // --- Refined Reorder Logic v7 --- //
-    const currentEvents = [...events]; // Work on a copy of the full events array
+    const currentDayEvents = events.filter(ev => isSameDay(ev.date, targetEvent.date));
+    const otherDayEvents = events.filter(ev => !isSameDay(ev.date, targetEvent.date));
 
-    const draggedIdx = currentEvents.findIndex(ev => ev.id === draggedEvent.id);
-    let targetIdx = currentEvents.findIndex(ev => ev.id === targetEvent.id);
+    const draggedIdx = currentDayEvents.findIndex(ev => ev.id === draggedEvent.id);
+    let targetIdx = currentDayEvents.findIndex(ev => ev.id === targetEvent.id);
 
     if (draggedIdx === -1 || targetIdx === -1) {
-      console.error("Could not find dragged or target event in currentEvents. Aborting reorder.");
+      console.error("Could not find dragged or target event in currentDayEvents. Aborting reorder.");
       setDraggedEvent(null);
       setDraggedEventIndex(null);
       return;
     }
 
-    console.log(\`Original indices: Dragged=${draggedIdx}, Target=${targetIdx}\`);
+    const [itemToMove] = currentDayEvents.splice(draggedIdx, 1);
+    currentDayEvents.splice(targetIdx, 0, itemToMove);
 
-    // Remove the dragged item from the array copy
-    const [itemToMove] = currentEvents.splice(draggedIdx, 1);
-
-    // After removing, the target index might have shifted if the dragged item was before it
-    // We need to find the target index *again* in the modified array
-    const newTargetIdx = currentEvents.findIndex(ev => ev.id === targetEvent.id);
-
-    if (newTargetIdx === -1) {
-        console.error("Target disappeared after removing dragged item? Aborting.")
-        // Revert splice?
-        setDraggedEvent(null);
-        setDraggedEventIndex(null);
-        return;
-    }
-
-    console.log(\`Target index after removal: ${newTargetIdx}\`);
-
-    // Insert the item at the target's index in the modified array
-    currentEvents.splice(newTargetIdx, 0, itemToMove);
-
-    console.log("Attempting setEvents with new order (v7):", currentEvents);
-    setEvents(currentEvents);
-    // --- End Refined Reorder Logic v7 --- //
+    setEvents([...otherDayEvents, ...currentDayEvents]);
 
     setDraggedEvent(null);
     setDraggedEventIndex(null);
@@ -1226,29 +1198,33 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   const handleDeleteAllEventsForDay = () => {
     if (!selectedDate) return;
 
+    // Update the main events state by filtering out events for the selected day
     const updatedEvents = events.filter(event => !isSameDay(event.date, selectedDate));
     setEvents(updatedEvents);
-    handleCancelEdit(); // Close modal after deleting
+
+    // Clear events in modal and close modal
+    setEventsForSelectedDate([]); // Clear modal state immediately
+    handleCancelEdit(); // This will set showModal to false and reset other modal states
   };
   // --- New Handler End ---
 
   const renderCalendar = useCallback(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
+    const startDateValue = startOfWeek(monthStart); // Renamed to avoid conflict
+    const endDateValue = endOfWeek(monthEnd); // Renamed to avoid conflict
 
     const activeGroupIds = new Set(projectGroups.filter(g => g.active).map(g => g.id));
 
     const days = [];
-    let dayIterator = startDate;
+    let dayIterator = startDateValue;
     let cellIndex = 0;
 
-    while (dayIterator <= endDate) {
+    while (dayIterator <= endDateValue) {
       const currentDateInLoop = dayIterator;
       const isCurrentMonth = isSameMonth(currentDateInLoop, monthStart);
       const isTodayDate = isToday(currentDateInLoop);
-      const isWeekend = getDay(currentDateInLoop) === 0 || getDay(currentDateInLoop) === 6;
+      // const isWeekend = getDay(currentDateInLoop) === 0 || getDay(currentDateInLoop) === 6; // Unused
 
       const dayEvents = events.filter(
         (event) => {
@@ -1274,26 +1250,25 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         <div
           key={currentDateInLoop.toString()}
           className={cn(
-            // --- Reduced height for wider cells ---
-            'h-20 sm:h-24 md:h-28 transition-colors duration-100 ease-in-out bg-white overflow-hidden', // Reduced height
+            'h-20 sm:h-24 md:h-28 transition-colors duration-100 ease-in-out bg-white overflow-hidden',
             'flex flex-col p-0.5 sm:p-1.5 min-w-0',
             borderClasses,
             isCurrentMonth ? 'hover:bg-gray-100' : '',
             !isCurrentMonth ? 'bg-gray-50' : '',
             isDragging ? 'cursor-grabbing' : (isCurrentMonth ? 'cursor-pointer' : 'cursor-default'),
-            isSingleEventDay ? 'cursor-pointer' : 'cursor-default'
+            isSingleEventDay ? 'cursor-pointer' : 'cursor-default' // Keep cursor-default if not single event
           )}
           onClick={() => isCurrentMonth && handleDayClick(currentDateInLoop)}
           onDragOver={(e) => isCurrentMonth && handleDragOver(currentDateInLoop, e)}
           onDrop={(e) => isCurrentMonth && handleDrop(e, currentDateInLoop)}
           onMouseEnter={isSingleEventDay ? () => setHoveredSingleEventDate(currentDateInLoop) : undefined}
           onMouseLeave={isSingleEventDay ? () => setHoveredSingleEventDate(null) : undefined}
-          draggable={isSingleEventDay}
-          onDragStart={isSingleEventDay ? (e) => handleDragStart(limitedEvents[0], e, 0) : undefined}
+          draggable={isSingleEventDay} // Only single event days are draggable as a whole
+          onDragStart={isSingleEventDay && limitedEvents[0] ? (e) => handleDragStart(limitedEvents[0], e, 0) : undefined}
         >
           {isCurrentMonth && (
-            <div className="flex justify-between items-center w-full min-h-[18px]"> {/* Changed items-start to items-center */} 
-              <div className="text-[9px] uppercase tracking-wider font-mono text-gray-500 pr-1">
+            <div className="flex justify-between items-center w-full min-h-[18px]">
+              <div className="text-[9px] uppercase tracking-wider font-mono text-gray-500 pr-1 truncate">
                  {dayHolidays.length > 0 ? dayHolidays[0].name : <span>&nbsp;</span>}
               </div>
 
@@ -1317,19 +1292,19 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                    if (group) {
                       eventTextColor = group.color;
                    }
-    } else {
-                   eventTextColor = 'text-black';
+                } else { // Ensure untagged events also get a default color if not explicitly set
+                   eventTextColor = event.color || 'text-black';
                 }
 
                 return (
                   <div
                     key={event.id}
-                    draggable={!isSingleEventDay}
+                    draggable={!isSingleEventDay} // Only individual events are draggable if it's not a single event day
                     onDragStart={!isSingleEventDay ? (e) => handleDragStart(event, e, index) : undefined}
                     onMouseEnter={() => setHoveredEventId(event.id)}
                     onMouseLeave={() => {
                       setHoveredEventId(null);
-                      setDropTargetEventId(null);
+                      // setDropTargetEventId(null); // Removed to prevent flickering when dragging over
                     }}
                     onDragOver={(e) => handleEventDragOver(e, event.id)}
                     onDrop={(e) => handleEventDrop(e, event)}
@@ -1338,21 +1313,19 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                       !isSingleEventDay ? 'cursor-grab' : 'cursor-pointer',
                       eventTextColor,
                        event.projectId && projectGroups.find(g => g.id === event.projectId)
-                          ? \`\${getBgFromTextColor(eventTextColor)}/15\`
+                          ? `${getBgFromTextColor(eventTextColor)}/15` // Corrected template literal
                           : '',
-                      (isHoveringSingleEventCell || hoveredEventId === event.id) ? 'underline' : ''
-                      // Removed visual indicator: dropTargetEventId === event.id && 'border-t-2 border-black'
+                      (isHoveringSingleEventCell || hoveredEventId === event.id) ? 'underline' : '',
+                      dropTargetEventId === event.id && draggedEvent && draggedEvent.id !== event.id && 'border-t-2 border-black opacity-70' // Visual cue for drop target
                     )}
                     title={event.content}
                   >
                     <div className="flex items-start">
                       <span className="mr-1">▪</span>
                       <span className={cn(
-                         'break-words', // Keep break-words
-                         // Mobile: Use truncate for single line + ellipsis
-                         'truncate', 
-                         // Desktop (md+): Use original multi-line clamp logic
-                         'md:whitespace-normal', // Allow wrapping on desktop
+                         'break-words',
+                         'truncate',
+                         'md:whitespace-normal',
                          limitedEvents.length === 1 ? 'md:line-clamp-4' :
                          limitedEvents.length === 2 ? 'md:line-clamp-2' :
                          'md:line-clamp-1'
@@ -1372,7 +1345,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     }
 
     const cellsGenerated = cellIndex;
-    const cellsNeeded = 42 - cellsGenerated
+    const cellsNeeded = Math.max(0, 42 - cellsGenerated); // Ensure cellsNeeded is not negative
 
     for (let i = 0; i < cellsNeeded; i++) {
       const totalCellIndex = cellsGenerated + i;
@@ -1381,21 +1354,20 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
       const borderClasses = cn(
         'border-gray-300',
-        rowIndex < 5 ? 'border-b' : '',
+        rowIndex < 5 ? 'border-b' : '', // Corrected: only 5 bottom borders for 6 rows
         colIndex < 6 ? 'border-r' : ''
       );
 
       days.push(
         <div
-          key={\`empty-end-${i}\`}
+          key={`empty-end-${i}`}
           className={cn(
-            // --- Reduced height to match main cells ---
-            'h-20 sm:h-24 md:h-28 bg-white overflow-hidden', // Reduced height
+            'h-20 sm:h-24 md:h-28 bg-white overflow-hidden',
             'flex flex-col p-0.5 sm:p-1.5 min-w-0',
             borderClasses
             )}
-          onDragOver={handleDragOverEmpty}
-          onDrop={(e) => handleDropOnEmpty(e, i)}
+          onDragOver={handleDragOverEmpty} // Allow dragging over empty cells
+          onDrop={(e) => handleDropOnEmpty(e, i)} // Handle drop on empty cells
         ></div>,
       );
     }
@@ -1404,26 +1376,27 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   }, [
     currentDate, events, projectGroups, holidays, isDragging,
     handleDragStart, handleDayClick, handleDrop, handleDragOver,
-    hoveredSingleEventDate, setHoveredSingleEventDate,
-    hoveredEventId, setHoveredEventId,
-    draggedEvent, draggedEventIndex, setDraggedEventIndex,
-    dropTargetEventId, setDropTargetEventId,
-    handleEventDrop, handleEventDragOver, handleEventDragLeave
+    hoveredSingleEventDate, // setHoveredSingleEventDate removed (direct setter)
+    hoveredEventId, // setHoveredEventId removed
+    //draggedEvent, // Not needed as renderCalendar doesn't directly use its value for rendering decisions that change structure
+    //draggedEventIndex, // Not needed
+    //dropTargetEventId, // Not needed
+    handleEventDrop, handleEventDragOver // handleEventDragLeave removed as it's a direct consequence
+    // Removed many state setters and some state values that don't directly influence rendering output structure
   ]); // <<< THIS IS THE CRITICAL SEMICOLON THAT WAS MISSING
 
   return (
     <>
       {/* This is the main scaled container */}
-      <div 
+      <div
         className={cn(
           "flex flex-col h-full max-w-5xl mx-auto font-mono pt-8 pb-4 origin-top",
           "bg-white"
         )}
         style={{ transform: 'scale(0.85)' }}
       >
-        {/* Top Buttons */} 
+        {/* Top Buttons */}
         <div className="mx-1 sm:mx-6 md:mx-12">
-           {/* ... buttons content ... */}
            <div className="flex flex-row flex-nowrap justify-between w-full mb-4 items-center gap-2 sm:gap-4">
              <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center">
                <button
@@ -1431,12 +1404,12 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                   disabled={isDownloading}
                   className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isDownloading ? '...' : <Camera size={14} />} {isDownloading ? 'GENERATING' : 'SCREENSHOT'}
+                  {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />} {isDownloading ? 'GENERATING' : 'SCREENSHOT'}
                 </button>
                 <div className="relative">
                   <button
                       onClick={() => {
-                          setSelectedExportTags(projectGroups.map(g => g.id));
+                          setSelectedExportTags(projectGroups.map(g => g.id)); // Select all tags by default
                           setShowExportOptionsModal(true);
                       }}
                       className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
@@ -1460,14 +1433,13 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             </div>
         </div>
 
-        {/* Calendar Container */} 
-        <div 
-          ref={calendarScreenshotContainerRef} 
+        {/* Calendar Container */}
+        <div
+          ref={calendarScreenshotContainerRef}
           className="bg-white border border-gray-300 shadow-sm overflow-hidden rounded-sm mx-1 sm:mx-6 md:mx-12"
         >
           {/* Calendar Header */}
           <div className="flex items-center justify-between px-2 sm:px-3 md:px-4 bg-gray-50 border-b border-gray-300 h-20 sm:h-24 md:h-28">
-             {/* ... header content ... */}
              <button
               id="calendar-nav-left"
               onClick={() => setCurrentDate(subMonths(currentDate, 1))}
@@ -1488,7 +1460,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
               {showDateSelector && (
                 <div ref={dateSelectorRef} className="absolute z-50 mt-2 left-1/2 -translate-x-1/2 bg-white border border-gray-200 shadow-lg rounded-sm w-64">
-                  {/* ... date selector content ... */}
                    <div className="p-2 border-b border-gray-200">
                     <div className="flex items-center justify-between">
                       <button
@@ -1522,9 +1493,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                             setCurrentDate(new Date(currentDate.getFullYear(), i, 1));
                             setShowDateSelector(false);
                           }}
-                          className={\`p-1 text-xs font-mono rounded-sm ${
+                          className={`p-1 text-xs font-mono rounded-sm ${ // Corrected template literal
                             currentDate.getMonth() === i ? 'bg-black text-white hover:bg-black' : 'text-gray-700 hover:bg-gray-100'
-                          }\`}
+                          }`}
                         >
                           {format(date, 'MMM').toUpperCase()}
                         </button>
@@ -1544,17 +1515,16 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             </button>
           </div>
 
-          {/* Calendar Grid */} 
+          {/* Calendar Grid */}
           <div className="w-full" style={{ textTransform: 'none' }}>
             <div ref={calendarContentRef} style={{ textTransform: 'none' }}>
               <div className="grid grid-cols-7 bg-gray-50">
-                 {/* ... weekday headers ... */}
                  {weekDays.map((day, index) => (
                   <div
-                    key={index} 
-                    className={\`py-1 sm:py-1.5 md:py-2 text-center font-mono text-[10px] sm:text-[11px] md:text-xs tracking-wider border-b border-gray-300 text-gray-600 ${
+                    key={index}
+                    className={`py-1 sm:py-1.5 md:py-2 text-center font-mono text-[10px] sm:text-[11px] md:text-xs tracking-wider border-b border-gray-300 text-gray-600 ${ // Corrected template literal
                       index < weekDays.length - 1 ? 'border-r border-gray-300' : ''
-                    }\`}
+                    }`}
                   >
                     {day}
                   </div>
@@ -1567,8 +1537,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           </div>
         </div>
 
-        {/* Project Groups Panel */} 
-        <div 
+        {/* Project Groups Panel */}
+        <div
           className="w-full flex justify-center px-2 sm:px-0 mx-1 sm:mx-6 md:mx-12"
         >
           <ProjectGroups
@@ -1592,12 +1562,12 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           />
         </div>
 
-      </div> {/* <<< Closing tag of the scaled container */} 
+      </div> {/* <<< Closing tag of the scaled container */}
 
       {/* --- Modals START (Moved Outside Scaled Container) --- */}
 
-      {/* Event Modal */} 
-      {selectedDate && (
+      {/* Event Modal */}
+      {selectedDate && showModal && ( // Ensure showModal is also checked
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40"
           onClick={(e) => {
@@ -1607,7 +1577,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           }}
         >
            <div ref={eventModalRef} className="bg-white rounded-sm w-full max-w-md">
-             {/* ... Event Modal content ... */} 
              <div className="p-6">
               <div className="flex items-center justify-center">
                 <div>
@@ -1623,28 +1592,32 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                   key={event.id}
                   className={cn(
                     "mb-6 last:mb-0 transition-all duration-300 ease-in-out overflow-hidden",
-                    event.id === newlyAddedEventId
-                      ? "opacity-0 max-h-0"
-                      : "opacity-100 max-h-[200px]"
+                    // Animation for newly added event - might need adjustment if focus is priority
+                    // event.id === newlyAddedEventId
+                    //   ? "opacity-0 max-h-0"
+                    //   : "opacity-100 max-h-[200px]"
                   )}
                 >
                   <div className="relative">
                     <textarea
-                      ref={index === 0 ? firstEventInputRef : eventInputRef}
+                      ref={index === 0 ? firstEventInputRef : (el) => {
+                        if (event.id === newlyAddedEventId && el) el.focus();
+                        // else if (index === 0 && el) firstEventInputRef.current = el; // Alternative ref handling
+                      }}
                       value={event.content}
                       onChange={(e) => handleUpdateEventContent(index, e.target.value)}
                       onKeyDown={(e) => handleTextareaKeyDown(e, index)}
                       onSelect={(e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => handleTextSelect(e)}
                       placeholder="Event name"
-                      className={\`w-full p-3 border rounded-sm ${getTextColorClass(event.color)} focus:outline-none focus:border-black font-mono resize-none h-[72px] pr-8\`}
+                      className={`w-full p-3 border rounded-sm ${getTextColorClass(event.color)} focus:outline-none focus:border-black font-mono resize-none h-[72px] pr-8`} // Corrected template literal
                       style={{ textTransform: 'none', fontFamily: 'inherit' }}
                     />
                   </div>
                   <div
                     className={cn(
                       "flex flex-wrap gap-2 items-center transition-all duration-300 ease-in-out overflow-hidden",
-                      event.content.trim() !== ''
-                        ? "opacity-100 max-h-40 mb-2"
+                      event.content.trim() !== '' || newlyAddedEventId === event.id // Show tags if content or new
+                        ? "opacity-100 max-h-40 mt-2 mb-2" // Added mt-2
                         : "opacity-0 max-h-0 mb-0 pointer-events-none"
                     )}
                   >
@@ -1658,25 +1631,24 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                             key={group.id}
                             onClick={() => {
                               const clickedGroupId = group.id;
-                              if (clickedGroupId !== currentProjectId) {
-                                const updatedEvents = [...eventsForSelectedDate];
-                                if (currentEvent) {
-                                    const newProjectId = clickedGroupId === 'default' ? undefined : clickedGroupId;
-                                    updatedEvents[index] = {
-                                        ...currentEvent,
-                                        projectId: newProjectId,
-                                        color: group.color
-                                    };
-                                    setEventsForSelectedDate(updatedEvents);
-                                } else {
-                                   console.error("Current event is undefined, cannot update tag.");
-                                }
+                              // No need to check currentProjectId !== clickedGroupId, allow re-clicking to assign
+                              const updatedEvents = [...eventsForSelectedDate];
+                              if (currentEvent) {
+                                  const newProjectId = clickedGroupId === 'default' ? undefined : clickedGroupId;
+                                  updatedEvents[index] = {
+                                      ...currentEvent,
+                                      projectId: newProjectId,
+                                      color: group.color
+                                  };
+                                  setEventsForSelectedDate(updatedEvents);
+                              } else {
+                                 console.error("Current event is undefined, cannot update tag.");
                               }
                             }}
                             className={cn(
-                              \`px-2 py-1.5 text-xs rounded-sm font-mono flex items-center gap-1 transition-all duration-150 ease-in-out\`,
+                              `px-2 py-1.5 text-xs rounded-sm font-mono flex items-center gap-1 transition-all duration-150 ease-in-out`, // Corrected template literal
                               getBgFromTextColor(group.color),
-                              'text-white'
+                              'text-white' // Ensure text is white for all bgs from getBgFromTextColor
                             )}
                           >
                             <Tag size={14} />
@@ -1688,18 +1660,23 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                     </div>
                     <Button
                       variant="ghost"
+                      size="sm" // Ensure consistent size
                       onClick={() => {
+                        const updatedEvents = [...eventsForSelectedDate];
                         if (eventsForSelectedDate.length > 1) {
-                          const updatedEvents = eventsForSelectedDate.filter((_, i) => i !== index);
+                          updatedEvents.splice(index, 1);
                           setEventsForSelectedDate(updatedEvents);
-                        } else {
-                          const updatedEvents = [...eventsForSelectedDate];
-                          updatedEvents[index].content = "";
-                          setEventsForSelectedDate(updatedEvents);
+                        } else { // If only one event, clear its content instead of removing
+                          if (updatedEvents[index]) {
+                            updatedEvents[index].content = "";
+                             // updatedEvents[index].isDeleted = true; // Or mark as deleted
+                          }
+                           setEventsForSelectedDate(updatedEvents);
                         }
+                        // Focus logic might need adjustment based on deletion
                         setTimeout(() => firstEventInputRef.current?.focus(), 0);
                       }}
-                      className="text-red-600 hover:text-red-600 hover:underline self-start bg-transparent focus:outline-none border-none hover:bg-transparent"
+                      className="text-red-600 hover:text-red-600 hover:underline self-start bg-transparent focus:outline-none border-none hover:bg-transparent px-1 py-0" // Adjusted padding
                     >
                       DELETE
                     </Button>
@@ -1707,11 +1684,11 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 </div>
               ))}
             </div>
-            <div className="p-0"> 
+            <div className="p-0">
               <Button
                 variant="ghost"
                 onClick={handleAddEvent}
-                disabled={modalCloseState !== 'idle' || eventsForSelectedDate.length >= 4}
+                disabled={modalCloseState !== 'idle' || eventsForSelectedDate.filter(ev => !ev.isDeleted).length >= 4}
                 className="w-[calc(100%-3rem)] mx-6 mb-4 border border-dotted border-gray-300 text-gray-500 hover:bg-gray-100 flex items-center justify-center py-2 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ADD ANOTHER EVENT
@@ -1719,7 +1696,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             </div>
              <div className="flex justify-between items-center p-4 border-t border-gray-200">
                 <div className="flex-shrink-0">
-                  {eventsForSelectedDate.length >= 2 && eventsForSelectedDate[1]?.content?.trim() !== '' && (
+                  {eventsForSelectedDate.filter(ev => ev.content.trim() !== '').length > 0 && ( // Show if any event has content
                     <Button
                       onClick={handleDeleteAllEventsForDay}
                       variant="ghost"
@@ -1737,7 +1714,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                     disabled={modalCloseState !== 'idle'}
                     className={cn(
                        "disabled:opacity-50",
-                       modalCloseState === 'canceling' && "opacity-75"
+                       modalCloseState === 'canceling' && "opacity-75" // Visual feedback for canceling
                     )}
                   >
                     CANCEL
@@ -1745,7 +1722,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                   <Button
                     onClick={handleSaveAndClose}
                     disabled={modalCloseState !== 'idle'}
-                    className={cn("w-[90px]",
+                    className={cn("w-[90px]", // Fixed width for save button
                        "disabled:opacity-50"
                     )}
                   >
@@ -1755,25 +1732,24 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                      'SAVE'
                     }
                   </Button>
-                </div> 
+                </div>
             </div>
            </div>
         </div>
       )}
 
-      {/* Share Modal */} 
+      {/* Share Modal */}
       {showShareModal && (
          <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowShareModal(false);
-              setShareCopied(false);
+              setShareCopied(false); // Reset copied state when closing modal via overlay
             }
           }}
         >
           <div className="bg-white rounded-sm p-6 w-full max-w-md">
-            {/* ... Share Modal content ... */} 
              <h3 className="text-lg font-medium mb-4 font-mono">Share Calendar Link</h3>
             <div className="flex gap-2">
               <input
@@ -1791,7 +1767,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                     navigator.clipboard.writeText(shareInputRef.current.value)
                       .then(() => {
                         setShareCopied(true);
-                        setTimeout(() => setShareCopied(false), 2000);
+                        setTimeout(() => setShareCopied(false), 2000); // Reset after 2s
                       })
                       .catch(err => console.error('Copy failed', err));
                   }
@@ -1813,7 +1789,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         </div>
       )}
 
-      {/* Google Calendar Instructions Modal */} 
+      {/* Google Calendar Instructions Modal */}
       {showGoogleInstructionsModal && (
          <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -1824,14 +1800,13 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           }}
         >
           <div className="bg-white rounded-sm p-6 w-full max-w-md">
-             {/* ... Google Instructions Modal content ... */}
              <h3 className="text-lg font-medium mb-4 font-mono">Import to Google Calendar</h3>
             <ol className="list-decimal ml-4 space-y-2 text-sm text-gray-600 font-mono">
               <li>Go to <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">calendar.google.com</a></li>
               <li>Click the gear icon (Settings)</li>
-              <li>Click &quot;Import &amp; Export&quot;</li>
+              <li>Click "Import &amp; Export"</li>
               <li>Upload the downloaded .ics file</li>
-              <li>Click &quot;Import&quot;</li>
+              <li>Click "Import"</li>
             </ol>
             <div className="flex justify-end mt-6">
               <button
@@ -1845,7 +1820,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         </div>
       )}
 
-      {/* Reset Confirmation Modal */} 
+      {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -1855,16 +1830,17 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             }
           }}
         >
-          <div 
+          <div
+            ref={resetModalRef} // Added ref
             className="bg-white rounded-sm w-full max-w-sm p-6"
-            onKeyDown={(e) => {
+            onKeyDown={(e) => { // Ensure Enter in modal doesn't bubble
               if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
+                // Optionally trigger reset: handleResetData();
               }
             }}
           >
-             {/* ... Reset Modal content ... */} 
               <h4 className="text-md font-mono mb-2 text-center">RESET CALENDAR</h4>
             <p className="text-xs font-mono text-gray-600 mb-6 text-center">Are you sure? This will remove all events and tags.</p>
             <div className="flex justify-center gap-3">
@@ -1886,14 +1862,13 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */} 
+      {/* Delete Confirmation Dialog */}
        {showDeleteConfirmId && (
          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 p-4">
            <div ref={deleteConfirmRef} className="bg-white p-6 rounded-sm max-w-sm w-full shadow-xl">
-             {/* ... Delete Confirm Dialog content ... */}
              <h4 className="text-md font-mono mb-2 text-center">DELETE</h4>
              <p className="text-xs font-mono text-gray-600 mb-6 text-center">
-               Are you sure you want to delete the tag &quot;{projectGroups.find(g => g.id === showDeleteConfirmId)?.name}&quot;? Events using this tag will revert to default.
+               Are you sure you want to delete the tag "{projectGroups.find(g => g.id === showDeleteConfirmId)?.name}"? Events using this tag will revert to default.
              </p>
              <div className="flex justify-center gap-3">
                <button
@@ -1903,7 +1878,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                  CANCEL
                </button>
                <button
-                 onClick={() => console.log("Delete group confirmed")}
+                 onClick={handleDeleteGroup} // Changed from console.log to actual delete handler
                  className="px-4 py-2 text-xs font-mono bg-red-600 text-white rounded-sm hover:bg-red-700 transition-colors"
                >
                  DELETE
@@ -1913,25 +1888,24 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
          </div>
        )}
 
-      {/* Export Options Modal */} 
+      {/* Export Options Modal */}
       {showExportOptionsModal && (
          <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowExportOptionsModal(false);
-              setSelectedExportTags([]);
+              setSelectedExportTags([]); // Clear selection on closing via overlay
             }
           }}
          >
            <div className="bg-white rounded-sm w-full max-w-lg p-6 shadow-xl">
-             {/* ... Export Options Modal content ... */} 
                <div className="flex justify-between items-center border-b pb-3 mb-4">
                 <h3 className="text-sm font-mono uppercase tracking-wider">Export Options</h3>
                 <button
                   onClick={() => {
                     setShowExportOptionsModal(false);
-                    setSelectedExportTags([]);
+                    setSelectedExportTags([]); // Clear selection on close button
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -2001,7 +1975,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                        }}
                        className="form-checkbox rounded-sm text-black focus:ring-black"
                      />
-                     <span className={`px-1.5 py-0.5 text-xs rounded-sm ${getBgFromTextColor(group.color)} text-white`}>{group.name}</span>
+                     <span className={`px-1.5 py-0.5 text-xs rounded-sm ${getBgFromTextColor(group.color)} text-white`}>{group.name}</span> {/* Corrected template literal */}
                    </label>
                  ))}
                </div>
@@ -2010,7 +1984,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                  <button
                   onClick={() => {
                     setShowExportOptionsModal(false);
-                    setSelectedExportTags([]);
+                    setSelectedExportTags([]); // Clear selection on cancel
                   }}
                   className="px-4 py-2 text-xs font-mono hover:bg-gray-100 rounded-sm border border-gray-300"
                 >

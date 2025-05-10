@@ -1383,8 +1383,31 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       >
         <div className="mx-1 sm:mx-6 md:mx-12">
            <div className="flex flex-row flex-nowrap justify-between w-full mb-4 items-center gap-2 sm:gap-4">
-             {/* Left side: Sign In and Reset */}
              <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center">
+               <button
+                 onClick={downloadCalendarAsImage}
+                 disabled={isDownloading}
+                 className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+               >
+                 {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />} {isDownloading ? 'GENERATING' : 'SCREENSHOT'}
+               </button>
+               <div className="relative">
+                 <button
+                     onClick={() => {
+                         setSelectedExportTags(projectGroups.map(g => g.id));
+                         setShowExportOptionsModal(true);
+                     }}
+                     className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+                 >
+                   <CalendarIcon size={14} /> EXPORT
+                 </button>
+               </div>
+               <button
+                 onClick={handleShare}
+                 className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+               >
+                 <Link size={14} /> SHARE
+               </button>
                <AuthButton />
                <button
                  onClick={handleReset}
@@ -1392,33 +1415,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                >
                  <RefreshCcw size={14} /> RESET
                </button>
-             </div>
-             {/* Right side: Screenshot, Export, Share */}
-             <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center">
-               <button
-                  onClick={downloadCalendarAsImage}
-                  disabled={isDownloading}
-                  className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />} {isDownloading ? 'GENERATING' : 'SCREENSHOT'}
-                </button>
-                <div className="relative">
-                  <button
-                      onClick={() => {
-                          setSelectedExportTags(projectGroups.map(g => g.id));
-                          setShowExportOptionsModal(true);
-                      }}
-                      className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
-                  >
-                    <CalendarIcon size={14} /> EXPORT
-                  </button>
-                </div>
-                <button
-                  onClick={handleShare}
-                  className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
-                >
-                  <Link size={14} /> SHARE
-                </button>
              </div>
            </div>
         </div>

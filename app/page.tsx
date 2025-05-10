@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 // Remove the old dynamic import
 // import dynamic from "next/dynamic"
 import ClientCalendarWrapper from "@/components/ClientCalendarWrapper"; // Import the new wrapper
+import { useEffect, useState } from "react";
 
 // Remove the old dynamic import definition
 // const Calendar = dynamic(() => import("@/components/calendar-new"), {
@@ -16,6 +17,28 @@ import ClientCalendarWrapper from "@/components/ClientCalendarWrapper"; // Impor
 //   ),
 // })
 
+function ConfirmationBanner() {
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash;
+      if (hash.includes("access_token") && hash.includes("type=signup")) {
+        setMessage("Your email has been confirmed! You can now sign in.");
+      } else if (hash.includes("error")) {
+        setMessage("There was a problem confirming your email. Please try again or contact support.");
+      }
+    }
+  }, []);
+
+  if (!message) return null;
+  return (
+    <div className="bg-green-100 text-green-800 p-3 rounded mb-4 text-center">
+      {message}
+    </div>
+  );
+}
+
 export const metadata: Metadata = {
   title: "Free Calendar Template",
   description:
@@ -24,8 +47,9 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col p-2 sm:p-4 md:p-8 transition-colors duration-200">
-      <div className="w-full max-w-[1400px] mx-auto">
+    <main className="flex min-h-screen items-center justify-center p-2 sm:p-4 md:p-8 lg:p-12 xl:p-16 transition-colors duration-200">
+      <div className="w-full max-w-full sm:max-w-2xl">
+        <ConfirmationBanner />
         {/* Client-side rendered calendar */}
         <div className="calendar-wrapper">
           {/* Use the new wrapper component */}

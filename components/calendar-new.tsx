@@ -1384,6 +1384,13 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         <div className="mx-1 sm:mx-6 md:mx-12">
            <div className="flex flex-row flex-nowrap justify-between w-full mb-4 items-center gap-2 sm:gap-4">
              <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center">
+               <AuthButton />
+               <button
+                 onClick={handleReset}
+                 className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+               >
+                 <RefreshCcw size={14} /> RESET
+               </button>
                <button
                  onClick={downloadCalendarAsImage}
                  disabled={isDownloading}
@@ -1407,13 +1414,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                  className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
                >
                  <Link size={14} /> SHARE
-               </button>
-               <AuthButton />
-               <button
-                 onClick={handleReset}
-                 className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
-               >
-                 <RefreshCcw size={14} /> RESET
                </button>
              </div>
            </div>

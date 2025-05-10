@@ -241,7 +241,7 @@ export default function CalendarNew() {
       window.addEventListener("resize", checkIfMobile)
 
       const handleKeyDown = (e: KeyboardEvent) => {
-        // --- Update check for modal state ---
+        // --- Update check for modal state --- 
         if (showModal || showAddDialog) return; // Do nothing if event modal OR tag dialog is open
 
         if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
@@ -840,7 +840,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     }
   };
 
-  const createPrintableCalendar = () => { 
+  const createPrintableCalendar = () => {
     const printableDiv = document.createElement("div")
     printableDiv.className = "printable-calendar"
     printableDiv.style.position = "absolute"
@@ -1087,14 +1087,14 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
     const newEvent: Event = {
       id: Math.random().toString(36).substring(2, 11),
-      date: selectedDate, 
-      content: "", 
-      color: "text-black", 
-      projectId: "default", 
+      date: selectedDate,
+      content: "",
+      color: "text-black",
+      projectId: "default",
     };
 
     setEventsForSelectedDate(prev => [...prev, newEvent]);
-    setNewlyAddedEventId(newEvent.id); 
+    setNewlyAddedEventId(newEvent.id);
 
     setTimeout(() => {
        const textareas = eventModalRef.current?.querySelectorAll('textarea');
@@ -1119,7 +1119,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     if (newlyAddedEventId) {
       const timer = setTimeout(() => {
         setNewlyAddedEventId(null);
-      }, 50); 
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [newlyAddedEventId]);
@@ -1128,7 +1128,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     if (!showModal) {
       const timer = setTimeout(() => {
         setModalCloseState('idle');
-      }, 300); 
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [showModal]);
@@ -1246,14 +1246,14 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             isCurrentMonth ? 'hover:bg-gray-100' : '',
             !isCurrentMonth ? 'bg-gray-50' : '',
             isDragging ? 'cursor-grabbing' : (isCurrentMonth ? 'cursor-pointer' : 'cursor-default'),
-            isSingleEventDay ? 'cursor-pointer' : 'cursor-default' 
+            isSingleEventDay ? 'cursor-pointer' : 'cursor-default'
           )}
           onClick={() => isCurrentMonth && handleDayClick(currentDateInLoop)}
           onDragOver={(e) => isCurrentMonth && handleDragOver(currentDateInLoop, e)}
           onDrop={(e) => isCurrentMonth && handleDrop(e, currentDateInLoop)}
           onMouseEnter={isSingleEventDay ? () => setHoveredSingleEventDate(currentDateInLoop) : undefined}
           onMouseLeave={isSingleEventDay ? () => setHoveredSingleEventDate(null) : undefined}
-          draggable={isSingleEventDay} 
+          draggable={isSingleEventDay}
           onDragStart={isSingleEventDay && limitedEvents[0] ? (e) => handleDragStart(limitedEvents[0], e, 0) : undefined}
         >
           {isCurrentMonth && (
@@ -1282,14 +1282,14 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                    if (group) {
                       eventTextColor = group.color;
                    }
-                } else { 
+    } else {
                    eventTextColor = event.color || 'text-black';
                 }
 
                 return (
                   <div
                     key={event.id}
-                    draggable={!isSingleEventDay} 
+                    draggable={!isSingleEventDay}
                     onDragStart={!isSingleEventDay ? (e) => handleDragStart(event, e, index) : undefined}
                     onMouseEnter={() => setHoveredEventId(event.id)}
                     onMouseLeave={() => {
@@ -1302,7 +1302,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                       !isSingleEventDay ? 'cursor-grab' : 'cursor-pointer',
                       eventTextColor,
                        event.projectId && projectGroups.find(g => g.id === event.projectId)
-                          ? `${getBgFromTextColor(eventTextColor)}/15` 
+                          ? `${getBgFromTextColor(eventTextColor)}/15`
                           : '',
                       (isHoveringSingleEventCell || hoveredEventId === event.id) ? 'underline' : '',
                       dropTargetEventId === event.id && draggedEvent && draggedEvent.id !== event.id && 'border-t-2 border-black opacity-70' 
@@ -1313,7 +1313,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                       <span className="mr-1">▪</span>
                       <span className={cn(
                          'break-words',
-                         'truncate',
+                         'truncate', 
                          'md:whitespace-normal',
                          limitedEvents.length === 1 ? 'md:line-clamp-4' :
                          limitedEvents.length === 2 ? 'md:line-clamp-2' :
@@ -1343,7 +1343,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
       const borderClasses = cn(
         'border-gray-300',
-        rowIndex < 5 ? 'border-b' : '', 
+        rowIndex < 5 ? 'border-b' : '',
         colIndex < 6 ? 'border-r' : ''
       );
 
@@ -1355,8 +1355,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             'flex flex-col p-0.5 sm:p-1.5 min-w-0',
             borderClasses
             )}
-          onDragOver={handleDragOverEmpty} 
-          onDrop={(e) => handleDropOnEmpty(e, i)} 
+          onDragOver={handleDragOverEmpty}
+          onDrop={(e) => handleDropOnEmpty(e, i)}
         ></div>,
       );
     }
@@ -1370,11 +1370,11 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     draggedEvent, // Added draggedEvent to deps as it's used in dropTargetEventId condition
     dropTargetEventId, // Added dropTargetEventId to deps
     handleEventDrop, handleEventDragOver 
-  ]); 
+  ]);
 
   return (
     <>
-      <div
+      <div 
         className={cn(
           "flex flex-col h-full max-w-5xl mx-auto font-mono pt-8 pb-4 origin-top",
           "bg-white"
@@ -1383,6 +1383,17 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       >
         <div className="mx-1 sm:mx-6 md:mx-12">
            <div className="flex flex-row flex-nowrap justify-between w-full mb-4 items-center gap-2 sm:gap-4">
+             {/* Left side: Sign In and Reset */}
+             <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center">
+               <AuthButton />
+               <button
+                 onClick={handleReset}
+                 className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+               >
+                 <RefreshCcw size={14} /> RESET
+               </button>
+             </div>
+             {/* Right side: Screenshot, Export, Share */}
              <div className="flex flex-nowrap gap-1.5 sm:gap-2 items-center">
                <button
                   onClick={downloadCalendarAsImage}
@@ -1394,7 +1405,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 <div className="relative">
                   <button
                       onClick={() => {
-                          setSelectedExportTags(projectGroups.map(g => g.id)); 
+                          setSelectedExportTags(projectGroups.map(g => g.id));
                           setShowExportOptionsModal(true);
                       }}
                       className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
@@ -1408,19 +1419,12 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 >
                   <Link size={14} /> SHARE
                 </button>
-                <AuthButton />
-              </div>
-              <button
-                onClick={handleReset}
-                className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
-              >
-                <RefreshCcw size={14} /> RESET
-              </button>
-            </div>
+             </div>
+           </div>
         </div>
 
-        <div
-          ref={calendarScreenshotContainerRef}
+        <div 
+          ref={calendarScreenshotContainerRef} 
           className="bg-white border border-gray-300 shadow-sm overflow-hidden rounded-sm mx-1 sm:mx-6 md:mx-12"
         >
           <div className="flex items-center justify-between px-2 sm:px-3 md:px-4 bg-gray-50 border-b border-gray-300 h-20 sm:h-24 md:h-28">
@@ -1477,7 +1481,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                             setCurrentDate(new Date(currentDate.getFullYear(), i, 1));
                             setShowDateSelector(false);
                           }}
-                          className={`p-1 text-xs font-mono rounded-sm ${ 
+                          className={`p-1 text-xs font-mono rounded-sm ${
                             currentDate.getMonth() === i ? 'bg-black text-white hover:bg-black' : 'text-gray-700 hover:bg-gray-100'
                           }`}
                         >
@@ -1504,8 +1508,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
               <div className="grid grid-cols-7 bg-gray-50">
                  {weekDays.map((day, index) => (
                   <div
-                    key={index}
-                    className={`py-1 sm:py-1.5 md:py-2 text-center font-mono text-[10px] sm:text-[11px] md:text-xs tracking-wider border-b border-gray-300 text-gray-600 ${ 
+                    key={index} 
+                    className={`py-1 sm:py-1.5 md:py-2 text-center font-mono text-[10px] sm:text-[11px] md:text-xs tracking-wider border-b border-gray-300 text-gray-600 ${
                       index < weekDays.length - 1 ? 'border-r border-gray-300' : ''
                     }`}
                   >
@@ -1520,7 +1524,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           </div>
         </div>
 
-        <div
+        <div 
           className="w-full flex justify-center px-2 sm:px-0 mx-1 sm:mx-6 md:mx-12"
         >
           <ProjectGroups
@@ -1585,7 +1589,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                       onKeyDown={(e) => handleTextareaKeyDown(e, index)}
                       onSelect={(e: React.MouseEvent<HTMLTextAreaElement> | React.TouchEvent<HTMLTextAreaElement>) => handleTextSelect(e)}
                       placeholder="Event name"
-                      className={`w-full p-3 border rounded-sm ${getTextColorClass(event.color)} focus:outline-none focus:border-black font-mono resize-none h-[72px] pr-8`} 
+                      className={`w-full p-3 border rounded-sm ${getTextColorClass(event.color)} focus:outline-none focus:border-black font-mono resize-none h-[72px] pr-8`}
                       style={{ textTransform: 'none', fontFamily: 'inherit' }}
                     />
                   </div>
@@ -1607,23 +1611,23 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                             key={group.id}
                             onClick={() => {
                               const clickedGroupId = group.id;
-                              const updatedEvents = [...eventsForSelectedDate];
-                              if (currentEvent) {
-                                  const newProjectId = clickedGroupId === 'default' ? undefined : clickedGroupId;
-                                  updatedEvents[index] = {
-                                      ...currentEvent,
-                                      projectId: newProjectId,
-                                      color: group.color
-                                  };
-                                  setEventsForSelectedDate(updatedEvents);
-                              } else {
-                                 console.error("Current event is undefined, cannot update tag.");
+                                const updatedEvents = [...eventsForSelectedDate];
+                                if (currentEvent) {
+                                    const newProjectId = clickedGroupId === 'default' ? undefined : clickedGroupId;
+                                    updatedEvents[index] = {
+                                        ...currentEvent,
+                                        projectId: newProjectId,
+                                        color: group.color
+                                    };
+                                    setEventsForSelectedDate(updatedEvents);
+                                } else {
+                                   console.error("Current event is undefined, cannot update tag.");
                               }
                             }}
                             className={cn(
-                              `px-2 py-1.5 text-xs rounded-sm font-mono flex items-center gap-1 transition-all duration-150 ease-in-out`, 
+                              `px-2 py-1.5 text-xs rounded-sm font-mono flex items-center gap-1 transition-all duration-150 ease-in-out`,
                               getBgFromTextColor(group.color),
-                              'text-white' 
+                              'text-white'
                             )}
                           >
                             <Tag size={14} />
@@ -1641,11 +1645,11 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                         if (eventsForSelectedDate.length > 1) {
                           updatedEvents.splice(index, 1);
                           setEventsForSelectedDate(updatedEvents);
-                        } else { 
+                        } else {
                           if (updatedEvents[index]) {
-                            updatedEvents[index].content = "";
+                          updatedEvents[index].content = "";
                           }
-                           setEventsForSelectedDate(updatedEvents);
+                          setEventsForSelectedDate(updatedEvents);
                         }
                         setTimeout(() => firstEventInputRef.current?.focus(), 0);
                       }}
@@ -1657,7 +1661,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 </div>
               ))}
             </div>
-            <div className="p-0">
+            <div className="p-0"> 
               <Button
                 variant="ghost"
                 onClick={handleAddEvent}
@@ -1687,7 +1691,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                     disabled={modalCloseState !== 'idle'}
                     className={cn(
                        "disabled:opacity-50",
-                       modalCloseState === 'canceling' && "opacity-75" 
+                       modalCloseState === 'canceling' && "opacity-75"
                     )}
                   >
                     CANCEL
@@ -1695,7 +1699,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                   <Button
                     onClick={handleSaveAndClose}
                     disabled={modalCloseState !== 'idle'}
-                    className={cn("w-[90px]", 
+                    className={cn("w-[90px]",
                        "disabled:opacity-50"
                     )}
                   >
@@ -1705,7 +1709,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                      'SAVE'
                     }
                   </Button>
-                </div>
+                </div> 
             </div>
            </div>
         </div>
@@ -1717,7 +1721,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowShareModal(false);
-              setShareCopied(false); 
+              setShareCopied(false);
             }
           }}
         >
@@ -1739,7 +1743,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                     navigator.clipboard.writeText(shareInputRef.current.value)
                       .then(() => {
                         setShareCopied(true);
-                        setTimeout(() => setShareCopied(false), 2000); 
+                        setTimeout(() => setShareCopied(false), 2000);
                       })
                       .catch(err => console.error('Copy failed', err));
                   }
@@ -1800,10 +1804,10 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             }
           }}
         >
-          <div
+          <div 
             ref={resetModalRef} 
             className="bg-white rounded-sm w-full max-w-sm p-6"
-            onKeyDown={(e) => { 
+            onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1846,7 +1850,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                  CANCEL
                </button>
                <button
-                 onClick={handleDeleteGroup} 
+                 onClick={handleDeleteGroup}
                  className="px-4 py-2 text-xs font-mono bg-red-600 text-white rounded-sm hover:bg-red-700 transition-colors"
                >
                  DELETE
@@ -1862,7 +1866,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowExportOptionsModal(false);
-              setSelectedExportTags([]); 
+              setSelectedExportTags([]);
             }
           }}
          >
@@ -1872,7 +1876,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 <button
                   onClick={() => {
                     setShowExportOptionsModal(false);
-                    setSelectedExportTags([]); 
+                    setSelectedExportTags([]);
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -1942,7 +1946,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                        }}
                        className="form-checkbox rounded-sm text-black focus:ring-black"
                      />
-                     <span className={`px-1.5 py-0.5 text-xs rounded-sm ${getBgFromTextColor(group.color)} text-white`}>{group.name}</span> 
+                     <span className={`px-1.5 py-0.5 text-xs rounded-sm ${getBgFromTextColor(group.color)} text-white`}>{group.name}</span>
                    </label>
                  ))}
                </div>
@@ -1951,7 +1955,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                  <button
                   onClick={() => {
                     setShowExportOptionsModal(false);
-                    setSelectedExportTags([]); 
+                    setSelectedExportTags([]);
                   }}
                   className="px-4 py-2 text-xs font-mono hover:bg-gray-100 rounded-sm border border-gray-300"
                 >

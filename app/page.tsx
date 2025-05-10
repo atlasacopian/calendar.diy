@@ -40,12 +40,6 @@ function ConfirmationBanner() {
   );
 }
 
-export const metadata: Metadata = {
-  title: "Free Calendar Template",
-  description:
-    "A clean, free, editable calendar you can use instantly. No account. No clutter. Just a simple calendar for your projects, schedules, or planning.",
-}
-
 export default function Home() {
   return (
     <main className="flex min-h-screen items-center justify-center p-2 sm:p-4 md:p-8 lg:p-12 xl:p-16 transition-colors duration-200">

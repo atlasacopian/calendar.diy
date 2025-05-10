@@ -35,9 +35,10 @@ export async function encryptJSON(obj: unknown, key: CryptoKey) {
   const plaintext = new TextEncoder().encode(JSON.stringify(obj));
   const cipherBuf = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plaintext);
   const cipherArr = new Uint8Array(cipherBuf);
+  const cipherStr = String.fromCharCode(...Array.from(cipherArr));
   return {
     iv: Array.from(iv),
-    data: btoa(String.fromCharCode(...cipherArr)),
+    data: btoa(cipherStr),
   } as const;
 }
 

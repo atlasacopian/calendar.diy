@@ -42,12 +42,11 @@ function ConfirmationBanner() {
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen items-center justify-center p-2 sm:p-4 md:p-8 lg:p-12 xl:p-16 transition-colors duration-200">
-      <div className="w-full max-w-full sm:max-w-2xl">
+    <main className="flex flex-col min-h-screen p-2 sm:p-4 md:p-8 transition-colors duration-200">
+      <div className="w-full max-w-[1400px] mx-auto">
         <ConfirmationBanner />
         {/* Client-side rendered calendar */}
         <div className="calendar-wrapper">
-          {/* Use the new wrapper component */}
           <ClientCalendarWrapper />
         </div>
 

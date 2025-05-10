@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 // import dynamic from "next/dynamic"
 import ClientCalendarWrapper from "@/components/ClientCalendarWrapper"; // Import the new wrapper
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 // Remove the old dynamic import definition
 // const Calendar = dynamic(() => import("@/components/calendar-new"), {
@@ -19,18 +20,28 @@ import { useEffect, useState } from "react";
 // })
 
 function ConfirmationBanner() {
+  const { user } = useAuth();
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const hash = window.location.hash;
       if (hash.includes("access_token") && hash.includes("type=signup")) {
-        setMessage("Your email has been confirmed! You can now sign in.");
+        setMessage(user
+          ? `Welcome, ${user.email}! Your account is confirmed and you're now signed in.`
+          : "Your account is confirmed and you're now signed in.");
       } else if (hash.includes("error")) {
         setMessage("There was a problem confirming your email. Please try again or contact support.");
       }
     }
-  }, []);
+  }, [user]);
+
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   if (!message) return null;
   return (

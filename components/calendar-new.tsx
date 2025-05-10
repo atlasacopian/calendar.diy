@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import ProjectGroups from './project-groups';
 import { Button } from '@/components/ui/button';
-import { saveEventsToSupabase, saveProjectGroupsToSupabase, loadEventsFromSupabase, loadProjectGroupsFromSupabase } from "@/lib/calendar-service";
+import { saveEncryptedState, loadEncryptedState } from "@/lib/encrypted-storage";
 import { useAuth } from "@/lib/auth-context";
 import AuthButton from '@/components/AuthButton';
 
@@ -284,35 +284,27 @@ export default function CalendarNew() {
     }
   }, [showModal, showAddDialog, currentDate]); 
 
-  // Load data from Supabase once user is authenticated
+  // Load encrypted data once user is authenticated
   useEffect(() => {
     if (!user) return;
 
     (async () => {
       try {
-        const [supabaseEvents, supabaseGroups] = await Promise.all([
-          loadEventsFromSupabase(user),
-          loadProjectGroupsFromSupabase(user),
-        ]);
-
-        if (supabaseGroups && supabaseGroups.length > 0) {
-          setProjectGroups(supabaseGroups as ProjectGroup[]);
-        }
-
-        if (supabaseEvents && supabaseEvents.length > 0) {
-          // Ensure date objects are Date instances
-          const normalized = supabaseEvents.map(ev => ({ ...ev, date: new Date(ev.date) })) as Event[];
-          setEvents(normalized);
+        const loaded = await loadEncryptedState(user as any);
+        if (loaded) {
+          const normalizedEvents = loaded.events.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) as Event[];
+          setEvents(normalizedEvents);
+          setProjectGroups(loaded.groups as ProjectGroup[]);
         }
       } catch (err) {
-        console.error("Failed to load data from Supabase", err);
+        console.error("Failed to load encrypted data:", err);
       }
     })();
   }, [user]);
 
   useEffect(() => {
     if (user) {
-      saveEventsToSupabase(events as any, user as any);
+      saveEncryptedState({ events, groups: projectGroups }, user as any);
     } else if (typeof window !== 'undefined') {
       try {
         const eventsToSave = JSON.stringify(events, (key, value) => {
@@ -324,12 +316,11 @@ export default function CalendarNew() {
         console.error("Failed to save events:", e);
       }
     }
-  }, [events, user]);
+  }, [events, user, projectGroups]);
 
+  // When only local mode, persist groups to localStorage
   useEffect(() => {
-    if (user) {
-      saveProjectGroupsToSupabase(projectGroups as any, user as any);
-    } else if (typeof window !== 'undefined') {
+    if (!user && typeof window !== 'undefined') {
       try {
         localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
       } catch (e) {

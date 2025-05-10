@@ -50,8 +50,6 @@ export default function AuthButton() {
     setFormLoading(true)
 
     if (isSignUp) {
-      alert("EMAIL REDIRECT TO: " + SITE_URL);
-      console.log("EMAIL REDIRECT TO:", SITE_URL);
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,

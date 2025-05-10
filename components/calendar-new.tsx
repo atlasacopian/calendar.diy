@@ -303,11 +303,63 @@ export default function CalendarNew() {
 
     (async () => {
       try {
+        // First check for local events
+        let localEvents = [];
+        let localGroups = [];
+        if (typeof window !== 'undefined') {
+          const savedEvents = localStorage.getItem('calendarEvents');
+          const savedGroups = localStorage.getItem('projectGroups');
+          if (savedEvents) {
+            try {
+              localEvents = JSON.parse(savedEvents, (key, value) => {
+                if (key === 'date' && typeof value === 'string') {
+                  return parse(value, "yyyy-MM-dd'T'HH:mm:ss.SSSX", new Date());
+                }
+                return value;
+              });
+            } catch {}
+          }
+          if (savedGroups) {
+            try {
+              localGroups = JSON.parse(savedGroups);
+            } catch {}
+          }
+        }
+
+        // Then load from Supabase
         const loaded = await loadEncryptedState(user as any);
+        
         if (loaded) {
-          const normalizedEvents = loaded.events.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) as Event[];
-          setEvents(normalizedEvents);
-          setProjectGroups(loaded.groups as ProjectGroup[]);
+          // If we have both local and cloud data, merge them
+          if (localEvents.length > 0) {
+            const cloudEvents = loaded.events.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) as Event[];
+            const mergedEvents = [...cloudEvents, ...localEvents];
+            setEvents(mergedEvents);
+            setProjectGroups(loaded.groups as ProjectGroup[]);
+            
+            // Upload merged data to Supabase
+            await saveEncryptedState({ events: mergedEvents, groups: loaded.groups }, user as any);
+            
+            // Clear local storage
+            localStorage.removeItem('calendarEvents');
+            localStorage.removeItem('projectGroups');
+          } else {
+            // Just use cloud data
+            const normalizedEvents = loaded.events.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) as Event[];
+            setEvents(normalizedEvents);
+            setProjectGroups(loaded.groups as ProjectGroup[]);
+          }
+        } else if (localEvents.length > 0) {
+          // If no cloud data but we have local data, use that
+          setEvents(localEvents);
+          setProjectGroups(localGroups.length > 0 ? localGroups : [{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }]);
+          
+          // Upload local data to Supabase
+          await saveEncryptedState({ events: localEvents, groups: localGroups }, user as any);
+          
+          // Clear local storage
+          localStorage.removeItem('calendarEvents');
+          localStorage.removeItem('projectGroups');
         }
       } catch (err) {
         console.error("Failed to load encrypted data:", err);

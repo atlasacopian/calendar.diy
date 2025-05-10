@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
 import { Loader2, LogOut, UserCircle2 } from "lucide-react"
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL;
+const SITE_URL = "https://calendar.diy";
 
 export default function AuthButton() {
   const [user, setUser] = useState<User | null>(null)

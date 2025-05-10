@@ -1379,7 +1379,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           "flex flex-col h-full max-w-5xl mx-auto font-mono pt-8 pb-4 origin-top",
           "bg-white"
         )}
-        style={{ transform: 'scale(0.85)' }}
+        style={{ transform: 'scale(0.7)' }}
       >
         <div className="mx-1 sm:mx-6 md:mx-12">
            <div className="flex flex-row flex-nowrap justify-between w-full mb-4 items-center gap-2 sm:gap-4">

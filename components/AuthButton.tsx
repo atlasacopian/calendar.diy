@@ -48,7 +48,13 @@ export default function AuthButton() {
     setFormLoading(true)
 
     if (isSignUp) {
-      const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}`,
+        },
+      })
       if (signUpError) setError(signUpError.message)
       else if (data.user && data.user.identities?.length === 0) {
         setMessage("Please check your email to confirm your account.")

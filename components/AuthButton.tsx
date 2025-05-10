@@ -52,7 +52,10 @@ export default function AuthButton() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}`,
+          emailRedirectTo:
+            typeof window !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL
+              ? process.env.NEXT_PUBLIC_SITE_URL
+              : `${window.location.origin}`,
         },
       })
       if (signUpError) setError(signUpError.message)
@@ -61,11 +64,11 @@ export default function AuthButton() {
         setEmail("")
         setPassword("")
       } else if (data.user) {
-        setMessage("Sign up successful! Check email for confirmation (if enabled).")
+        setMessage("Sign up successful! Check your email to confirm your account.")
         setEmail("")
         setPassword("")
       } else {
-        setMessage("Sign up request sent. Check email for confirmation (if enabled).")
+        setMessage("Sign up request sent. Check your email to confirm your account.")
         setEmail("")
         setPassword("")
       }

@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { saveEncryptedState, loadEncryptedState } from "@/lib/encrypted-storage";
 import { useAuth } from "@/lib/auth-context";
 import AuthButton from '@/components/AuthButton';
+import type { User } from "@supabase/supabase-js";
 
 interface Event {
   id: string;
@@ -70,6 +71,18 @@ const getTextColorClass = (colorClass: string | undefined) => {
 function getTextColorFromBg(bgColor: string): string {
   const color = colorOptions.find(c => c.bg === bgColor);
   return color ? color.value : 'text-gray-800';
+}
+
+// Add this helper to upload local events to Supabase
+async function uploadLocalEventsToSupabase(user: User, localEvents: Event[], localGroups: ProjectGroup[]) {
+  if (!user || !localEvents || localEvents.length === 0) return;
+  try {
+    // Save events
+    await saveEncryptedState({ events: localEvents, groups: localGroups }, user);
+    // Optionally, you could merge with existing cloud events, but for now, we overwrite
+  } catch (e) {
+    console.error("Failed to upload local events to Supabase:", e);
+  }
 }
 
 export default function CalendarNew() {
@@ -1371,6 +1384,48 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     dropTargetEventId, // Added dropTargetEventId to deps
     handleEventDrop, handleEventDragOver 
   ]);
+
+  // On login/signup, upload local events to Supabase, then clear localStorage
+  useEffect(() => {
+    if (user) {
+      // Check for local events
+      let localEvents = [];
+      let localGroups = [];
+      if (typeof window !== 'undefined') {
+        const savedEvents = localStorage.getItem('calendarEvents');
+        const savedGroups = localStorage.getItem('projectGroups');
+        if (savedEvents) {
+          try {
+            localEvents = JSON.parse(savedEvents, (key, value) => {
+              if (key === 'date' && typeof value === 'string') {
+                return parse(value, "yyyy-MM-dd'T'HH:mm:ss.SSSX", new Date());
+              }
+              return value;
+            });
+          } catch {}
+        }
+        if (savedGroups) {
+          try {
+            localGroups = JSON.parse(savedGroups);
+          } catch {}
+        }
+      }
+      if (localEvents.length > 0) {
+        uploadLocalEventsToSupabase(user, localEvents, localGroups);
+        // Clear local events after upload
+        localStorage.removeItem('calendarEvents');
+        localStorage.removeItem('projectGroups');
+      }
+    }
+  }, [user]);
+
+  // On logout, clear events from UI
+  useEffect(() => {
+    if (!user) {
+      setEvents([]);
+      setProjectGroups([{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }]);
+    }
+  }, [user]);
 
   return (
     <>

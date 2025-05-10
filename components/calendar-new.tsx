@@ -8,7 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, getDay, getDaysInMonth, parse, isToday } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, Tag, X, User, AlertTriangle, Camera, Calendar as CalendarIcon, Link, ArrowUpDown, Check, RefreshCcw, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Tag, X, User as UserIcon, AlertTriangle, Camera, Calendar as CalendarIcon, Link, ArrowUpDown, Check, RefreshCcw, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import ProjectGroups from './project-groups';
@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { saveEncryptedState, loadEncryptedState } from "@/lib/encrypted-storage";
 import { useAuth } from "@/lib/auth-context";
 import AuthButton from '@/components/AuthButton';
-import type { User } from "@supabase/supabase-js";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface Event {
   id: string;
@@ -74,7 +74,7 @@ function getTextColorFromBg(bgColor: string): string {
 }
 
 // Add this helper to upload local events to Supabase
-async function uploadLocalEventsToSupabase(user: User, localEvents: Event[], localGroups: ProjectGroup[]) {
+async function uploadLocalEventsToSupabase(user: SupabaseUser, localEvents: Event[], localGroups: ProjectGroup[]) {
   if (!user || !localEvents || localEvents.length === 0) return;
   try {
     // Save events
@@ -1146,14 +1146,14 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     }
   }, [showModal]);
 
-  const handleEventDragOver = (e: React.DragEvent, targetEventId: string) => {
+  const handleEventDragOver = useCallback((e: React.DragEvent, targetEventId: string) => {
     e.preventDefault();
     e.stopPropagation();
     if (draggedEvent && draggedEvent.id !== targetEventId) {
         setDropTargetEventId(targetEventId);
         if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
     }
-  };
+  }, [draggedEvent]);
 
   const handleEventDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
@@ -1161,24 +1161,20 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     setDropTargetEventId(null);
   };
 
-  const handleEventDrop = (e: React.DragEvent, targetEvent: Event) => {
+  const handleEventDrop = useCallback((e: React.DragEvent, targetEvent: Event) => {
     e.preventDefault();
     e.stopPropagation();
     setDropTargetEventId(null);
 
     if (!draggedEvent || !isSameDay(draggedEvent.date, targetEvent.date)) {
-      // console.log(`Drop condition not met (inter-day or no dragged event)`);
       handleDrop(e, targetEvent.date); 
       return;
     }
     if (draggedEvent.id === targetEvent.id) {
-      // console.log("Dropped event onto itself. No reorder needed.");
       setDraggedEvent(null);
       setDraggedEventIndex(null);
       return;
     }
-
-    // console.log("Performing intra-day reorder...");
 
     const currentDayEvents = events.filter(ev => isSameDay(ev.date, targetEvent.date));
     const otherDayEvents = events.filter(ev => !isSameDay(ev.date, targetEvent.date));
@@ -1200,7 +1196,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
     setDraggedEvent(null);
     setDraggedEventIndex(null);
-  };
+  }, [draggedEvent, events, handleDrop]);
 
   const handleDeleteAllEventsForDay = () => {
     if (!selectedDate) return;

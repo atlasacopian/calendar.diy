@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Free Calendar Template",
   description:
     "A clean, free, editable calendar you can use instantly. No account. No clutter. Just a simple calendar for your projects, schedules, or planning.",
-  metadataBase: new URL("http://localhost:3000"),
+  metadataBase: new URL("https://calendar.diy"),
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     title: "Free Calendar Template",
     description:
       "Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account needed.",
-    url: "http://localhost:3000",
+    url: "https://calendar.diy",
     siteName: "calendar.diy",
     images: [
       {
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   robots: "index, follow",
   // Explicitly disable AMP
   alternates: {
-    canonical: "http://localhost:3000",
+    canonical: "https://calendar.diy",
   },
 }
 
@@ -72,7 +72,7 @@ export default function RootLayout({
         {/* Use calendar emoji as favicon - with Apple-style emoji */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
-        <link rel="canonical" href="http://localhost:3000" />
+        <link rel="canonical" href="https://calendar.diy" />
         <title>Free Calendar Template</title>
 
         {/* Add direct meta tags for social sharing with calendar emoji */}
@@ -82,7 +82,7 @@ export default function RootLayout({
           content="Plan your time without the clutter. A simple, free calendar you can type into, save, or print. No account needed."
         />
         <meta property="og:image" content="/calendar_og.jpg" />
-        <meta property="og:url" content="http://localhost:3000" />
+        <meta property="og:url" content="https://calendar.diy" />
         <meta property="og:type" content="website" />
 
         {/* Explicitly disable AMP */}

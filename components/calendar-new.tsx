@@ -1240,7 +1240,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         <div
           key={currentDateInLoop.toString()}
           className={cn(
-            'h-20 sm:h-24 md:h-28 transition-colors duration-100 ease-in-out bg-white overflow-hidden',
+            'aspect-square transition-colors duration-100 ease-in-out bg-white overflow-hidden',
             'flex flex-col p-0.5 sm:p-1.5 min-w-0',
             borderClasses,
             isCurrentMonth ? 'hover:bg-gray-100' : '',

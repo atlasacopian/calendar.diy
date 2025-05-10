@@ -1,3 +1,4 @@
+"use client"
 import type { Metadata } from "next"
 // Remove the old dynamic import
 // import dynamic from "next/dynamic"

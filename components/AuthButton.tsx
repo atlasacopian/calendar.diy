@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
 import { Loader2, LogOut, UserCircle2 } from "lucide-react"
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL;
+
 export default function AuthButton() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -52,10 +54,7 @@ export default function AuthButton() {
         email,
         password,
         options: {
-          emailRedirectTo:
-            typeof window !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL
-              ? process.env.NEXT_PUBLIC_SITE_URL
-              : `${window.location.origin}`,
+          emailRedirectTo: SITE_URL || window.location.origin,
         },
       })
       if (signUpError) setError(signUpError.message)

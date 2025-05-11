@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 // This middleware ensures we don't have unwanted redirects
 export async function middleware(request: NextRequest) {
-  console.log('[MW] Middleware triggered for path:', request.nextUrl.pathname);
+  console.log('[MW_DIAGNOSTIC] Middleware triggered for path:', request.nextUrl.pathname);
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
   // Log incoming cookies
   const incomingCookies: { [key: string]: string } = {};
   request.cookies.getAll().forEach(cookie => { incomingCookies[cookie.name] = cookie.value; });
-  console.log('[MW] Initial request cookies:', JSON.stringify(incomingCookies));
+  console.log('[MW_DIAGNOSTIC] Initial request cookies:', JSON.stringify(incomingCookies));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,35 +41,25 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  console.log('[MW] Attempting to get session...');
+  console.log('[MW_DIAGNOSTIC] Attempting to get session...');
   const { data: { session } } = await supabase.auth.getSession();
 
   if (session) {
-    console.log('[MW] Supabase session FOUND in middleware for user:', session.user.id);
+    console.log('[MW_DIAGNOSTIC] Supabase session FOUND in middleware for user:', session.user.id);
   } else {
-    console.log('[MW] Supabase session NOT FOUND in middleware.');
+    console.log('[MW_DIAGNOSTIC] Supabase session NOT FOUND in middleware.');
   }
   
   // Log outgoing cookies before returning response
   const outgoingCookies: { [key: string]: string } = {};
   response.cookies.getAll().forEach(cookie => { outgoingCookies[cookie.name] = cookie.value; });
-  console.log('[MW] Response cookies BEFORE returning:', JSON.stringify(outgoingCookies));
+  console.log('[MW_DIAGNOSTIC] Response cookies BEFORE returning:', JSON.stringify(outgoingCookies));
 
   return response;
 }
 
 // Configure middleware to run on specific paths
 export const config = {
-  matcher: [
-    '/api/:path*', // Explicitly match all API routes FIRST
-    /*
-     * Match all other request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * This simpler matcher should ensure API routes are included.
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)', 
-  ],
+  matcher: '/:path*', // DIAGNOSTIC: Match EVERYTHING
 }
 

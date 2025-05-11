@@ -225,6 +225,10 @@ export default function CalendarNew() {
         }
         console.log('[DataFlow] Local data found (to be migrated/merged):', {lsEv: lsEvents.length, lsGr: lsGroups.length});
 
+        // Show local snapshot right away for snappy UI while we fetch Supabase
+        setEvents(lsEvents);
+        setProjectGroups(lsGroups.length > 0 ? lsGroups : [...initialProjectGroups]);
+
         let cloudEvents: Event[] = [];
         let cloudGroups: ProjectGroup[] = [...initialProjectGroups];
         // Fetch cloud data with up to 3 retries (handles first-load race where cookies aren't set yet)

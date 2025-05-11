@@ -853,64 +853,64 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   };
 
   const handleDragStart = useCallback((event: Event, e: React.DragEvent, index: number | null = null) => {
-    e.stopPropagation()
-    setDraggedEvent(event)
+    e.stopPropagation();
+    setDraggedEvent(event);
     setDraggedEventIndex(index);
 
     if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = "move"
-      e.dataTransfer.setData("text/plain", event.id)
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", event.id);
 
-      const ghostElement = document.createElement("div")
-      ghostElement.classList.add("event-ghost")
-      ghostElement.textContent = event.content
-      ghostElement.style.padding = "4px 8px"
-      ghostElement.style.background = "#f5f5f5"
-      ghostElement.style.border = "1px solid #ddd"
-      ghostElement.style.borderRadius = "4px"
-      ghostElement.style.width = "100px"
-      ghostElement.style.overflow = "hidden"
-      ghostElement.style.whiteSpace = "nowrap"
-      ghostElement.style.textOverflow = "ellipsis"
-      ghostElement.style.position = "absolute"
-      ghostElement.style.top = "-1000px"
-      document.body.appendChild(ghostElement)
+      const ghostElement = document.createElement("div");
+      ghostElement.classList.add("event-ghost");
+      ghostElement.textContent = event.content;
+      ghostElement.style.padding = "4px 8px";
+      ghostElement.style.background = "#f5f5f5";
+      ghostElement.style.border = "1px solid #ddd";
+      ghostElement.style.borderRadius = "4px";
+      ghostElement.style.width = "100px";
+      ghostElement.style.overflow = "hidden";
+      ghostElement.style.whiteSpace = "nowrap";
+      ghostElement.style.textOverflow = "ellipsis";
+      ghostElement.style.position = "absolute";
+      ghostElement.style.top = "-1000px";
+      document.body.appendChild(ghostElement);
 
-      e.dataTransfer.setDragImage(ghostElement, 50, 10)
+      e.dataTransfer.setDragImage(ghostElement, 50, 10);
 
       setTimeout(() => {
         if (document.body.contains(ghostElement)) {
-            document.body.removeChild(ghostElement)
+          document.body.removeChild(ghostElement);
         }
-      }, 100)
+      }, 100);
     }
-  }, []); 
+  }, []);
 
-  const handleDragOver = useCallback((day: Date, e: React.DragEvent) => {
-    e.preventDefault()
-    if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = "move"
-    }
-    setDragOverDate(day)
-  }, []); 
-
-  const handleDrop = useCallback((e: React.DragEvent, date: Date) => {
-    e.preventDefault()
-    if (!draggedEvent) return
+  const handleDrop = useCallback((e: React.DragEvent<Element>, date: Date) => {
+    e.preventDefault();
+    if (!draggedEvent) return;
 
     const updatedEvents = events.map((event) =>
-      event.id === draggedEvent.id ? { ...event, date } : event,
-    )
-    setEvents(updatedEvents)
-    setDraggedEvent(null)
-    setDragOverDate(null)
-  }, [draggedEvent, events]); 
+      event.id === draggedEvent.id ? { ...event, date } : event
+    );
+    setEvents(updatedEvents);
+    setDraggedEvent(null);
+    setDragOverDate(null);
+  }, [draggedEvent, events]);
 
-  const handleDragEnd = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDraggedEvent(null)
-    setDragOverDate(null)
+  const handleDragOver = useCallback((day: Date, e: React.DragEvent<Element>) => {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = "move";
+    }
+    setDragOverDate(day);
+  }, []);
+
+  const handleDragEnd = (e: React.DragEvent<Element>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggedEvent(null);
+    setDragOverDate(null);
   };
 
   const handleShare = () => {

@@ -297,6 +297,29 @@ export default function CalendarNew() {
     }
   }, [showModal, showAddDialog, currentDate]); 
 
+  // Save encrypted data when events or groups change
+  useEffect(() => {
+    if (!user) {
+      // When logged out, save to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('calendarEvents', JSON.stringify(events));
+        localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
+      }
+      return;
+    }
+
+    // When logged in, save to Supabase
+    (async () => {
+      try {
+        console.log("Saving to Supabase - Events count:", events.length);
+        await saveEncryptedState({ events, groups: projectGroups }, user as any);
+        console.log("Successfully saved to Supabase");
+      } catch (err) {
+        console.error("Failed to save encrypted data:", err);
+      }
+    })();
+  }, [events, projectGroups, user]);
+
   // Load encrypted data once user is authenticated
   useEffect(() => {
     if (!user) return;

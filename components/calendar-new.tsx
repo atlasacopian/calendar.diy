@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import ProjectGroups from './project-groups';
 import { Button } from '@/components/ui/button';
-import { saveEncryptedState, loadEncryptedState } from "@/lib/encrypted-storage";
 import { useAuth } from "@/lib/auth-context";
 import AuthButton from '@/components/AuthButton';
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -73,21 +72,11 @@ function getTextColorFromBg(bgColor: string): string {
   return color ? color.value : 'text-gray-800';
 }
 
-// Add this helper to upload local events to Supabase
-async function uploadLocalEventsToSupabase(user: SupabaseUser, localEvents: Event[], localGroups: ProjectGroup[]) {
-  if (!user || !localEvents || localEvents.length === 0) return;
-  try {
-    // Save events
-    await saveEncryptedState({ events: localEvents, groups: localGroups }, user);
-    // Optionally, you could merge with existing cloud events, but for now, we overwrite
-  } catch (e) {
-    console.error("Failed to upload local events to Supabase:", e);
-  }
-}
-
 export default function CalendarNew() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
+
+  const initialProjectGroups = useMemo(() => [{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }], []);
 
   const [currentDate, setCurrentDate] = useState(() => {
     const dateParam = searchParams.get('date');
@@ -106,65 +95,8 @@ export default function CalendarNew() {
     return new Date()
   });
 
-  const [events, setEvents] = useState<Event[]>(() => {
-    let loadedEvents: Event[] = [];
-    if (typeof window !== 'undefined') {
-      const savedEvents = localStorage.getItem('calendarEvents');
-      if (savedEvents) {
-        try {
-          loadedEvents = JSON.parse(savedEvents, (key, value) => {
-            if (key === 'date' && typeof value === 'string') {
-              return new Date(value);
-            }
-            return value;
-          });
-        } catch (e) {
-          console.error("Failed to parse saved events:", e);
-        }
-      }
-    }
-    return loadedEvents;
-  });
-
-  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>(() => {
-    let loadedGroups: ProjectGroup[] = [];
-    const defaultGroups = [{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }];
-    const validColorValues = new Set(colorOptions.map(opt => opt.value));
-
-    if (typeof window !== 'undefined') {
-      const savedGroups = localStorage.getItem('projectGroups');
-      if (savedGroups) {
-        try {
-          const parsedGroups: ProjectGroup[] = JSON.parse(savedGroups);
-          let foundDefault = false;
-          loadedGroups = parsedGroups.map(group => {
-            if (group.id === 'default') {
-              foundDefault = true;
-              return { ...group, name: 'TAG 01', color: 'text-black' };
-            }
-            if (!validColorValues.has(group.color)) {
-              console.warn(`Invalid color "${group.color}" found for group "${group.name}". Resetting to default.`);
-              return { ...group, color: 'text-black' };
-            }
-            return group;
-          });
-
-          if (!foundDefault) {
-            loadedGroups.unshift(defaultGroups[0]);
-          }
-
-        } catch (e) {
-          console.error("Failed to parse/correct saved groups:", e);
-          loadedGroups = defaultGroups;
-        }
-      } else {
-        loadedGroups = defaultGroups;
-      }
-    } else {
-      loadedGroups = defaultGroups;
-    }
-    return loadedGroups;
-  });
+  const [events, setEvents] = useState<Event[]>([]);
+  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>(initialProjectGroups);
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -201,7 +133,7 @@ export default function CalendarNew() {
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
   const [draggedEventIndex, setDraggedEventIndex] = useState<number | null>(null);
   const [dropTargetEventId, setDropTargetEventId] = useState<string | null>(null);
-  const [originalModalEvents, setOriginalModalEvents] = useState<Event[]>([]); // Added state for original modal events
+  const [originalModalEvents, setOriginalModalEvents] = useState<Event[]>([]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -218,6 +150,8 @@ export default function CalendarNew() {
   const firstEventInputRef = useRef<HTMLTextAreaElement>(null);
   const calendarScreenshotContainerRef = useRef<HTMLDivElement>(null);
   const [holidayForSelectedDate, setHolidayForSelectedDate] = useState<string | null>(null);
+
+  const prevUser = useRef(user); // Ref to store previous user state
 
   useEffect(() => {
     try {
@@ -271,249 +205,120 @@ export default function CalendarNew() {
     }
   }, [showModal, showAddDialog, currentDate]); 
 
-  // Save encrypted data when events or groups change
+  // NEW useEffect for Data Loading & Migration (based on user auth state)
   useEffect(() => {
-    if (!user) {
-      console.log("User not logged in, saving to localStorage");
-      // When logged out, save to localStorage
-      if (typeof window !== 'undefined') {
-        const eventsToSave = JSON.stringify(events, (key, value) => {
-          if (value instanceof Date) {
-            return value.toISOString();
-          }
-          return value;
-        });
-        localStorage.setItem('calendarEvents', eventsToSave);
-        localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
-        console.log("Saved to localStorage:", { eventsCount: events.length, groupsCount: projectGroups.length });
-      }
-      return;
-    }
+    const loadAndProcessData = async () => {
+      if (user) { // User is LOGGED IN
+        console.log('[DataFlow] User is logged in. Processing login data flow.', user.id);
+        let localEvents: Event[] = [];
+        let localGroups: ProjectGroup[] = [...initialProjectGroups];
 
-    // When logged in, save to Supabase via API
-    (async () => {
-      try {
-        console.log("Attempting to save to Supabase for user:", user.id);
-        console.log("Data to save:", { 
-          eventsCount: events.length, 
-          groupsCount: projectGroups.length,
-          firstEvent: events[0] ? { id: events[0].id, date: events[0].date, content: events[0].content } : null
-        });
-        
-        const response = await fetch('/api/calendar', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ events, groups: projectGroups }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        console.log("Successfully saved to Supabase");
-      } catch (err) {
-        console.error("Failed to save encrypted data to Supabase:", err);
-        // If Supabase save fails, fall back to localStorage
         if (typeof window !== 'undefined') {
-          console.log("Falling back to localStorage due to Supabase error");
-          localStorage.setItem('calendarEvents', JSON.stringify(events));
-          localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
+          const lsEventsStr = localStorage.getItem('calendarEvents');
+          const lsGroupsStr = localStorage.getItem('projectGroups');
+          if (lsEventsStr) try { localEvents = JSON.parse(lsEventsStr, (k,v) => k === 'date' ? new Date(v) : v); } catch(e) { console.error("Err parsing local events on login:", e); }
+          if (lsGroupsStr) try { localGroups = JSON.parse(lsGroupsStr); } catch(e) { console.error("Err parsing local groups on login:", e); }
         }
-      }
-    })();
-  }, [events, projectGroups, user]);
+        console.log('[DataFlow] Local data found (to be migrated/merged):', {ev: localEvents.length, gr: localGroups.length});
 
-  // Load encrypted data once user is authenticated
-  useEffect(() => {
-    if (!user) {
-      console.log("User not logged in, loading from localStorage");
-      // When logged out, load from localStorage
-      if (typeof window !== 'undefined') {
-        const savedEvents = localStorage.getItem('calendarEvents');
-        const savedGroups = localStorage.getItem('projectGroups');
-        if (savedEvents) {
-          try {
-            const parsedEvents = JSON.parse(savedEvents, (key, value) => {
-              if (key === 'date' && typeof value === 'string') {
-                // Ensure consistency with how dates are saved (toISOString) and initialized
-                return new Date(value); 
-              }
-              return value;
-            });
-            console.log("Loaded from localStorage:", { eventsCount: parsedEvents.length });
-            setEvents(parsedEvents);
-          } catch (e) {
-            console.error("Failed to parse local events:", e);
-          }
-        }
-        if (savedGroups) {
-          try {
-            const parsedGroups = JSON.parse(savedGroups);
-            console.log("Loaded groups from localStorage:", { groupsCount: parsedGroups.length });
-            setProjectGroups(parsedGroups);
-          } catch (e) {
-            console.error("Failed to parse local groups:", e);
-          }
-        }
-      }
-      return;
-    }
+        let cloudEvents: Event[] = [];
+        let cloudGroups: ProjectGroup[] = [...initialProjectGroups];
+        try {
+          const response = await fetch('/api/calendar');
+          if (response.ok) {
+            const data = await response.json();
+            if (data) {
+              cloudEvents = data.events?.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) || [];
+              cloudGroups = data.groups && data.groups.length > 0 ? data.groups : [...initialProjectGroups];
+               console.log('[DataFlow] Cloud data fetched:', {ev: cloudEvents.length, gr: cloudGroups.length});
+            }
+          } else { console.error('[DataFlow] Failed to fetch cloud data, status:', response.status); }
+        } catch (e) { console.error('[DataFlow] Error fetching cloud data:', e); }
 
-    // When logged in, load from Supabase via API
-    (async () => {
-      try {
-        console.log("Starting to load data for user:", user.id);
+        let finalEvents = cloudEvents;
+        let finalGroups = cloudGroups; // Default to cloud groups
+
+        if (localEvents.length > 0) { 
+          const cloudEventIds = new Set(cloudEvents.map(e => e.id));
+          const newLocalEvents = localEvents.filter(le => !cloudEventIds.has(le.id));
+          finalEvents = [...cloudEvents, ...newLocalEvents];
+          
+          const localHasNonDefaultGroups = localGroups.some(g => g.id !== 'default' || g.name !== 'TAG 01');
+          const cloudHasOnlyDefaultGroup = cloudGroups.length === 1 && cloudGroups[0].id === 'default' && cloudGroups[0].name === 'TAG 01';
+
+          if (localHasNonDefaultGroups && cloudHasOnlyDefaultGroup) {
+            finalGroups = localGroups;
+          } else if (cloudGroups.length === 0 && localGroups.length > 0) {
+            finalGroups = localGroups;
+          } else if (cloudGroups.length === 0 && localGroups.length === 0){
+             finalGroups = [...initialProjectGroups];
+          }
+           console.log('[DataFlow] Merged local and cloud. Final to set/save:', {ev: finalEvents.length, gr: finalGroups.length});
+        }
         
-        // First check for local events
-        let localEvents = [];
-        let localGroups = [];
-        if (typeof window !== 'undefined') {
-          const savedEvents = localStorage.getItem('calendarEvents');
-          const savedGroups = localStorage.getItem('projectGroups');
-          if (savedEvents) {
-            try {
-              localEvents = JSON.parse(savedEvents, (key, value) => {
-                if (key === 'date' && typeof value === 'string') {
-                  // Ensure consistency with how dates are saved (toISOString) and initialized
-                  return new Date(value);
-                }
-                return value;
-              });
-              console.log("Found local events:", { count: localEvents.length, firstEvent: localEvents[0] });
-            } catch (e) {
-              console.error("Failed to parse local events:", e);
-            }
-          }
-          if (savedGroups) {
-            try {
-              localGroups = JSON.parse(savedGroups);
-              console.log("Found local groups:", { count: localGroups.length });
-            } catch (e) {
-              console.error("Failed to parse local groups:", e);
-            }
-          }
-        }
+        setEvents(finalEvents);
+        setProjectGroups(finalGroups);
 
-        // Then load from Supabase
-        console.log("Attempting to load from Supabase...");
-        const response = await fetch('/api/calendar');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const loaded = await response.json();
-        console.log("Supabase load result:", loaded ? "Data found" : "No data found");
-        
-        if (loaded && loaded.events) {
-          console.log("Cloud data details:", { 
-            eventsCount: loaded.events.length,
-            groupsCount: loaded.groups.length,
-            firstEvent: loaded.events[0] ? { id: loaded.events[0].id, date: loaded.events[0].date } : null
-          });
-          
-          // If we have both local and cloud data, merge them
-          if (localEvents.length > 0) {
-            const cloudEvents = loaded.events.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) as Event[];
-            const mergedEvents = [...cloudEvents, ...localEvents];
-            console.log("Merging data:", { 
-              cloudEventsCount: cloudEvents.length,
-              localEventsCount: localEvents.length,
-              mergedEventsCount: mergedEvents.length
-            });
-            
-            setEvents(mergedEvents);
-            setProjectGroups(loaded.groups as ProjectGroup[]);
-            
-            // Upload merged data to Supabase
-            console.log("Uploading merged data to Supabase...");
-            const saveResponse = await fetch('/api/calendar', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ events: mergedEvents, groups: loaded.groups }),
-            });
-            
-            if (!saveResponse.ok) {
-              throw new Error(`HTTP error! status: ${saveResponse.status}`);
-            }
-            
-            console.log("Successfully uploaded merged data to Supabase");
-            
-            // Clear local storage
-            localStorage.removeItem('calendarEvents');
-            localStorage.removeItem('projectGroups');
-          } else {
-            // Just use cloud data
-            const normalizedEvents = loaded.events.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) as Event[];
-            console.log("Using cloud data only:", { eventsCount: normalizedEvents.length });
-            setEvents(normalizedEvents);
-            setProjectGroups(loaded.groups as ProjectGroup[]);
-          }
-        } else if (localEvents.length > 0) {
-          // If no cloud data but we have local data, use that
-          console.log("No cloud data found, using local data:", { eventsCount: localEvents.length });
-          setEvents(localEvents);
-          setProjectGroups(localGroups.length > 0 ? localGroups : [{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }]);
-          
-          // Upload local data to Supabase
-          console.log("Uploading local data to Supabase...");
-          const saveResponse = await fetch('/api/calendar', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ events: localEvents, groups: localGroups }),
-          });
-          
-          if (!saveResponse.ok) {
-            throw new Error(`HTTP error! status: ${saveResponse.status}`);
-          }
-          
-          console.log("Successfully uploaded local data to Supabase");
-          
-          // Clear local storage
+        if (typeof window !== 'undefined') { 
           localStorage.removeItem('calendarEvents');
           localStorage.removeItem('projectGroups');
-        } else {
-          // If no data at all, initialize with empty state
-          console.log("No data found anywhere, initializing empty state");
-          setEvents([]);
-          setProjectGroups([{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }]);
         }
-      } catch (err) {
-        console.error("Failed to load encrypted data:", err);
-      }
-    })();
-  }, [user]);
 
-  useEffect(() => {
-    if (user) {
-      saveEncryptedState({ events, groups: projectGroups }, user as any);
-    } else if (typeof window !== 'undefined') {
-      try {
-        const eventsToSave = JSON.stringify(events, (key, value) => {
-          if (value instanceof Date) return value.toISOString();
-          return value;
-        });
-        localStorage.setItem('calendarEvents', eventsToSave);
-      } catch (e) {
-        console.error("Failed to save events:", e);
+      } else { // User is LOGGED OUT
+        if (prevUser.current) { // Was logged in, now is not --> True Logout
+          console.log('[DataFlow] Logout detected. Clearing UI and localStorage.');
+          setEvents([]);
+          setProjectGroups([...initialProjectGroups]);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('calendarEvents');
+            localStorage.removeItem('projectGroups');
+          }
+        } else { // Initial load and user is not logged in, or still logged out
+          console.log('[DataFlow] User is logged out (initial or continuing). Loading from localStorage.');
+          if (typeof window !== 'undefined') {
+            const lsEventsStr = localStorage.getItem('calendarEvents');
+            const lsGroupsStr = localStorage.getItem('projectGroups');
+            let loadedEvents: Event[] = [];
+            let loadedGroups: ProjectGroup[] = [...initialProjectGroups];
+            if (lsEventsStr) try { loadedEvents = JSON.parse(lsEventsStr, (k,v) => k === 'date' ? new Date(v) : v); } catch(e) {console.error("Err parsing lsEvents on logged-out load",e)}
+            if (lsGroupsStr) try { loadedGroups = JSON.parse(lsGroupsStr); } catch(e) {console.error("Err parsing lsGroups on logged-out load",e)}
+            
+            setEvents(loadedEvents);
+            setProjectGroups(loadedGroups.length > 0 ? loadedGroups : [...initialProjectGroups]);
+          }
+        }
       }
-    }
-  }, [events, user, projectGroups]);
+      prevUser.current = user;
+    };
+    loadAndProcessData();
+  }, [user, initialProjectGroups]);
 
-  // When only local mode, persist groups to localStorage
+  // NEW useEffect for Data Saving (based on data or user auth state changes)
   useEffect(() => {
-    if (!user && typeof window !== 'undefined') {
-      try {
+    if (user) { // Logged IN: Save to Supabase
+      console.log('[SaveEffect] User logged in. Saving to Supabase.', {ev: events.length, gr: projectGroups.length});
+      const payload = {
+        events: events.map(e => ({ ...e, date: e.date instanceof Date ? e.date.toISOString() : e.date })),
+        groups: projectGroups
+      };
+      fetch('/api/calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(err => console.error('Error saving to Supabase from effect:', err));
+
+    } else { // Logged OUT: Save to localStorage
+      if (typeof window !== 'undefined') {
+        console.log('[SaveEffect] User logged out. Saving to localStorage.', {ev: events.length, gr: projectGroups.length});
+        const eventsToSave = events.map(event => ({
+            ...event,
+            date: event.date instanceof Date ? event.date.toISOString() : event.date,
+        }));
+        localStorage.setItem('calendarEvents', JSON.stringify(eventsToSave));
         localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
-      } catch (e) {
-        console.error("Failed to save groups:", e);
       }
     }
-  }, [projectGroups, user]);
+  }, [events, projectGroups, user]);
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -1553,91 +1358,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     dropTargetEventId, // Added dropTargetEventId to deps
     handleEventDrop, handleEventDragOver 
   ]);
-
-  // On login, migrate any local events to Supabase **before** loading cloud data
-  useEffect(() => {
-    if (!user) return;
-
-    (async () => {
-      try {
-        // 1. Grab anything still in localStorage
-        let localEvents: Event[] = [];
-        let localGroups: ProjectGroup[] = [];
-        if (typeof window !== 'undefined') {
-          const savedEvents = localStorage.getItem('calendarEvents');
-          const savedGroups = localStorage.getItem('projectGroups');
-          if (savedEvents) {
-            try {
-              localEvents = JSON.parse(savedEvents, (key, value) => {
-                if (key === 'date' && typeof value === 'string') return new Date(value);
-                return value;
-              });
-            } catch (err) {
-              console.error('Failed to parse local events during login migration', err);
-            }
-          }
-          if (savedGroups) {
-            try {
-              localGroups = JSON.parse(savedGroups);
-            } catch (err) {
-              console.error('Failed to parse local groups during login migration', err);
-            }
-          }
-        }
-
-        // 2. If we DO have local data, upload/merge it into Supabase
-        if (localEvents.length > 0) {
-          console.log('[LoginMigration] Uploading local events to Supabase', { events: localEvents.length, groups: localGroups.length });
-
-          // Fetch cloud first so we can merge instead of overwrite
-          const cloudResp = await fetch('/api/calendar');
-          let mergedEvents = localEvents;
-          let mergedGroups: ProjectGroup[] = localGroups.length ? localGroups : projectGroups;
-          if (cloudResp.ok) {
-            const cloudData = await cloudResp.json();
-            if (cloudData && cloudData.events) {
-              const cloudEvents: Event[] = cloudData.events.map((ev: any) => ({ ...ev, date: new Date(ev.date) }));
-              mergedEvents = [...cloudEvents, ...localEvents];
-              mergedGroups = cloudData.groups ?? mergedGroups;
-              console.log('[LoginMigration] Merging local & cloud events', { cloud: cloudEvents.length, local: localEvents.length, merged: mergedEvents.length });
-            }
-          }
-
-          // Save merged data back to Supabase
-          await fetch('/api/calendar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ events: mergedEvents, groups: mergedGroups })
-          });
-
-          // Clear localStorage copies
-          localStorage.removeItem('calendarEvents');
-          localStorage.removeItem('projectGroups');
-
-          // Update UI immediately
-          setEvents(mergedEvents);
-          setProjectGroups(mergedGroups);
-        }
-      } catch (err) {
-        console.error('[LoginMigration] Failed to migrate local data', err);
-      }
-    })();
-  }, [user]);
-
-  // When the user logs out (transition from logged-in to null), clear cloud events from UI so they do not leak
-  const prevUserRef = useRef<typeof user | null>(null);
-  useEffect(() => {
-    if (prevUserRef.current && !user) {
-      // We had a user and now we don't – clear current state
-      setEvents([]);
-      setProjectGroups([{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }]);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('calendarEvents');
-        localStorage.removeItem('projectGroups');
-      }
-    }
-    prevUserRef.current = user;
-  }, [user]);
 
   return (
     <>

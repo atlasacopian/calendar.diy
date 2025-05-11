@@ -66,9 +66,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * This simpler matcher should ensure API routes are included.
      */
-    '/((?!_next/static|_next/image|favicon.ico|images|robots.txt|sitemap.xml).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)', 
   ],
 }
 

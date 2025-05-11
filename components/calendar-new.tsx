@@ -322,8 +322,36 @@ export default function CalendarNew() {
 
   // Load encrypted data once user is authenticated
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // When logged out, load from localStorage
+      if (typeof window !== 'undefined') {
+        const savedEvents = localStorage.getItem('calendarEvents');
+        const savedGroups = localStorage.getItem('projectGroups');
+        if (savedEvents) {
+          try {
+            const parsedEvents = JSON.parse(savedEvents, (key, value) => {
+              if (key === 'date' && typeof value === 'string') {
+                return parse(value, "yyyy-MM-dd'T'HH:mm:ss.SSSX", new Date());
+              }
+              return value;
+            });
+            setEvents(parsedEvents);
+          } catch (e) {
+            console.error("Failed to parse local events:", e);
+          }
+        }
+        if (savedGroups) {
+          try {
+            setProjectGroups(JSON.parse(savedGroups));
+          } catch (e) {
+            console.error("Failed to parse local groups:", e);
+          }
+        }
+      }
+      return;
+    }
 
+    // When logged in, load from Supabase
     (async () => {
       try {
         console.log("Starting to load data for user:", user.id);

@@ -681,12 +681,33 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     setShowResetConfirm(true)
   };
 
-  const handleResetData = () => {
-    setEvents([])
-    setProjectGroups([{ id: "default", name: "TAG 01", color: "text-black", active: true }])
-    localStorage.removeItem("calendarEvents")
-    localStorage.removeItem("projectGroups")
-    setShowResetConfirm(false)
+  const handleResetData = async () => {
+    // Clear UI state
+    const clearedGroups = [{ id: "default", name: "TAG 01", color: "text-black", active: true }];
+    setEvents([]);
+    setProjectGroups(clearedGroups);
+
+    // Clear localStorage snapshot
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("calendarEvents");
+      localStorage.removeItem("projectGroups");
+    }
+
+    // If the user is logged-in push the cleared state to Supabase immediately
+    if (user) {
+      try {
+        await fetch("/api/calendar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ events: [], groups: clearedGroups }),
+        });
+        console.log("[Reset] Cleared calendar saved to Supabase");
+      } catch (err) {
+        console.error("[Reset] Failed to save cleared calendar to Supabase", err);
+      }
+    }
+
+    setShowResetConfirm(false);
   };
 
   const handleDragStart = useCallback((event: Event, e: React.DragEvent, index: number | null = null) => {

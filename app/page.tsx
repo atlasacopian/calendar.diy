@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 // Remove the old dynamic import
 // import dynamic from "next/dynamic"
 import ClientCalendarWrapper from "@/components/ClientCalendarWrapper"; // Import the new wrapper
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/lib/auth-context";
 
 // Remove the old dynamic import definition
@@ -61,7 +61,9 @@ export default function Home() {
         <ConfirmationBanner />
         {/* Client-side rendered calendar */}
         <div className="calendar-wrapper">
-          <ClientCalendarWrapper />
+          <Suspense>
+            <ClientCalendarWrapper />
+          </Suspense>
         </div>
 
         {/* Visually hidden content for SEO */}

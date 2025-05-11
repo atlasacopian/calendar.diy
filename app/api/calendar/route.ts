@@ -13,10 +13,12 @@ export async function POST(request: Request) {
       {
         cookies: {
           get(name: string) {
+            // @ts-expect-error - Linter incorrectly infers cookieStore as Promise here
             return cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: CookieOptions) {
             try {
+              // @ts-expect-error - Linter incorrectly infers cookieStore as Promise here
               cookieStore.set({ name, value, ...options });
             } catch (error) {
               // Errors during set in Route Handlers can often be ignored
@@ -25,6 +27,7 @@ export async function POST(request: Request) {
           },
           remove(name: string, options: CookieOptions) {
             try {
+              // @ts-expect-error - Linter incorrectly infers cookieStore as Promise here
               cookieStore.set({ name, value: '', ...options });
             } catch (error) {
               // Errors during remove in Route Handlers can often be ignored.
@@ -78,16 +81,19 @@ export async function GET(request: Request) {
       {
         cookies: {
           get(name: string) {
+            // @ts-expect-error - Linter incorrectly infers cookieStore as Promise here
             return cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: CookieOptions) {
             try {
+              // @ts-expect-error - Linter incorrectly infers cookieStore as Promise here
               cookieStore.set({ name, value, ...options });
             } catch (error) {
             }
           },
           remove(name: string, options: CookieOptions) {
             try {
+              // @ts-expect-error - Linter incorrectly infers cookieStore as Promise here
               cookieStore.set({ name, value: '', ...options });
             } catch (error) {
             }

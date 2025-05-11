@@ -904,7 +904,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     setEvents(updatedEvents)
     setDraggedEvent(null)
     setDragOverDate(null)
-  }, [draggedEvent, events, handleDrop]); 
+  }, [draggedEvent, events]); 
 
   const handleDragEnd = (e: React.DragEvent) => {
     e.preventDefault()

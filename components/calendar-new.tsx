@@ -344,9 +344,18 @@ export default function CalendarNew() {
           });
         } else {
           console.log('[SaveEffect] Successfully saved to Supabase.');
-        }
-      })
-      .catch(err => console.error('[SaveEffect] Network error saving to Supabase from effect:', err));
+          // Cache the same payload locally so the calendar can load instantly
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('calendarEvents', JSON.stringify(payload.events));
+              localStorage.setItem('projectGroups', JSON.stringify(payload.groups));
+            } catch (e) {
+              console.warn('[SaveEffect] Failed to persist calendar snapshot to localStorage', e);
+            }
+          }
+         }
+       })
+       .catch(err => console.error('[SaveEffect] Network error saving to Supabase from effect:', err));
 
     } else { // Logged OUT: Save to localStorage
       if (typeof window !== 'undefined') {

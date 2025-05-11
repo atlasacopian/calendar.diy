@@ -1588,14 +1588,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     }
   }, [user]);
 
-  // On logout, clear events from UI
-  useEffect(() => {
-    if (!user) {
-      setEvents([]);
-      setProjectGroups([{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }]);
-    }
-  }, [user]);
-
   return (
     <>
       <div 

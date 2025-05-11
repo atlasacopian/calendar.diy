@@ -227,17 +227,30 @@ export default function CalendarNew() {
 
         let cloudEvents: Event[] = [];
         let cloudGroups: ProjectGroup[] = [...initialProjectGroups];
-        try {
-          const response = await fetch('/api/calendar');
-          if (response.ok) {
-            const data = await response.json();
-            if (data) {
+        // Fetch cloud data with up to 3 retries (handles first-load race where cookies aren't set yet)
+        const fetchCloudData = async (attempt = 1): Promise<boolean> => {
+          try {
+            const res = await fetch('/api/calendar');
+            if (res.ok) {
+              const data = await res.json();
               cloudEvents = data.events?.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) || [];
               cloudGroups = data.groups && data.groups.length > 0 ? data.groups : [...initialProjectGroups];
-               console.log('[DataFlow] Cloud data fetched:', {cloudEv: cloudEvents.length, cloudGr: cloudGroups.length});
+              console.log('[DataFlow] Cloud data fetched:', { cloudEv: cloudEvents.length, cloudGr: cloudGroups.length });
+              return true;
             }
-          } else { console.error('[DataFlow] Failed to fetch cloud data, status:', response.status); }
-        } catch (e) { console.error('[DataFlow] Error fetching cloud data:', e); }
+            if (res.status === 401 && attempt < 3) {
+              console.log('[DataFlow] Cloud fetch unauthorized (likely cookies not set yet). Retrying in 400ms…');
+              await new Promise(r => setTimeout(r, 400));
+              return fetchCloudData(attempt + 1);
+            }
+            console.error('[DataFlow] Failed to fetch cloud data, status:', res.status);
+          } catch (err) {
+            console.error('[DataFlow] Error fetching cloud data:', err);
+          }
+          return false;
+        };
+
+        await fetchCloudData();
 
         let mergedEvents = cloudEvents;
         let mergedGroups = cloudGroups;

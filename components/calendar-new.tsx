@@ -1631,6 +1631,10 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       // We had a user and now we don't – clear current state
       setEvents([]);
       setProjectGroups([{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }]);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('calendarEvents');
+        localStorage.removeItem('projectGroups');
+      }
     }
     prevUserRef.current = user;
   }, [user]);

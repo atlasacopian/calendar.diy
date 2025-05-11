@@ -19,6 +19,9 @@ import { useAuth } from "@/lib/auth-context";
 //   ),
 // })
 
+// Disable static pre-rendering because we rely on `useSearchParams` in a client component.
+export const dynamic = 'force-dynamic';
+
 function ConfirmationBanner() {
   const { user } = useAuth();
   const [message, setMessage] = useState("");

@@ -337,7 +337,8 @@ export default function CalendarNew() {
           try {
             const parsedEvents = JSON.parse(savedEvents, (key, value) => {
               if (key === 'date' && typeof value === 'string') {
-                return parse(value, "yyyy-MM-dd'T'HH:mm:ss.SSSX", new Date());
+                // Ensure consistency with how dates are saved (toISOString) and initialized
+                return new Date(value); 
               }
               return value;
             });
@@ -375,7 +376,8 @@ export default function CalendarNew() {
             try {
               localEvents = JSON.parse(savedEvents, (key, value) => {
                 if (key === 'date' && typeof value === 'string') {
-                  return parse(value, "yyyy-MM-dd'T'HH:mm:ss.SSSX", new Date());
+                  // Ensure consistency with how dates are saved (toISOString) and initialized
+                  return new Date(value);
                 }
                 return value;
               });

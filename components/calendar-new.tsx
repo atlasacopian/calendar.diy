@@ -108,44 +108,18 @@ export default function CalendarNew() {
 
   const [events, setEvents] = useState<Event[]>(() => {
     let loadedEvents: Event[] = [];
-    let loadedGroups: ProjectGroup[] = [{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }];
     if (typeof window !== 'undefined') {
-      const savedGroups = localStorage.getItem('projectGroups');
-      if (savedGroups) {
-        try {
-          loadedGroups = JSON.parse(savedGroups);
-        } catch (e) { console.error("Failed parse groups on load"); }
-      }
-
       const savedEvents = localStorage.getItem('calendarEvents');
       if (savedEvents) {
         try {
-          const parsedEvents: Event[] = JSON.parse(savedEvents, (key, value) => {
+          loadedEvents = JSON.parse(savedEvents, (key, value) => {
             if (key === 'date' && typeof value === 'string') {
-              return parse(value, "yyyy-MM-dd'T'HH:mm:ss.SSSX", new Date());
+              return new Date(value);
             }
             return value;
           });
-
-          loadedEvents = parsedEvents.map(event => {
-            if (event.projectId) {
-              const matchingGroup = loadedGroups.find(g => g.id === event.projectId);
-              if (matchingGroup && event.color !== matchingGroup.color) {
-                 console.log(`Correcting color for event ${event.id} (projectId: ${event.projectId}) from ${event.color} to ${matchingGroup.color}`);
-                 return { ...event, color: matchingGroup.color };
-              }
-            }
-
-            if (!event.projectId && event.color !== 'text-black') {
-                 console.log(`Correcting color for untagged event ${event.id} to default`);
-                 return { ...event, color: 'text-black' };
-            }
-            return event;
-          });
-
         } catch (e) {
-          console.error("Failed to parse/correct saved events:", e);
-          loadedEvents = [];
+          console.error("Failed to parse saved events:", e);
         }
       }
     }
@@ -303,7 +277,13 @@ export default function CalendarNew() {
       console.log("User not logged in, saving to localStorage");
       // When logged out, save to localStorage
       if (typeof window !== 'undefined') {
-        localStorage.setItem('calendarEvents', JSON.stringify(events));
+        const eventsToSave = JSON.stringify(events, (key, value) => {
+          if (value instanceof Date) {
+            return value.toISOString();
+          }
+          return value;
+        });
+        localStorage.setItem('calendarEvents', eventsToSave);
         localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
         console.log("Saved to localStorage:", { eventsCount: events.length, groupsCount: projectGroups.length });
       }

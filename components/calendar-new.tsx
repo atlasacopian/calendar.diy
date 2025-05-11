@@ -300,22 +300,47 @@ export default function CalendarNew() {
   // Save encrypted data when events or groups change
   useEffect(() => {
     if (!user) {
+      console.log("User not logged in, saving to localStorage");
       // When logged out, save to localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('calendarEvents', JSON.stringify(events));
         localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
+        console.log("Saved to localStorage:", { eventsCount: events.length, groupsCount: projectGroups.length });
       }
       return;
     }
 
-    // When logged in, save to Supabase
+    // When logged in, save to Supabase via API
     (async () => {
       try {
-        console.log("Saving to Supabase - Events count:", events.length);
-        await saveEncryptedState({ events, groups: projectGroups }, user as any);
+        console.log("Attempting to save to Supabase for user:", user.id);
+        console.log("Data to save:", { 
+          eventsCount: events.length, 
+          groupsCount: projectGroups.length,
+          firstEvent: events[0] ? { id: events[0].id, date: events[0].date, content: events[0].content } : null
+        });
+        
+        const response = await fetch('/api/calendar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ events, groups: projectGroups }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         console.log("Successfully saved to Supabase");
       } catch (err) {
-        console.error("Failed to save encrypted data:", err);
+        console.error("Failed to save encrypted data to Supabase:", err);
+        // If Supabase save fails, fall back to localStorage
+        if (typeof window !== 'undefined') {
+          console.log("Falling back to localStorage due to Supabase error");
+          localStorage.setItem('calendarEvents', JSON.stringify(events));
+          localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
+        }
       }
     })();
   }, [events, projectGroups, user]);
@@ -323,6 +348,7 @@ export default function CalendarNew() {
   // Load encrypted data once user is authenticated
   useEffect(() => {
     if (!user) {
+      console.log("User not logged in, loading from localStorage");
       // When logged out, load from localStorage
       if (typeof window !== 'undefined') {
         const savedEvents = localStorage.getItem('calendarEvents');
@@ -335,6 +361,7 @@ export default function CalendarNew() {
               }
               return value;
             });
+            console.log("Loaded from localStorage:", { eventsCount: parsedEvents.length });
             setEvents(parsedEvents);
           } catch (e) {
             console.error("Failed to parse local events:", e);
@@ -342,7 +369,9 @@ export default function CalendarNew() {
         }
         if (savedGroups) {
           try {
-            setProjectGroups(JSON.parse(savedGroups));
+            const parsedGroups = JSON.parse(savedGroups);
+            console.log("Loaded groups from localStorage:", { groupsCount: parsedGroups.length });
+            setProjectGroups(parsedGroups);
           } catch (e) {
             console.error("Failed to parse local groups:", e);
           }
@@ -351,7 +380,7 @@ export default function CalendarNew() {
       return;
     }
 
-    // When logged in, load from Supabase
+    // When logged in, load from Supabase via API
     (async () => {
       try {
         console.log("Starting to load data for user:", user.id);
@@ -370,7 +399,7 @@ export default function CalendarNew() {
                 }
                 return value;
               });
-              console.log("Found local events:", localEvents.length);
+              console.log("Found local events:", { count: localEvents.length, firstEvent: localEvents[0] });
             } catch (e) {
               console.error("Failed to parse local events:", e);
             }
@@ -378,7 +407,7 @@ export default function CalendarNew() {
           if (savedGroups) {
             try {
               localGroups = JSON.parse(savedGroups);
-              console.log("Found local groups:", localGroups.length);
+              console.log("Found local groups:", { count: localGroups.length });
             } catch (e) {
               console.error("Failed to parse local groups:", e);
             }
@@ -386,22 +415,49 @@ export default function CalendarNew() {
         }
 
         // Then load from Supabase
-        const loaded = await loadEncryptedState(user as any);
-        console.log("Loaded from Supabase:", loaded ? "yes" : "no");
+        console.log("Attempting to load from Supabase...");
+        const response = await fetch('/api/calendar');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const loaded = await response.json();
+        console.log("Supabase load result:", loaded ? "Data found" : "No data found");
         
-        if (loaded) {
-          console.log("Cloud events count:", loaded.events.length);
+        if (loaded && loaded.events) {
+          console.log("Cloud data details:", { 
+            eventsCount: loaded.events.length,
+            groupsCount: loaded.groups.length,
+            firstEvent: loaded.events[0] ? { id: loaded.events[0].id, date: loaded.events[0].date } : null
+          });
+          
           // If we have both local and cloud data, merge them
           if (localEvents.length > 0) {
             const cloudEvents = loaded.events.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) as Event[];
             const mergedEvents = [...cloudEvents, ...localEvents];
-            console.log("Merged events count:", mergedEvents.length);
+            console.log("Merging data:", { 
+              cloudEventsCount: cloudEvents.length,
+              localEventsCount: localEvents.length,
+              mergedEventsCount: mergedEvents.length
+            });
+            
             setEvents(mergedEvents);
             setProjectGroups(loaded.groups as ProjectGroup[]);
             
             // Upload merged data to Supabase
-            await saveEncryptedState({ events: mergedEvents, groups: loaded.groups }, user as any);
-            console.log("Uploaded merged data to Supabase");
+            console.log("Uploading merged data to Supabase...");
+            const saveResponse = await fetch('/api/calendar', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ events: mergedEvents, groups: loaded.groups }),
+            });
+            
+            if (!saveResponse.ok) {
+              throw new Error(`HTTP error! status: ${saveResponse.status}`);
+            }
+            
+            console.log("Successfully uploaded merged data to Supabase");
             
             // Clear local storage
             localStorage.removeItem('calendarEvents');
@@ -409,26 +465,38 @@ export default function CalendarNew() {
           } else {
             // Just use cloud data
             const normalizedEvents = loaded.events.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) as Event[];
-            console.log("Using cloud events count:", normalizedEvents.length);
+            console.log("Using cloud data only:", { eventsCount: normalizedEvents.length });
             setEvents(normalizedEvents);
             setProjectGroups(loaded.groups as ProjectGroup[]);
           }
         } else if (localEvents.length > 0) {
           // If no cloud data but we have local data, use that
-          console.log("Using local events count:", localEvents.length);
+          console.log("No cloud data found, using local data:", { eventsCount: localEvents.length });
           setEvents(localEvents);
           setProjectGroups(localGroups.length > 0 ? localGroups : [{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }]);
           
           // Upload local data to Supabase
-          await saveEncryptedState({ events: localEvents, groups: localGroups }, user as any);
-          console.log("Uploaded local data to Supabase");
+          console.log("Uploading local data to Supabase...");
+          const saveResponse = await fetch('/api/calendar', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ events: localEvents, groups: localGroups }),
+          });
+          
+          if (!saveResponse.ok) {
+            throw new Error(`HTTP error! status: ${saveResponse.status}`);
+          }
+          
+          console.log("Successfully uploaded local data to Supabase");
           
           // Clear local storage
           localStorage.removeItem('calendarEvents');
           localStorage.removeItem('projectGroups');
         } else {
           // If no data at all, initialize with empty state
-          console.log("No data found, initializing empty state");
+          console.log("No data found anywhere, initializing empty state");
           setEvents([]);
           setProjectGroups([{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }]);
         }
@@ -836,7 +904,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     setEvents(updatedEvents)
     setDraggedEvent(null)
     setDragOverDate(null)
-  }, [draggedEvent, events]); 
+  }, [draggedEvent, events, handleDrop]); 
 
   const handleDragEnd = (e: React.DragEvent) => {
     e.preventDefault()

@@ -1554,38 +1554,85 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     handleEventDrop, handleEventDragOver 
   ]);
 
-  // On login/signup, upload local events to Supabase, then clear localStorage
+  // On login, migrate any local events to Supabase **before** loading cloud data
   useEffect(() => {
-    if (user) {
-      // Check for local events
-      let localEvents = [];
-      let localGroups = [];
-      if (typeof window !== 'undefined') {
-        const savedEvents = localStorage.getItem('calendarEvents');
-        const savedGroups = localStorage.getItem('projectGroups');
-        if (savedEvents) {
-          try {
-            localEvents = JSON.parse(savedEvents, (key, value) => {
-              if (key === 'date' && typeof value === 'string') {
-                return parse(value, "yyyy-MM-dd'T'HH:mm:ss.SSSX", new Date());
-              }
-              return value;
-            });
-          } catch {}
+    if (!user) return;
+
+    (async () => {
+      try {
+        // 1. Grab anything still in localStorage
+        let localEvents: Event[] = [];
+        let localGroups: ProjectGroup[] = [];
+        if (typeof window !== 'undefined') {
+          const savedEvents = localStorage.getItem('calendarEvents');
+          const savedGroups = localStorage.getItem('projectGroups');
+          if (savedEvents) {
+            try {
+              localEvents = JSON.parse(savedEvents, (key, value) => {
+                if (key === 'date' && typeof value === 'string') return new Date(value);
+                return value;
+              });
+            } catch (err) {
+              console.error('Failed to parse local events during login migration', err);
+            }
+          }
+          if (savedGroups) {
+            try {
+              localGroups = JSON.parse(savedGroups);
+            } catch (err) {
+              console.error('Failed to parse local groups during login migration', err);
+            }
+          }
         }
-        if (savedGroups) {
-          try {
-            localGroups = JSON.parse(savedGroups);
-          } catch {}
+
+        // 2. If we DO have local data, upload/merge it into Supabase
+        if (localEvents.length > 0) {
+          console.log('[LoginMigration] Uploading local events to Supabase', { events: localEvents.length, groups: localGroups.length });
+
+          // Fetch cloud first so we can merge instead of overwrite
+          const cloudResp = await fetch('/api/calendar');
+          let mergedEvents = localEvents;
+          let mergedGroups: ProjectGroup[] = localGroups.length ? localGroups : projectGroups;
+          if (cloudResp.ok) {
+            const cloudData = await cloudResp.json();
+            if (cloudData && cloudData.events) {
+              const cloudEvents: Event[] = cloudData.events.map((ev: any) => ({ ...ev, date: new Date(ev.date) }));
+              mergedEvents = [...cloudEvents, ...localEvents];
+              mergedGroups = cloudData.groups ?? mergedGroups;
+              console.log('[LoginMigration] Merging local & cloud events', { cloud: cloudEvents.length, local: localEvents.length, merged: mergedEvents.length });
+            }
+          }
+
+          // Save merged data back to Supabase
+          await fetch('/api/calendar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ events: mergedEvents, groups: mergedGroups })
+          });
+
+          // Clear localStorage copies
+          localStorage.removeItem('calendarEvents');
+          localStorage.removeItem('projectGroups');
+
+          // Update UI immediately
+          setEvents(mergedEvents);
+          setProjectGroups(mergedGroups);
         }
+      } catch (err) {
+        console.error('[LoginMigration] Failed to migrate local data', err);
       }
-      if (localEvents.length > 0) {
-        uploadLocalEventsToSupabase(user, localEvents, localGroups);
-        // Clear local events after upload
-        localStorage.removeItem('calendarEvents');
-        localStorage.removeItem('projectGroups');
-      }
+    })();
+  }, [user]);
+
+  // When the user logs out (transition from logged-in to null), clear cloud events from UI so they do not leak
+  const prevUserRef = useRef<typeof user | null>(null);
+  useEffect(() => {
+    if (prevUserRef.current && !user) {
+      // We had a user and now we don't – clear current state
+      setEvents([]);
+      setProjectGroups([{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }]);
     }
+    prevUserRef.current = user;
   }, [user]);
 
   return (

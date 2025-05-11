@@ -1,7 +1,5 @@
-"use client"
-
-// Lightweight helper functions for client-side AES-GCM encryption.
-// These run only in the browser (Web Crypto API).
+// Lightweight helper functions for AES-GCM encryption using the Web Crypto API.
+// Works both in the browser (global `crypto`) and on the server (Node 20+).
 
 export async function deriveKey(uniqueId: string): Promise<CryptoKey> {
   const enc = new TextEncoder();

@@ -1,19 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-// Dynamically import the Calendar component with no SSR
-const Calendar = dynamic(() => import("@/components/calendar-new"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-screen w-full flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-2xl mb-2">Loading calendar...</div>
-        <div className="text-sm text-gray-500">Please wait while we set up your calendar</div>
-      </div>
-    </div>
-  ),
-});
+// Direct import so the calendar renders immediately without the loading flash.
+import Calendar from "@/components/calendar-new";
 
 export default function ClientCalendarWrapper() {
   return <Calendar />;

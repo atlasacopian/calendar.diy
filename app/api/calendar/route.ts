@@ -126,6 +126,9 @@ export async function GET(request: Request) {
     const key = await deriveKey(user.id);
     const decrypted = await decryptJSON(data.payload, key);
 
+    const decAny: any = decrypted;
+    console.log('[API_GET] Decrypted payload for user', user.id, 'Events:', decAny?.events?.length || 0, 'Groups:', decAny?.groups?.length || 0);
+
     return NextResponse.json(decrypted);
   } catch (error) {
     console.error('Error in GET /api/calendar:', error);

@@ -98,6 +98,8 @@ export default function CalendarNew() {
   const [events, setEvents] = useState<Event[]>([]);
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>(initialProjectGroups);
 
+  const [isDataSettled, setIsDataSettled] = useState(false); // New state
+
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [eventsForSelectedDate, setEventsForSelectedDate] = useState<Event[]>([]);
@@ -207,6 +209,7 @@ export default function CalendarNew() {
 
   // NEW useEffect for Data Loading & Migration (based on user auth state)
   useEffect(() => {
+    setIsDataSettled(false); // Reset before loading
     const loadAndProcessData = async () => {
       if (user) { // User is LOGGED IN
         console.log('[DataFlow] User is logged in. Processing login data flow.', user.id);
@@ -263,6 +266,7 @@ export default function CalendarNew() {
           localStorage.removeItem('calendarEvents');
           localStorage.removeItem('projectGroups');
         }
+        setIsDataSettled(true); // Mark data as settled
 
       } else { // User is LOGGED OUT
         if (prevUser.current) { // Was logged in, now is not --> True Logout
@@ -273,6 +277,7 @@ export default function CalendarNew() {
             localStorage.removeItem('calendarEvents');
             localStorage.removeItem('projectGroups');
           }
+          setIsDataSettled(true); // Mark data as settled (empty state is settled)
         } else { // Initial load and user is not logged in, or still logged out
           console.log('[DataFlow] User is logged out (initial or continuing). Loading from localStorage.');
           if (typeof window !== 'undefined') {
@@ -285,6 +290,7 @@ export default function CalendarNew() {
             
             setEvents(loadedEvents);
             setProjectGroups(loadedGroups.length > 0 ? loadedGroups : [...initialProjectGroups]);
+            setIsDataSettled(true); // Mark data as settled
           }
         }
       }
@@ -295,6 +301,8 @@ export default function CalendarNew() {
 
   // NEW useEffect for Data Saving (based on data or user auth state changes)
   useEffect(() => {
+    if (!isDataSettled) return; // <<<< GUARD CLAUSE
+
     if (user) { // Logged IN: Save to Supabase
       console.log('[SaveEffect] User logged in. Saving to Supabase.', {ev: events.length, gr: projectGroups.length});
       const payload = {
@@ -309,7 +317,7 @@ export default function CalendarNew() {
 
     } else { // Logged OUT: Save to localStorage
       if (typeof window !== 'undefined') {
-        console.log('[SaveEffect] User logged out. Saving to localStorage.', {ev: events.length, gr: projectGroups.length});
+        console.log('[SaveEffect] User logged out. Saving to localStorage.', {isDataSettled, ev: events.length, gr: projectGroups.length});
         const eventsToSave = events.map(event => ({
             ...event,
             date: event.date instanceof Date ? event.date.toISOString() : event.date,
@@ -318,7 +326,7 @@ export default function CalendarNew() {
         localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
       }
     }
-  }, [events, projectGroups, user]);
+  }, [events, projectGroups, user, isDataSettled]); // Added isDataSettled to dependencies
 
   useEffect(() => {
     const fetchHolidays = async () => {

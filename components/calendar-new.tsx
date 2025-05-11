@@ -1487,6 +1487,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                >
                  <RefreshCcw size={14} /> RESET
                </button>
+             </div>
+             {/* Right-aligned action buttons */}
+             <div className="ml-auto flex flex-nowrap gap-1.5 sm:gap-2 items-center">
                <button
                  onClick={downloadCalendarAsImage}
                  disabled={isDownloading}

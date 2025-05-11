@@ -101,7 +101,7 @@ export default function AuthButton() {
         <button
           onClick={handleSignOut}
           disabled={formLoading}
-          className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1.5 pl-2 pr-2.5 py-1 border border-gray-200 rounded-sm transition-colors disabled:opacity-50"
+          className="text-xs sm:text-sm text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1.5 pl-3 pr-3 py-1.5 border border-gray-200 rounded-sm transition-colors disabled:opacity-50"
           title={user.email}
         >
           {formLoading ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={12} />} 
@@ -116,7 +116,7 @@ export default function AuthButton() {
     <div className="relative">
       <button
         onClick={() => setAuthUiVisible(!authUiVisible)}
-        className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1.5 pl-2 pr-2.5 py-1 border border-gray-200 rounded-sm transition-colors"
+        className="text-xs sm:text-sm text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1.5 pl-3 pr-3 py-1.5 border border-gray-200 rounded-sm transition-colors"
       >
         <UserCircle2 size={12} /> Sign&nbsp;In
       </button>

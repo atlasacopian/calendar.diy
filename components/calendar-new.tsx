@@ -225,9 +225,28 @@ export default function CalendarNew() {
         }
         console.log('[DataFlow] Local data found (to be migrated/merged):', {lsEv: lsEvents.length, lsGr: lsGroups.length});
 
-        // Show local snapshot right away for snappy UI while we fetch Supabase
-        setEvents(lsEvents);
-        setProjectGroups(lsGroups.length > 0 ? lsGroups : [...initialProjectGroups]);
+        // Per-user snapshot (if we've logged in before on this device)
+        let cachedEvents: Event[] = [];
+        let cachedGroups: ProjectGroup[] = [];
+        if (typeof window !== 'undefined') {
+          const snap = localStorage.getItem(`calendarSnapshot_${user.id}`);
+          if (snap) {
+            try {
+              const parsed = JSON.parse(snap);
+              cachedEvents = parsed.events?.map((ev: any) => ({ ...ev, date: new Date(ev.date) })) || [];
+              cachedGroups = parsed.groups || [];
+            } catch {}
+          }
+        }
+
+        // Prefer snapshot > localStorage generic data (which may belong to logged-out session)
+        if (cachedEvents.length || cachedGroups.length) {
+          setEvents(cachedEvents);
+          setProjectGroups(cachedGroups.length > 0 ? cachedGroups : [...initialProjectGroups]);
+        } else {
+          setEvents(lsEvents);
+          setProjectGroups(lsGroups.length > 0 ? lsGroups : [...initialProjectGroups]);
+        }
 
         let cloudEvents: Event[] = [];
         let cloudGroups: ProjectGroup[] = [...initialProjectGroups];
@@ -366,6 +385,9 @@ export default function CalendarNew() {
             try {
               localStorage.setItem('calendarEvents', JSON.stringify(payload.events));
               localStorage.setItem('projectGroups', JSON.stringify(payload.groups));
+              if (user) {
+                localStorage.setItem(`calendarSnapshot_${user.id}`, JSON.stringify(payload));
+              }
             } catch (e) {
               console.warn('[SaveEffect] Failed to persist calendar snapshot to localStorage', e);
             }
@@ -1268,8 +1290,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     if (!selectedDate) return;
 
     const updatedEvents = events.filter(event => !isSameDay(event.date, selectedDate));
-    setEvents(updatedEvents);
-
+    setEvents(updatedEvents); 
     setEventsForSelectedDate([]); 
     handleCancelEdit(); 
   };

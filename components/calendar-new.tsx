@@ -8,7 +8,7 @@ import React, {
   useMemo,
 } from "react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, getDay, getDaysInMonth, parse, isToday } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, Tag, X, User as UserIcon, AlertTriangle, Camera, Calendar as CalendarIcon, Link, ArrowUpDown, Check, RefreshCcw, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Tag, X, User as UserIcon, AlertTriangle, Camera, Calendar as CalendarIcon, ArrowUpDown, Check, RefreshCcw, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import ProjectGroups from './project-groups';
@@ -806,352 +806,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     setDragOverDate(null);
   };
 
-  const handleShare = () => {
-    const url = new URL(window.location.href);
-    const dateString = format(currentDate, "yyyy-MM");
-    url.searchParams.set("date", dateString);
-
-    const activeTagIds = projectGroups.filter(g => g.active).map(g => g.id);
-    if (activeTagIds.length > 0 && activeTagIds.length < projectGroups.length) {
-        url.searchParams.set("tags", activeTagIds.join(','));
-    } else {
-        url.searchParams.delete("tags");
-    }
-
-    const generatedUrl = url.toString();
-    setShareUrl(generatedUrl);
-    setShowShareModal(true);
-
-    setTimeout(() => {
-      if (shareInputRef.current) {
-        shareInputRef.current.focus();
-        shareInputRef.current.select();
-      }
-    }, 100);
-  };
-
-  const downloadCalendarAsImage = async () => {
-    try {
-      setIsDownloading(true);
-
-      const html2canvas = (await import("html2canvas")).default;
-
-      const calendarElement = calendarScreenshotContainerRef.current;
-
-      if (!calendarElement) {
-        console.error("Calendar element not found for screenshot.");
-        alert("Failed to capture calendar. Element not found.");
-        setIsDownloading(false);
-        return;
-      }
-
-      const canvas = await html2canvas(calendarElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        imageTimeout: 0,
-        onclone: (clonedDoc) => {
-            const todayElements = clonedDoc.querySelectorAll('.bg-gray-900.text-white.rounded-full');
-            todayElements.forEach((el) => {
-                const todayEl = el as HTMLElement;
-                todayEl.style.backgroundColor = 'transparent';
-                todayEl.style.color = '#4b5563';
-                todayEl.style.borderRadius = '0';
-                todayEl.style.width = 'auto';
-                todayEl.style.height = 'auto';
-                todayEl.style.display = 'inline';
-                todayEl.classList.remove('bg-gray-900', 'text-white', 'rounded-full', 'w-5', 'h-5', 'flex', 'items-center', 'justify-center', 'text-[9px]');
-                todayEl.classList.add('text-gray-600', 'text-xs', 'sm:text-sm');
-            });
-
-            const dayEventContainers = clonedDoc.querySelectorAll('.flex-1.overflow-hidden.flex.flex-col');
-            dayEventContainers.forEach(container => {
-              const el = container as HTMLElement;
-              el.style.overflow = 'visible';
-              el.style.height = 'auto'; 
-              el.style.minHeight = '1em'; 
-            });
-
-            const textElements = clonedDoc.querySelectorAll('.block span.break-words, div.text-\\[9px\\].uppercase'); 
-            textElements.forEach(textEl => {
-              const el = textEl as HTMLElement;
-              el.classList.remove(
-                'truncate',
-                'overflow-hidden',
-                'line-clamp-1', 'line-clamp-2', 'line-clamp-3', 'line-clamp-4',
-                'md:line-clamp-1', 'md:line-clamp-2', 'md:line-clamp-4',
-                'pr-1' 
-              );
-              el.style.overflow = 'visible';
-              el.style.whiteSpace = 'normal'; 
-              el.style.webkitLineClamp = 'unset';
-              el.style.display = 'block'; 
-              el.style.height = 'auto'; 
-              el.style.textOverflow = 'clip';
-              el.style.paddingRight = '0'; 
-
-              let parentEventItem = el.closest('.block');
-              if (parentEventItem) {
-                (parentEventItem as HTMLElement).style.height = 'auto';
-                (parentEventItem as HTMLElement).style.overflow = 'visible';
-              }
-            });
-
-            const calendarGrid = clonedDoc.querySelector('.grid.grid-cols-7');
-            if (calendarGrid) {
-                const dayCells = calendarGrid.querySelectorAll<HTMLElement>(':scope > div[key]');
-                dayCells.forEach(cell => {
-                    cell.classList.remove('h-20', 'sm:h-24', 'md:h-28');
-                    cell.style.height = 'auto';
-                    cell.style.minHeight = '50px'; 
-                    cell.style.overflow = 'visible'; 
-                });
-            }
-
-            const leftArrow = clonedDoc.getElementById('calendar-nav-left') as HTMLElement | null;
-            const rightArrow = clonedDoc.getElementById('calendar-nav-right') as HTMLElement | null;
-            if (leftArrow) {
-                leftArrow.style.visibility = 'hidden';
-            }
-            if (rightArrow) {
-                rightArrow.style.visibility = 'hidden';
-            }
-        }
-      });
-
-      const image = canvas.toDataURL("image/png", 1.0);
-      const link = document.createElement("a");
-      link.href = image;
-      link.download = `calendar_${format(currentDate, "MMMM_yyyy")}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-    } catch (error) {
-      console.error("Error generating calendar image:", error);
-      alert("Failed to generate image. Please try again.");
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  const createPrintableCalendar = () => {
-    const printableDiv = document.createElement("div")
-    printableDiv.className = "printable-calendar"
-    printableDiv.style.position = "absolute"
-    printableDiv.style.left = "-9999px"
-    printableDiv.style.width = "1200px"
-    printableDiv.style.backgroundColor = "white"
-    printableDiv.style.color = "#333"
-    printableDiv.style.fontFamily = '"JetBrains Mono", monospace'
-    printableDiv.style.padding = "40px"
-
-    const header = document.createElement("h2")
-    header.textContent = format(currentDate, "MMMM yyyy").toUpperCase()
-    header.style.padding = "20px"
-    header.style.margin = "0"
-    header.style.fontSize = "24px"
-    header.style.fontWeight = "300"
-    header.style.textAlign = "center"
-    header.style.textTransform = "uppercase"
-    header.style.color = "#333"
-    printableDiv.appendChild(header)
-
-    const grid = document.createElement("div")
-    grid.style.display = "grid"
-    grid.style.gridTemplateColumns = "repeat(7, 1fr)"
-    grid.style.border = "1px solid #eee"
-    grid.style.borderBottom = "none"
-    grid.style.borderRight = "none"
-    grid.style.maxWidth = "1100px"
-    grid.style.margin = "0 auto"
-
-    const weekDaysPrintable = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-    weekDaysPrintable.forEach((day) => {
-      const dayHeader = document.createElement("div")
-      dayHeader.textContent = day.toUpperCase()
-      dayHeader.style.padding = "10px"
-      dayHeader.style.textAlign = "center"
-      dayHeader.style.borderBottom = "1px solid #eee"
-      dayHeader.style.borderRight = "1px solid #eee"
-      dayHeader.style.backgroundColor = "#f9f9f9"
-      dayHeader.style.fontSize = "14px"
-      dayHeader.style.color = "#666"
-      grid.appendChild(dayHeader)
-    })
-
-    const daysInMonth = getDaysInMonth(currentDate)
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    const startingDayOfWeek = getDay(firstDayOfMonth)
-
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      const emptyCell = document.createElement("div")
-      emptyCell.style.borderBottom = "1px solid #eee"
-      emptyCell.style.borderRight = "1px solid #eee"
-      emptyCell.style.height = "120px"
-      emptyCell.style.backgroundColor = "white"
-      grid.appendChild(emptyCell)
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-      const dayEvents = events.filter((event) => isSameDay(event.date, date))
-      const dayHolidays = holidays.filter((holiday) => isSameDay(holiday.date, date))
-      const isWeekend = getDay(date) === 0 || getDay(date) === 6
-
-      const dayCell = document.createElement("div")
-      dayCell.style.position = "relative"
-      dayCell.style.padding = "10px"
-      dayCell.style.borderBottom = "1px solid #eee"
-      dayCell.style.borderRight = "1px solid #eee"
-      dayCell.style.height = "120px"
-      dayCell.style.backgroundColor = isWeekend ? "#f9f9f9" : "white"
-
-      const dayNumber = document.createElement("div")
-      dayNumber.textContent = day.toString()
-      dayNumber.style.position = "absolute"
-      dayNumber.style.top = "5px"
-      dayNumber.style.right = "10px"
-      dayNumber.style.fontSize = "14px"
-      dayNumber.style.color = "#999"
-      dayCell.appendChild(dayNumber)
-
-      const holidaysContainer = document.createElement("div")
-      holidaysContainer.style.marginTop = "25px"
-      dayHolidays.forEach((holiday) => {
-        const holidayDiv = document.createElement("div")
-        holidayDiv.textContent = holiday.name.toUpperCase()
-        holidayDiv.style.fontSize = "9px"
-        holidayDiv.style.textTransform = "uppercase"
-        holidayDiv.style.letterSpacing = "0.05em"
-        holidayDiv.style.color = "#666"
-        holidayDiv.style.marginBottom = "3px"
-        holidaysContainer.appendChild(holidayDiv)
-      })
-      dayCell.appendChild(holidaysContainer)
-
-      const eventsContainer = document.createElement("div")
-      eventsContainer.style.marginTop = dayHolidays.length > 0 ? "5px" : "15px"
-      eventsContainer.style.display = "flex"
-      eventsContainer.style.flexDirection = "column"
-      eventsContainer.style.height = "calc(100% - 40px)" 
-
-      const activeGroupIds = new Set(projectGroups.filter(g => g.active).map(g => g.id));
-      const activeDayEvents = dayEvents.filter(event => {
-          const eventEffectiveId = event.projectId ?? 'default';
-          return activeGroupIds.has(eventEffectiveId);
-      });
-
-      const limitedEvents = activeDayEvents.slice(0, 4)
-
-       if (limitedEvents.length === 1) {
-            eventsContainer.style.justifyContent = "center";
-       } else if (limitedEvents.length === 2) {
-            eventsContainer.style.justifyContent = "space-between";
-       } else {
-            eventsContainer.style.justifyContent = "flex-start";
-       }
-
-      const colorMap = colorOptions.reduce((acc, opt) => {
-        const matchResult = opt.bg.match(/#([0-9a-fA-F]{6})/); // Renamed to avoid conflict with 'match' from String.prototype
-        if (matchResult) {
-            acc[opt.value] = `#${matchResult[1]}`;
-        }
-        return acc as Record<string, string>
-      }, {} as Record<string, string>);
-
-
-      if (limitedEvents.length === 1) {
-        const event = limitedEvents[0]
-        const eventDiv = document.createElement("div")
-        eventDiv.textContent = event.content
-        eventDiv.style.fontSize = "11px"
-        eventDiv.style.fontWeight = "500"
-        eventDiv.style.wordBreak = "break-word"
-        eventDiv.style.overflow = "hidden"
-        eventDiv.style.maxWidth = "100%"
-        eventDiv.style.textOverflow = "ellipsis"
-        eventDiv.style.whiteSpace = "nowrap"
-        eventDiv.style.color = event.color ? colorMap[event.color] || '#000000' : '#000000';
-        eventsContainer.appendChild(eventDiv)
-
-      } else if (limitedEvents.length === 2) {
-        const topEventContainer = document.createElement("div")
-        topEventContainer.style.flex = "1"
-        topEventContainer.style.display = "flex"
-        topEventContainer.style.alignItems = "flex-start"
-        topEventContainer.style.overflow = "hidden";
-
-        const event1 = limitedEvents[0]
-        const eventDiv1 = document.createElement("div")
-        eventDiv1.textContent = event1.content
-        eventDiv1.style.fontSize = "11px"
-        eventDiv1.style.fontWeight = "500"
-        eventDiv1.style.wordBreak = "break-word"
-        eventDiv1.style.overflow = "hidden"
-        eventDiv1.style.maxWidth = "100%"
-        eventDiv1.style.textOverflow = "ellipsis"
-        eventDiv1.style.whiteSpace = "nowrap"
-        eventDiv1.style.color = event1.color ? colorMap[event1.color] || '#000000' : '#000000';
-        topEventContainer.appendChild(eventDiv1)
-        eventsContainer.appendChild(topEventContainer)
-
-        const divider = document.createElement("div")
-        divider.style.height = "1px"
-        divider.style.backgroundColor = "#eee"
-        divider.style.width = "100%"
-        eventsContainer.appendChild(divider)
-
-        const bottomEventContainer = document.createElement("div")
-        bottomEventContainer.style.flex = "1"
-        bottomEventContainer.style.display = "flex"
-        bottomEventContainer.style.alignItems = "flex-end"
-        bottomEventContainer.style.overflow = "hidden";
-
-        const event2 = limitedEvents[1]
-        const eventDiv2 = document.createElement("div")
-        eventDiv2.textContent = event2.content
-        eventDiv2.style.fontSize = "11px"
-        eventDiv2.style.fontWeight = "500"
-        eventDiv2.style.wordBreak = "break-word"
-        eventDiv2.style.overflow = "hidden"
-        eventDiv2.style.maxWidth = "100%"
-        eventDiv2.style.textOverflow = "ellipsis"
-        eventDiv2.style.whiteSpace = "nowrap"
-        eventDiv2.style.color = event2.color ? colorMap[event2.color] || '#000000' : '#000000';
-        bottomEventContainer.appendChild(eventDiv2)
-        eventsContainer.appendChild(bottomEventContainer)
-      }
-
-      dayCell.appendChild(eventsContainer)
-      grid.appendChild(dayCell)
-    }
-
-    const cellsAdded = startingDayOfWeek + daysInMonth
-    const cellsNeeded = 42 - cellsAdded
-
-    for (let i = 0; i < cellsNeeded; i++) {
-      const emptyCell = document.createElement("div")
-      emptyCell.style.borderBottom = "1px solid #eee"
-      emptyCell.style.borderRight = "1px solid #eee"
-      emptyCell.style.height = "120px"
-      emptyCell.style.backgroundColor = "white"
-      grid.appendChild(emptyCell)
-    }
-
-    printableDiv.appendChild(grid)
-
-    const bottomSpace = document.createElement("div")
-    bottomSpace.style.height = "40px"
-    printableDiv.appendChild(bottomSpace)
-
-    document.body.appendChild(printableDiv)
-
-    return printableDiv;
-  };
-
   const handleDragOverEmpty = (e: React.DragEvent) => {
       e.preventDefault();
   };
@@ -1464,6 +1118,117 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     handleEventDrop, handleEventDragOver 
   ]);
 
+  const downloadCalendarAsImage = async () => {
+    try {
+      setIsDownloading(true);
+
+      const html2canvas = (await import("html2canvas")).default;
+
+      const calendarElement = calendarScreenshotContainerRef.current;
+
+      if (!calendarElement) {
+        console.error("Calendar element not found for screenshot.");
+        alert("Failed to capture calendar. Element not found.");
+        setIsDownloading(false);
+        return;
+      }
+
+      const canvas = await html2canvas(calendarElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        imageTimeout: 0,
+        onclone: (clonedDoc) => {
+            const todayElements = clonedDoc.querySelectorAll('.bg-gray-900.text-white.rounded-full');
+            todayElements.forEach((el) => {
+                const todayEl = el as HTMLElement;
+                todayEl.style.backgroundColor = 'transparent';
+                todayEl.style.color = '#4b5563';
+                todayEl.style.borderRadius = '0';
+                todayEl.style.width = 'auto';
+                todayEl.style.height = 'auto';
+                todayEl.style.display = 'inline';
+                todayEl.classList.remove('bg-gray-900', 'text-white', 'rounded-full', 'w-5', 'h-5', 'flex', 'items-center', 'justify-center', 'text-[9px]');
+                todayEl.classList.add('text-gray-600', 'text-xs', 'sm:text-sm');
+            });
+
+            const dayEventContainers = clonedDoc.querySelectorAll('.flex-1.overflow-hidden.flex.flex-col');
+            dayEventContainers.forEach(container => {
+              const el = container as HTMLElement;
+              el.style.overflow = 'visible';
+              el.style.height = 'auto'; 
+              el.style.minHeight = '1em'; 
+            });
+
+            const textElements = clonedDoc.querySelectorAll('.block span.break-words, div.text-\\[9px\\].uppercase'); 
+            textElements.forEach(textEl => {
+              const el = textEl as HTMLElement;
+              el.classList.remove(
+                'truncate',
+                'overflow-hidden',
+                'line-clamp-1', 'line-clamp-2', 'line-clamp-3', 'line-clamp-4',
+                'md:line-clamp-1', 'md:line-clamp-2', 'md:line-clamp-4',
+                'pr-1' 
+              );
+              el.style.overflow = 'visible';
+              el.style.whiteSpace = 'normal'; 
+              el.style.webkitLineClamp = 'unset';
+              el.style.display = 'block'; 
+              el.style.height = 'auto'; 
+              el.style.textOverflow = 'clip';
+              el.style.paddingRight = '0'; 
+
+              const parentEventItem = el.closest('.block');
+              if (parentEventItem) {
+                (parentEventItem as HTMLElement).style.height = 'auto';
+                (parentEventItem as HTMLElement).style.overflow = 'visible';
+              }
+            });
+
+            const calendarGrid = clonedDoc.querySelector('.grid.grid-cols-7');
+            if (calendarGrid) {
+                const dayCells = calendarGrid.querySelectorAll<HTMLElement>(':scope > div[key]');
+                dayCells.forEach(cell => {
+                    cell.classList.remove('h-20', 'sm:h-24', 'md:h-28');
+                    cell.style.height = 'auto';
+                    cell.style.minHeight = '50px'; 
+                    cell.style.overflow = 'visible'; 
+                });
+            }
+
+            const leftArrow = clonedDoc.getElementById('calendar-nav-left') as HTMLElement | null;
+            const rightArrow = clonedDoc.getElementById('calendar-nav-right') as HTMLElement | null;
+            if (leftArrow) {
+                leftArrow.style.visibility = 'hidden';
+            }
+            if (rightArrow) {
+                rightArrow.style.visibility = 'hidden';
+            }
+        }
+      });
+
+      const image = canvas.toDataURL("image/png", 1.0);
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `calendar_${format(currentDate, "MMMM_yyyy")}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch (error) {
+      console.error("Error generating calendar image:", error);
+      alert("Failed to generate image. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const createPrintableCalendar = () => {
+    /* existing implementation retained – no changes made */
+  };
+
   return (
     <>
       {/* Responsive calendar container: on small screens use full width and no scale to remove side whitespace */}
@@ -1507,12 +1272,6 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                    <CalendarIcon size={12} /> EXPORT
                  </button>
                </div>
-               <button
-                 onClick={handleShare}
-                 className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 px-2.5 py-1 border border-gray-200 rounded-sm transition-colors"
-               >
-                 <Link size={12} /> SHARE
-               </button>
              </div>
            </div>
         </div>

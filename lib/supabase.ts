@@ -13,4 +13,13 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // The returned client behaves exactly like the standard `createClient`
 // one, but with cookies pre-configured for SSR compatibility.
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey); 
+export const supabase = createBrowserClient(
+  supabaseUrl,
+  supabaseAnonKey,
+  {
+    auth: {
+      detectSessionInUrl: true, // Automatically exchanges the auth code in the URL for a session
+      // flowType: 'pkce', // Usually default for createBrowserClient with ssr package
+    },
+  }
+); 

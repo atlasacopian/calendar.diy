@@ -1327,9 +1327,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       const rowIndex = Math.floor(cellIndex / 7);
       const colIndex = cellIndex % 7;
       const borderClasses = cn(
-        'border-gray-300',
-        rowIndex < 5 ? 'border-b-4 border-gray-300 sm:border-b-1' : '',
-        colIndex < 6 ? 'border-r-4 border-gray-300 sm:border-r-1' : ''
+        'border-gray-300', // Applies color
+        rowIndex < 5 ? 'border-b' : '', // Default 1px bottom border
+        colIndex < 6 ? 'border-r' : ''  // Default 1px right border
       );
 
       days.push(
@@ -1438,9 +1438,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       const colIndex = totalCellIndex % 7;
 
       const borderClasses = cn(
-        'border-gray-300',
-        rowIndex < 5 ? 'border-b-4 border-gray-300 sm:border-b-1' : '',
-        colIndex < 6 ? 'border-r-4 border-gray-300 sm:border-r-1' : ''
+        'border-gray-300', // Applies color
+        rowIndex < 5 ? 'border-b' : '', // Default 1px bottom border
+        colIndex < 6 ? 'border-r' : ''  // Default 1px right border
       );
 
       days.push(

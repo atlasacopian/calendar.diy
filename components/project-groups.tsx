@@ -127,13 +127,13 @@ export default function ProjectGroups({
                 <button
                   onClick={(e) => handleToggleClick(group.id, e)}
                   className={cn(
-                    `px-2.5 py-1.5 text-xs sm:text-sm rounded-sm font-mono flex items-center gap-1 transition-all duration-150 ease-in-out border`,
+                    `px-2 py-1 text-[10px] sm:text-xs rounded-sm font-mono flex items-center gap-0.5 transition-all duration-150 ease-in-out border`,
                     isActive
                       ? `${displayColor} ${displayTextColor} border-transparent`
                       : `bg-white text-gray-400 border-gray-200 hover:bg-gray-50 hover:text-gray-600 hover:border-gray-300`,
                   )}
                 >
-                  <Tag size={12} className="hover:underline" />
+                  <Tag size={10} className="hover:underline" />
                   <span 
                     onClick={(e) => handleProjectNameClick(group, e)} 
                     className="cursor-pointer hover:underline"
@@ -146,9 +146,9 @@ export default function ProjectGroups({
           })}
           <button
             onClick={onShowAddRequest}
-            className="flex items-center justify-center w-8 h-8 border border-dotted border-gray-300 text-gray-500 hover:bg-gray-100 transition-all duration-150 ease-in-out rounded-sm"
+            className="flex items-center justify-center w-6 h-6 border border-dotted border-gray-300 text-gray-500 hover:bg-gray-100 transition-all duration-150 ease-in-out rounded-sm"
           >
-            <Plus size={18} />
+            <Plus size={14} />
           </button>
         </div>
       </div>

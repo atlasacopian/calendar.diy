@@ -391,7 +391,14 @@ export default function CalendarNew() {
       .catch(err => console.error('[SaveEffect] Network error saving to Supabase:', err));
     } else { // Logged OUT: Save to localStorage
     if (typeof window !== 'undefined') {
-        console.log('[SaveEffect] User logged out. Saving to localStorage.', { ev: events.length, gr: projectGroups.length });
+        // If prevUser.current is not null, we're in the middle of a logout transition.
+        // Skip saving to localStorage so stale cloud events aren't persisted.
+        if (prevUser.current) {
+          console.log('[SaveEffect] Logout transition – skipping localStorage save to avoid stale data');
+          return;
+        }
+
+        console.log('[SaveEffect] User logged out (no prior session). Saving to localStorage.', { ev: events.length, gr: projectGroups.length });
         const eventsToSave = events.map(event => ({
             ...event,
             date: event.date instanceof Date ? event.date.toISOString() : event.date,

@@ -13,12 +13,13 @@ export default function AuthButton() {
   const [authUiVisible, setAuthUiVisible] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isSignUp, setIsSignUp] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [formLoading, setFormLoading] = useState(false)
-  const [view, setView] = useState<'sign_in' | 'sign_up' | 'reset_password'>('sign_in')
+  const [view, setView] = useState<'sign_in' | 'sign_up' | 'reset_password' | 'update_password'>('sign_in')
   const [resetEmail, setResetEmail] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmNewPassword, setConfirmNewPassword] = useState("")
 
   useEffect(() => {
     let mounted = true
@@ -38,6 +39,31 @@ export default function AuthButton() {
         if (session?.user) setAuthUiVisible(false) // Close UI on successful login/signup
       }
     })
+
+    // Check for password recovery token in URL hash on mount
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash;
+      if (hash.includes('type=recovery') && hash.includes('access_token')) {
+        // Supabase client automatically handles the token from hash if user is not logged in
+        // Forcing a state to show update password form
+        console.log("[Auth] Detected password recovery flow.");
+        // We need to make sure the user object is updated after this token is processed by Supabase client
+        // Forcing a brief delay before setting view might help if Supabase client needs time.
+        setTimeout(() => {
+          supabase.auth.getUser().then(({data: {user: currentUser}}) => {
+            if (currentUser) {
+              setUser(currentUser); // ensure user state is updated from recovery token
+              setView('update_password');
+              setAuthUiVisible(true);
+              window.location.hash = ''; // Clear hash
+            } else {
+              console.warn("[Auth] Recovery token in hash, but no user session established by Supabase client.")
+              setError("Invalid or expired recovery link. Please request a new one.");
+            }
+          })
+        }, 100); // Small delay for Supabase client to process hash
+      }
+    }
 
     return () => {
       mounted = false
@@ -98,6 +124,31 @@ export default function AuthButton() {
     setFormLoading(false);
   };
 
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmNewPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    setMessage("");
+    setError("");
+    setFormLoading(true);
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    if (updateError) {
+      setError(updateError.message);
+    } else {
+      setMessage("Password updated successfully! Please sign in.");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setView('sign_in'); // Switch back to sign-in view
+    }
+    setFormLoading(false);
+  };
+
   const handleSignOut = async () => {
     setFormLoading(true)
     await supabase.auth.signOut()
@@ -142,7 +193,7 @@ export default function AuthButton() {
 
       {authUiVisible && (
         <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-300 rounded-sm shadow-lg p-4 z-20">
-          <button onClick={() => {setAuthUiVisible(false); setView('sign_in'); setEmail(''); setPassword(''); setResetEmail(''); setError(""); setMessage(""); }} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+          <button onClick={() => {setAuthUiVisible(false); setView('sign_in'); setEmail(''); setPassword(''); setResetEmail(''); setNewPassword(''); setConfirmNewPassword(''); setError(""); setMessage(""); }} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
 
@@ -172,6 +223,48 @@ export default function AuthButton() {
               <button
                 type="button"
                 onClick={() => { setView('sign_in'); setError(""); setMessage(""); }}
+                className="mt-3 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
+              >
+                Back to Sign In
+              </button>
+            </form>
+          ) : view === 'update_password' ? (
+            <form onSubmit={handleUpdatePassword} className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-800 text-center mb-3">Update Password</h3>
+              <div>
+                <input
+                  id="new-password"
+                  type="password"
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  className="w-full px-2.5 py-1.5 border border-gray-300 rounded-sm focus:ring-1 focus:ring-black focus:border-black text-xs placeholder-gray-400"
+                />
+              </div>
+              <div>
+                <input
+                  id="confirm-new-password"
+                  type="password"
+                  placeholder="Confirm New Password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  required
+                  className="w-full px-2.5 py-1.5 border border-gray-300 rounded-sm focus:ring-1 focus:ring-black focus:border-black text-xs placeholder-gray-400"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={formLoading}
+                className="w-full bg-black text-white px-3 py-1.5 rounded-sm hover:bg-gray-800 transition-colors text-xs font-mono disabled:opacity-50 flex items-center justify-center"
+              >
+                {formLoading ? <Loader2 size={14} className="animate-spin" /> : "Update Password"}
+              </button>
+              {error && <p className="text-red-500 text-xs text-center pt-1">{error}</p>}
+              {message && <p className="text-green-600 text-xs text-center pt-1">{message}</p>}
+              <button
+                type="button"
+                onClick={() => { setView('sign_in'); setError(""); setMessage(""); setNewPassword(''); setConfirmNewPassword('');}}
                 className="mt-3 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
               >
                 Back to Sign In
@@ -215,7 +308,7 @@ export default function AuthButton() {
               {view === 'sign_in' && (
                 <button
                   type="button"
-                  onClick={() => { setView('reset_password'); setError(""); setMessage(""); }}
+                  onClick={() => { setView('reset_password'); setError(""); setMessage(""); setEmail(''); setPassword(''); }}
                   className="mt-3 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
                 >
                   Forgot Password?
@@ -227,6 +320,13 @@ export default function AuthButton() {
                   setView(view === 'sign_in' ? 'sign_up' : 'sign_in');
                   setError("");
                   setMessage("");
+                  // Clear form fields based on the NEW view
+                  if (view === 'sign_in') { // about to switch to sign_up
+                    setEmail(''); setPassword('');
+                  } else { // about to switch to sign_in
+                    setEmail(''); setPassword('');
+                  }
+                  // Resetting resetEmail here if it was the active form is implicitly handled by setView not being reset_password
                 }}
                 className="mt-1 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
               >

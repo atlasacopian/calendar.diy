@@ -46,9 +46,30 @@ export default function ResetPasswordPage() {
 
     setFormLoading(true);
 
-    const {
+    // Ensure we have a valid session before attempting to update the password.
+    let {
       data: { user },
+      error: getUserError,
     } = await supabase.auth.getUser();
+
+    if (!user) {
+      // In some cases the Supabase client hasn't yet exchanged the recovery
+      // code that is present in the URL for a session cookie. We attempt that
+      // exchange manually and fetch the user again.
+      try {
+        const currentUrl = new URL(window.location.href);
+        const recoveryCode =
+          currentUrl.searchParams.get("code") || currentUrl.searchParams.get("token");
+
+        if (recoveryCode) {
+          await supabase.auth.exchangeCodeForSession(recoveryCode);
+          // Retry fetching user after exchange.
+          ({ data: { user }, error: getUserError } = await supabase.auth.getUser());
+        }
+      } catch (ex) {
+        /* no-op: we'll handle with user === null below */
+      }
+    }
 
     if (!user) {
       setError(

@@ -1436,11 +1436,12 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       {/* Responsive calendar container: on small screens use full width and no scale to remove side whitespace */}
       <div
         className={cn(
-          // base: take full width; on small and above, constrain to max-w-5xl
-          "flex flex-col h-full w-full sm:max-w-5xl mx-auto font-mono pt-8 pb-4 origin-top",
+          // Remove fixed height and scaling so the bounding box matches the visible size
+          "flex flex-col w-full sm:max-w-5xl mx-auto font-mono pt-4 pb-4",
           "bg-white"
         )}
-        style={{ transform: `scale(${isMobile ? 0.85 : 0.7})` }}
+        // No transform here – rely on natural sizing so the calendar centers correctly
+        style={{}}
       >
         <div className="mx-1 sm:mx-6 md:mx-12">
            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-between w-full mb-4 items-center gap-2 sm:gap-4">

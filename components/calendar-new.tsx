@@ -1440,8 +1440,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           "flex flex-col w-full sm:max-w-5xl mx-auto font-mono pt-4 pb-4",
           "bg-white"
         )}
-        // No transform here – rely on natural sizing so the calendar centers correctly
-        style={{}}
+        // Shrink overall calendar a bit while keeping accurate layout bounds
+        style={{ zoom: isMobile ? 0.9 : 0.85 }}
       >
         <div className="mx-1 sm:mx-6 md:mx-12">
            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-between w-full mb-4 items-center gap-2 sm:gap-4">

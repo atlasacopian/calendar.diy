@@ -56,7 +56,7 @@ function ConfirmationBanner() {
 
 export default function Home() {
   return (
-    <main className="flex flex-col min-h-screen p-2 sm:p-4 md:p-8 transition-colors duration-200">
+    <main className="flex flex-col min-h-screen p-2 sm:p-4 md:p-8 transition-colors duration-200 overflow-y-hidden sm:overflow-y-auto">
       <div className="w-full max-w-[1400px] mx-auto">
         <ConfirmationBanner />
         {/* Client-side rendered calendar */}

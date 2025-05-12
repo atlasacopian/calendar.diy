@@ -89,7 +89,7 @@ export default function AuthButton() {
 
   if (loading) {
     return (
-      <button className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 px-2 py-1 border border-gray-200 rounded-sm transition-colors cursor-default">
+      <button className="text-xs sm:text-sm text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 px-3 py-1.5 border border-gray-200 rounded-sm transition-colors cursor-default">
         <Loader2 size={14} className="animate-spin" />
       </button>
     )

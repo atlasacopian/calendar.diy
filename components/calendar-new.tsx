@@ -1328,8 +1328,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       const colIndex = cellIndex % 7;
       const borderClasses = cn(
         'border-gray-300',
-        rowIndex < 5 ? 'border-b-2 sm:border-b' : '', // 2px bottom border on mobile, 1px on sm+
-        colIndex < 6 ? 'border-r-2 sm:border-r' : ''  // 2px right border on mobile, 1px on sm+
+        rowIndex < 5 ? 'border-b-2 sm:border-b-1' : '', // Explicit 1px for sm+
+        colIndex < 6 ? 'border-r-2 sm:border-r-1' : ''  // Explicit 1px for sm+
       );
 
       days.push(
@@ -1439,8 +1439,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
       const borderClasses = cn(
         'border-gray-300',
-        rowIndex < 5 ? 'border-b-2 sm:border-b' : '', // 2px bottom border on mobile, 1px on sm+
-        colIndex < 6 ? 'border-r-2 sm:border-r' : ''  // 2px right border on mobile, 1px on sm+
+        rowIndex < 5 ? 'border-b-2 sm:border-b-1' : '', // Explicit 1px for sm+
+        colIndex < 6 ? 'border-r-2 sm:border-r-1' : ''  // Explicit 1px for sm+
       );
 
       days.push(

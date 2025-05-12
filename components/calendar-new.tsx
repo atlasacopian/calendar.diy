@@ -1483,7 +1483,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                <AuthButton />
                <button
                  onClick={handleReset}
-                 className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+                 className="text-xs sm:text-sm text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 pl-3 pr-3 py-1.5 border border-gray-200 rounded-sm transition-colors"
                >
                  <RefreshCcw size={14} /> RESET
                </button>
@@ -1493,7 +1493,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                <button
                  onClick={downloadCalendarAsImage}
                  disabled={isDownloading}
-                 className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                 className="text-xs sm:text-sm text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 border border-gray-200 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                >
                  {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />} {isDownloading ? 'GENERATING' : 'SCREENSHOT'}
                </button>
@@ -1503,14 +1503,14 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                          setSelectedExportTags(projectGroups.map(g => g.id));
                          setShowExportOptionsModal(true);
                      }}
-                     className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+                     className="text-xs sm:text-sm text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 border border-gray-200 rounded-sm transition-colors"
                  >
                    <CalendarIcon size={14} /> EXPORT
                  </button>
                </div>
                <button
                  onClick={handleShare}
-                 className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-2 py-1 border border-gray-200 rounded-sm transition-colors"
+                 className="text-xs sm:text-sm text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 border border-gray-200 rounded-sm transition-colors"
                >
                  <Link size={14} /> SHARE
                </button>

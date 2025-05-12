@@ -586,15 +586,14 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   }, [events, holidays]); 
 
   const handleCancelEdit = () => {
-    setEventsForSelectedDate(originalModalEvents);
-    setModalCloseState('canceling');
-    setTimeout(() => {
-      setShowModal(false)
-      setSelectedDate(null);
-      setActiveEventIndex(0);
-      setOriginalModalEvents([]); 
-      setModalCloseState('idle');
-    }, 150); 
+    // Optional: Revert to original events if changes shouldn't persist on cancel
+    // setEventsForSelectedDate(originalModalEvents); 
+    
+    setShowModal(false);
+    setSelectedDate(null);
+    setActiveEventIndex(0);
+    setOriginalModalEvents([]);
+    setModalCloseState('idle'); // Reset state for next time modal opens
   };
 
   const handleSaveAndClose = () => {
@@ -608,13 +607,17 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         setEvents(newEvents);
     }
 
-    setModalCloseState('saved');
-
+    // Keep the success animation for save
     setTimeout(() => {
-      setShowModal(false)
-      setSelectedDate(null)
-      setActiveEventIndex(0)
-    }, 400);
+      setModalCloseState('saved'); 
+      setTimeout(() => {
+        setShowModal(false);
+        setSelectedDate(null);
+        setActiveEventIndex(0);
+        setOriginalModalEvents([]);
+        setModalCloseState('idle');
+      }, 400); // Delay to show SAVED message
+    }, 400); // Simulate save duration
   };
 
   const handleUpdateEventContent = (index: number, content: string, formattedContent?: string) => {

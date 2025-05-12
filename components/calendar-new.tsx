@@ -214,6 +214,32 @@ export default function CalendarNew() {
       if (user) {
         // USER LOGGED IN
         console.log('[DataLoad/Login] User detected. ID:', user.id);
+
+        // 1️⃣ Attempt to load a cached snapshot for this user from localStorage so we can
+        //    paint the UI immediately while the network request to Supabase is in flight.
+        //    This makes the calendar appear almost instantly after a refresh or page load.
+        let snapshotEvents: Event[] = [];
+        let snapshotGroups: ProjectGroup[] = [...initialProjectGroups];
+
+        if (typeof window !== 'undefined') {
+          const snapshotStr = localStorage.getItem(`calendarSnapshot_${user.id}`);
+          if (snapshotStr) {
+            try {
+              const parsed = JSON.parse(snapshotStr);
+              snapshotEvents = (parsed.events || []).map((ev: any) => ({ ...ev, date: new Date(ev.date) }));
+              snapshotGroups = parsed.groups && parsed.groups.length > 0 ? parsed.groups : [...initialProjectGroups];
+
+              // Immediately show the cached data. A later successful cloud fetch will
+              // overwrite this state with the latest data.
+              setEvents(snapshotEvents);
+              setProjectGroups(snapshotGroups);
+              console.log('[DataLoad/Login] Loaded snapshot from localStorage for quick display:', { ev: snapshotEvents.length, gr: snapshotGroups.length });
+            } catch (err) {
+              console.error('[DataLoad/Login] Error parsing local snapshot:', err);
+            }
+          }
+        }
+
         let localEvents: Event[] = [];
         let localGroups: ProjectGroup[] = [];
 
@@ -286,10 +312,17 @@ export default function CalendarNew() {
             localStorage.removeItem('projectGroups');
           }
         } else if (!cloudFetchSuccess && localEvents.length === 0) {
-          // No cloud data fetched, no local data found either. Ensure UI is empty.
-          console.log('[DataLoad/Login] No cloud or local data. Setting empty state.');
-          finalEvents = [];
-          finalGroups = [...initialProjectGroups];
+          // If the cloud fetch failed (e.g., network hiccup) fall back to the snapshot
+          // we might have just loaded above. If there is no snapshot either, keep empty state.
+          if (snapshotEvents.length > 0) {
+            console.log('[DataLoad/Login] Cloud fetch failed – using cached snapshot.');
+            finalEvents = snapshotEvents;
+            finalGroups = snapshotGroups;
+          } else {
+            console.log('[DataLoad/Login] No cloud or local data. Setting empty state.');
+            finalEvents = [];
+            finalGroups = [...initialProjectGroups];
+          }
         }
         
         setEvents(finalEvents);
@@ -1440,8 +1473,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           "flex flex-col w-full sm:max-w-5xl mx-auto font-mono pt-4 pb-4",
           "bg-white"
         )}
-        // Shrink overall calendar a bit while keeping accurate layout bounds
-        style={{ zoom: isMobile ? 0.9 : 0.85 }}
+        // Shrink a bit further for both mobile and desktop
+        style={{ zoom: isMobile ? 0.8 : 0.75 }}
       >
         <div className="mx-1 sm:mx-6 md:mx-12">
            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-between w-full mb-4 items-center gap-2 sm:gap-4">

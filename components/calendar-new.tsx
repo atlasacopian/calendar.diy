@@ -1328,15 +1328,15 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       const colIndex = cellIndex % 7;
       const borderClasses = cn(
         'border-gray-300',
-        rowIndex < 5 ? 'border-b-2 border-gray-300 sm:border-b-1' : '',
-        colIndex < 6 ? 'border-r-2 border-gray-300 sm:border-r-1' : ''
+        rowIndex < 5 ? 'border-b-4 border-gray-300 sm:border-b-1' : '',
+        colIndex < 6 ? 'border-r-4 border-gray-300 sm:border-r-1' : ''
       );
 
       days.push(
         <div
           key={currentDateInLoop.toString()}
           className={cn(
-            'aspect-square transition-colors duration-100 ease-in-out bg-white overflow-hidden',
+            'aspect-square transition-colors duration-100 ease-in-out bg-white overflow-hidden h-20 sm:h-24 md:h-28', // Added explicit height
             'flex flex-col p-0.5 sm:p-1.5 min-w-0',
             borderClasses,
             isCurrentMonth ? 'hover:bg-gray-100' : '',
@@ -1439,8 +1439,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
       const borderClasses = cn(
         'border-gray-300',
-        rowIndex < 5 ? 'border-b-2 border-gray-300 sm:border-b-1' : '',
-        colIndex < 6 ? 'border-r-2 border-gray-300 sm:border-r-1' : ''
+        rowIndex < 5 ? 'border-b-4 border-gray-300 sm:border-b-1' : '',
+        colIndex < 6 ? 'border-r-4 border-gray-300 sm:border-r-1' : ''
       );
 
       days.push(

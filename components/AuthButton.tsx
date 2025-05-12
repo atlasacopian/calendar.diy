@@ -41,7 +41,7 @@ export default function AuthButton() {
       console.log("[Auth onAuthStateChange] Event:", event, "Session User ID:", session?.user?.id, "Current View:", view)
       setUser(session?.user ?? null)
 
-      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION" ) && session?.user) {
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "PASSWORD_RECOVERY") && session?.user) {
         const currentUrl = (typeof window !== "undefined") ? new URL(window.location.href) : null;
         const urlHasRecoveryType = currentUrl && 
                                    (currentUrl.hash.includes('type=recovery') || 
@@ -80,7 +80,7 @@ export default function AuthButton() {
         setAuthUiVisible(true);
         window.history.replaceState({}, document.title, window.location.pathname); 
       } else if ((recoveryCode && recoveryTypeFromQuery === 'recovery') || (hash.includes('type=recovery') && hash.includes('access_token'))) {
-        console.log("[Auth InitialUrlCheck] Detected recovery params in URL. Switching to update_password view.");
+        console.log("[Auth InitialUrlCheck] Detected recovery params in URL. Forcing UI visible and update_password view.");
         setView('update_password');
         setAuthUiVisible(true);
         // Supabase client (with detectSessionInUrl: true) should be processing the code/hash.

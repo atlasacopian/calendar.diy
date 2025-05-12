@@ -20,56 +20,55 @@ export default function AuthButton() {
   const [resetEmail, setResetEmail] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
+  const [initialRecoveryProcessed, setInitialRecoveryProcessed] = useState(false)
 
   useEffect(() => {
     let mounted = true
 
     async function getUserSession() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (mounted && session) {
-        setUser(session.user)
+      if (mounted) {
+        setUser(session?.user ?? null)
       }
       setLoading(false)
     }
     getUserSession()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (mounted) {
+        console.log("[Auth] onAuthStateChange event:", event, "session:", session);
         setUser(session?.user ?? null)
-        if (session?.user) setAuthUiVisible(false) // Close UI on successful login/signup
+
+        if (event === "PASSWORD_RECOVERY" && session?.user) {
+          console.log("[Auth] PASSWORD_RECOVERY event detected, switching to update_password view.");
+          setView('update_password');
+          setAuthUiVisible(true); // Explicitly open the auth UI
+          if (typeof window !== "undefined") window.location.hash = ''; // Clear hash
+        } else if (session?.user && view !== 'update_password' && event !== 'PASSWORD_RECOVERY') { 
+          // If logged in normally, and not in update_password view or during recovery itself
+          setAuthUiVisible(false); // Close UI on successful login/signup
+        }
       }
     })
-
-    // Check for password recovery token in URL hash on mount
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash;
-      if (hash.includes('type=recovery') && hash.includes('access_token')) {
-        // Supabase client automatically handles the token from hash if user is not logged in
-        // Forcing a state to show update password form
-        console.log("[Auth] Detected password recovery flow.");
-        // We need to make sure the user object is updated after this token is processed by Supabase client
-        // Forcing a brief delay before setting view might help if Supabase client needs time.
-        setTimeout(() => {
-          supabase.auth.getUser().then(({data: {user: currentUser}}) => {
-            if (currentUser) {
-              setUser(currentUser); // ensure user state is updated from recovery token
-              setView('update_password');
-              setAuthUiVisible(true);
-              window.location.hash = ''; // Clear hash
-            } else {
-              console.warn("[Auth] Recovery token in hash, but no user session established by Supabase client.")
-              setError("Invalid or expired recovery link. Please request a new one.");
-            }
-          })
-        }, 100); // Small delay for Supabase client to process hash
+    
+    // Check for password recovery token in URL hash on initial load as a fallback
+    // This is mainly if onAuthStateChange doesn't fire immediately for type=recovery
+    if (!initialRecoveryProcessed && typeof window !== "undefined" && !user) { // Only run once and if not already logged in
+        const hash = window.location.hash;
+        if (hash.includes('type=recovery') && hash.includes('access_token')) {
+          console.log("[Auth] Detected type=recovery in hash on initial load. Supabase client should pick this up.");
+          // The onAuthStateChange listener for PASSWORD_RECOVERY should handle the UI update.
+          // We make the auth UI visible here just in case, to show any potential errors if session isn't established.
+          setAuthUiVisible(true);
+          setInitialRecoveryProcessed(true); // Mark as processed
+        }
       }
-    }
 
     return () => {
       mounted = false
       subscription?.unsubscribe()
     }
-  }, [])
+  }, [view, user, initialRecoveryProcessed])
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -102,7 +101,6 @@ export default function AuthButton() {
     } else if (view === 'sign_in') {
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) setError(signInError.message)
-      // User state will be updated by onAuthStateChange, which closes the UI
     }
     setFormLoading(false)
   }
@@ -144,7 +142,7 @@ export default function AuthButton() {
       setMessage("Password updated successfully! Please sign in.");
       setNewPassword("");
       setConfirmNewPassword("");
-      setView('sign_in'); // Switch back to sign-in view
+      setView('sign_in');
     }
     setFormLoading(false);
   };
@@ -185,7 +183,12 @@ export default function AuthButton() {
   return (
     <div className="relative">
       <button
-        onClick={() => setAuthUiVisible(!authUiVisible)}
+        onClick={() => { 
+          setAuthUiVisible(true); 
+          setView('sign_in'); // Default to sign_in when opening
+          setError("");
+          setMessage("");
+        }}
         className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 px-2.5 py-1 border border-gray-200 rounded-sm transition-colors"
       >
         <UserCircle2 size={10} /> Sign&nbsp;In

@@ -29,6 +29,11 @@ export default function AuthButton() {
       const { data: { session } } = await supabase.auth.getSession()
       if (mounted) {
         setUser(session?.user ?? null)
+        if (session?.user) {
+          console.log("[Auth InitialGetUser] Session found, user:", session.user.id);
+        } else {
+          console.log("[Auth InitialGetUser] No initial session.");
+        }
       }
       setLoading(false)
     }
@@ -36,31 +41,44 @@ export default function AuthButton() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (mounted) {
-        console.log("[Auth] onAuthStateChange event:", event, "session:", session);
+        console.log("[Auth onAuthStateChange] Event:", event, "User from session:", session?.user?.id);
         setUser(session?.user ?? null)
 
-        if (event === "PASSWORD_RECOVERY" && session?.user) {
-          console.log("[Auth] PASSWORD_RECOVERY event detected, switching to update_password view.");
-          setView('update_password');
-          setAuthUiVisible(true); // Explicitly open the auth UI
-          if (typeof window !== "undefined") window.location.hash = ''; // Clear hash
-        } else if (session?.user && view !== 'update_password' && event !== 'PASSWORD_RECOVERY') { 
-          // If logged in normally, and not in update_password view or during recovery itself
-          setAuthUiVisible(false); // Close UI on successful login/signup
+        if (event === "PASSWORD_RECOVERY") {
+          if (session?.user) {
+            console.log("[Auth] PASSWORD_RECOVERY event detected WITH user session. Switching to update_password view.");
+            setView('update_password');
+            setAuthUiVisible(true);
+            if (typeof window !== "undefined") window.location.hash = '';
+          } else {
+            console.warn("[Auth] PASSWORD_RECOVERY event but NO user session. This is unexpected.");
+            setError("Could not verify password recovery. Please try again.");
+            setAuthUiVisible(true); 
+            setView('sign_in');
+          }
+        } else if (event === "SIGNED_IN") {
+          console.log("[Auth] SIGNED_IN event detected. Current view:", view);
+          if (view !== 'update_password') { // Only close if not in the middle of password update
+            setAuthUiVisible(false); 
+            console.log("[Auth] SIGNED_IN: Auth UI hidden.");
+          } else {
+            console.log("[Auth] SIGNED_IN: Auth UI kept visible because view is update_password.");
+          }
+        } else if (event === "SIGNED_OUT") {
+          console.log("[Auth] SIGNED_OUT event detected. Resetting view.");
+          setView('sign_in');
+          setAuthUiVisible(false);
         }
       }
     })
     
-    // Check for password recovery token in URL hash on initial load as a fallback
-    // This is mainly if onAuthStateChange doesn't fire immediately for type=recovery
-    if (!initialRecoveryProcessed && typeof window !== "undefined" && !user) { // Only run once and if not already logged in
+    // Fallback check for hash - keep this simple for now, rely on onAuthStateChange primarily
+    if (!initialRecoveryProcessed && typeof window !== "undefined") {
         const hash = window.location.hash;
         if (hash.includes('type=recovery') && hash.includes('access_token')) {
-          console.log("[Auth] Detected type=recovery in hash on initial load. Supabase client should pick this up.");
-          // The onAuthStateChange listener for PASSWORD_RECOVERY should handle the UI update.
-          // We make the auth UI visible here just in case, to show any potential errors if session isn't established.
-          setAuthUiVisible(true);
-          setInitialRecoveryProcessed(true); // Mark as processed
+          console.log("[Auth InitialHashCheck] Detected type=recovery in hash. Supabase client should process this and fire PASSWORD_RECOVERY event.");
+          // No direct UI change here, wait for onAuthStateChange
+          setInitialRecoveryProcessed(true);
         }
       }
 
@@ -68,13 +86,35 @@ export default function AuthButton() {
       mounted = false
       subscription?.unsubscribe()
     }
-  }, [view, user, initialRecoveryProcessed])
+  }, [view, initialRecoveryProcessed])
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage("")
     setError("")
     setFormLoading(true)
+
+    if (!email) {
+      setError("Please enter your email address.");
+      setFormLoading(false);
+      return;
+    }
+    // Basic email validation
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError("Please enter a valid email address.");
+      setFormLoading(false);
+      return;
+    }
+    if (!password && (view === 'sign_in' || view === 'sign_up')) { // Password only needed for sign_in/sign_up
+      setError("Please enter your password.");
+      setFormLoading(false);
+      return;
+    }
+    if (view === 'sign_up' && password.length < 6) {
+        setError("Password must be at least 6 characters.");
+        setFormLoading(false);
+        return;
+    }
 
     if (view === 'sign_up') {
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -109,6 +149,18 @@ export default function AuthButton() {
     e.preventDefault();
     setMessage("");
     setError("");
+
+    if (!resetEmail) {
+      setError("Please enter your email address to reset password.");
+      setFormLoading(false);
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(resetEmail)) {
+      setError("Please enter a valid email address.");
+      setFormLoading(false);
+      return;
+    }
+
     setFormLoading(true);
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail, {
       redirectTo: SITE_URL,
@@ -124,6 +176,11 @@ export default function AuthButton() {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage(""); // Clear previous success message too
+    if (!newPassword || !confirmNewPassword) {
+      setError("Please fill out both password fields.");
+      return;
+    }
     if (newPassword !== confirmNewPassword) {
       setError("Passwords do not match.");
       return;
@@ -132,7 +189,6 @@ export default function AuthButton() {
       setError("Password must be at least 6 characters.");
       return;
     }
-    setMessage("");
     setError("");
     setFormLoading(true);
     const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
@@ -201,7 +257,7 @@ export default function AuthButton() {
           </button>
 
           {view === 'reset_password' ? (
-            <form onSubmit={handlePasswordResetRequest} className="space-y-3">
+            <form onSubmit={handlePasswordResetRequest} className="space-y-3" noValidate>
               <h3 className="text-sm font-semibold text-gray-800 text-center mb-3">Reset Password</h3>
               <div>
                 <input
@@ -232,7 +288,7 @@ export default function AuthButton() {
               </button>
             </form>
           ) : view === 'update_password' ? (
-            <form onSubmit={handleUpdatePassword} className="space-y-3">
+            <form onSubmit={handleUpdatePassword} className="space-y-3" noValidate>
               <h3 className="text-sm font-semibold text-gray-800 text-center mb-3">Update Password</h3>
               <div>
                 <input
@@ -274,7 +330,7 @@ export default function AuthButton() {
               </button>
             </form>
           ) : (
-            <form onSubmit={handleAuthAction} className="space-y-3">
+            <form onSubmit={handleAuthAction} className="space-y-3" noValidate>
               <h3 className="text-sm font-semibold text-gray-800 text-center mb-3">{view === 'sign_up' ? "Create Account" : "Sign In"}</h3>
               <div>
                 <input

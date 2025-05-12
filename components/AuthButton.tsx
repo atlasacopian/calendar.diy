@@ -20,73 +20,71 @@ export default function AuthButton() {
   const [resetEmail, setResetEmail] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
-  const [initialRecoveryProcessed, setInitialRecoveryProcessed] = useState(false)
+  const [initialHashProcessed, setInitialHashProcessed] = useState(false)
 
   useEffect(() => {
     let mounted = true
 
-    async function getUserSession() {
-      const { data: { session } } = await supabase.auth.getSession()
+    // 1. Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (mounted) {
         setUser(session?.user ?? null)
-        if (session?.user) {
-          console.log("[Auth InitialGetUser] Session found, user:", session.user.id);
-        } else {
-          console.log("[Auth InitialGetUser] No initial session.");
-        }
+        console.log("[Auth InitialGetSession] User:", session?.user?.id || "null")
       }
       setLoading(false)
-    }
-    getUserSession()
+    })
 
+    // 2. Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (mounted) {
-        console.log("[Auth onAuthStateChange] Event:", event, "User from session:", session?.user?.id);
-        setUser(session?.user ?? null)
+      if (!mounted) return
+      
+      console.log("[Auth onAuthStateChange] Event:", event, "Session User ID:", session?.user?.id, "Current View:", view)
+      setUser(session?.user ?? null)
 
-        if (event === "PASSWORD_RECOVERY") {
-          if (session?.user) {
-            console.log("[Auth] PASSWORD_RECOVERY event detected WITH user session. Switching to update_password view.");
-            setView('update_password');
-            setAuthUiVisible(true);
-            if (typeof window !== "undefined") window.location.hash = '';
-          } else {
-            console.warn("[Auth] PASSWORD_RECOVERY event but NO user session. This is unexpected.");
-            setError("Could not verify password recovery. Please try again.");
-            setAuthUiVisible(true); 
-            setView('sign_in');
-          }
-        } else if (event === "SIGNED_IN") {
-          console.log("[Auth] SIGNED_IN event detected. Current view:", view);
-          if (view !== 'update_password') { // Only close if not in the middle of password update
-            setAuthUiVisible(false); 
-            console.log("[Auth] SIGNED_IN: Auth UI hidden.");
-          } else {
-            console.log("[Auth] SIGNED_IN: Auth UI kept visible because view is update_password.");
-          }
-        } else if (event === "SIGNED_OUT") {
-          console.log("[Auth] SIGNED_OUT event detected. Resetting view.");
-          setView('sign_in');
-          setAuthUiVisible(false);
+      if (event === "PASSWORD_RECOVERY") {
+        console.log("[Auth] PASSWORD_RECOVERY event received.")
+        if (session?.user) {
+          console.log("[Auth] User session present with PASSWORD_RECOVERY. Setting view to update_password.")
+          setView('update_password')
+          setAuthUiVisible(true)
+          if (typeof window !== "undefined") window.location.hash = '' // Clear any previous hash
+        } else {
+          console.warn("[Auth] PASSWORD_RECOVERY event but no session.user. This is unexpected.")
+          setError("Password recovery error. Please try again or contact support.")
+          setView('sign_in')
+          setAuthUiVisible(true)
         }
+      } else if (event === "SIGNED_IN") {
+        console.log("[Auth] SIGNED_IN event received. Current view:", view)
+        // If a user signs in (not due to password recovery), and we are not already in update_password view, close the modal.
+        if (view !== 'update_password') {
+          setAuthUiVisible(false)
+        }
+      } else if (event === "SIGNED_OUT") {
+        console.log("[Auth] SIGNED_OUT event received. Resetting view.")
+        setView('sign_in')
+        // setAuthUiVisible(false); // Usually closed by user action already
       }
     })
-    
-    // Fallback check for hash - keep this simple for now, rely on onAuthStateChange primarily
-    if (!initialRecoveryProcessed && typeof window !== "undefined") {
-        const hash = window.location.hash;
-        if (hash.includes('type=recovery') && hash.includes('access_token')) {
-          console.log("[Auth InitialHashCheck] Detected type=recovery in hash. Supabase client should process this and fire PASSWORD_RECOVERY event.");
-          // No direct UI change here, wait for onAuthStateChange
-          setInitialRecoveryProcessed(true);
-        }
+
+    // 3. Check hash on initial load for recovery (Supabase client should handle this by firing PASSWORD_RECOVERY)
+    if (!initialHashProcessed && typeof window !== 'undefined') {
+      const hash = window.location.hash
+      if (hash.includes('type=recovery') && hash.includes('access_token')) {
+        console.log("[Auth InitialHashCheck] Found type=recovery in hash. Supabase client will process this.")
+        // The onAuthStateChange listener should pick up PASSWORD_RECOVERY after client processes it.
+      } else if (window.location.search.includes('code=') && window.location.search.includes('type=recovery')) {
+        // This case is if Supabase redirected with ?code=... for recovery (PKCE-like)
+        console.log("[Auth InitialQueryCheck] Found type=recovery with code in query params. Supabase client will process this.")
       }
+      setInitialHashProcessed(true)
+    }
 
     return () => {
       mounted = false
       subscription?.unsubscribe()
     }
-  }, [view, initialRecoveryProcessed])
+  }, [initialHashProcessed, view]) // React to view changes to correctly handle SIGNED_IN logic
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault()

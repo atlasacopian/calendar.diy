@@ -20,7 +20,7 @@ export default function AuthButton() {
   const [resetEmail, setResetEmail] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
-  const [initialHashProcessed, setInitialHashProcessed] = useState(false)
+  const [recoveryFlowDetected, setRecoveryFlowDetected] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -47,7 +47,10 @@ export default function AuthButton() {
           console.log("[Auth] User session present with PASSWORD_RECOVERY. Setting view to update_password.")
           setView('update_password')
           setAuthUiVisible(true)
-          if (typeof window !== "undefined") window.location.hash = '' // Clear any previous hash
+          setRecoveryFlowDetected(true)
+          if (typeof window !== "undefined") {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
         } else {
           console.warn("[Auth] PASSWORD_RECOVERY event but no session.user. This is unexpected.")
           setError("Password recovery error. Please try again or contact support.")
@@ -55,36 +58,42 @@ export default function AuthButton() {
           setAuthUiVisible(true)
         }
       } else if (event === "SIGNED_IN") {
-        console.log("[Auth] SIGNED_IN event received. Current view:", view)
-        // If a user signs in (not due to password recovery), and we are not already in update_password view, close the modal.
-        if (view !== 'update_password') {
+        console.log("[Auth] SIGNED_IN event received. Current view:", view, "Recovery flow detected:", recoveryFlowDetected)
+        if (view !== 'update_password' && !recoveryFlowDetected) {
           setAuthUiVisible(false)
         }
       } else if (event === "SIGNED_OUT") {
         console.log("[Auth] SIGNED_OUT event received. Resetting view.")
         setView('sign_in')
-        // setAuthUiVisible(false); // Usually closed by user action already
+        setRecoveryFlowDetected(false)
       }
     })
 
     // 3. Check hash on initial load for recovery (Supabase client should handle this by firing PASSWORD_RECOVERY)
-    if (!initialHashProcessed && typeof window !== 'undefined') {
-      const hash = window.location.hash
-      if (hash.includes('type=recovery') && hash.includes('access_token')) {
-        console.log("[Auth InitialHashCheck] Found type=recovery in hash. Supabase client will process this.")
-        // The onAuthStateChange listener should pick up PASSWORD_RECOVERY after client processes it.
-      } else if (window.location.search.includes('code=') && window.location.search.includes('type=recovery')) {
-        // This case is if Supabase redirected with ?code=... for recovery (PKCE-like)
-        console.log("[Auth InitialQueryCheck] Found type=recovery with code in query params. Supabase client will process this.")
+    if (typeof window !== "undefined" && !recoveryFlowDetected) {
+      const currentUrl = new URL(window.location.href);
+      const code = currentUrl.searchParams.get('code');
+      const hash = window.location.hash;
+      let RrecoveryInUrl = false;
+
+      if (code && currentUrl.search.includes('type=recovery')) {
+        console.log("[Auth InitialUrlCheck] Found PKCE-like recovery params in URL query. Supabase client should process this.");
+        RrecoveryInUrl = true;
+      } else if (hash.includes('type=recovery') && hash.includes('access_token')) {
+        console.log("[Auth InitialUrlCheck] Found type=recovery in URL hash. Supabase client should process this.");
+        RrecoveryInUrl = true;
       }
-      setInitialHashProcessed(true)
+      if (RrecoveryInUrl) {
+        // setAuthUiVisible(true); // Open UI immediately if recovery params are seen
+        // setRecoveryFlowDetected(true); // Let onAuthStateChange handle actual view switch after client processes token/code
+      }
     }
 
     return () => {
       mounted = false
       subscription?.unsubscribe()
     }
-  }, [initialHashProcessed, view]) // React to view changes to correctly handle SIGNED_IN logic
+  }, [view, recoveryFlowDetected]) // Listen to recoveryFlowDetected to avoid re-running hash check unnecessarily
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -92,18 +101,17 @@ export default function AuthButton() {
     setError("")
     setFormLoading(true)
 
-    if (!email) {
+    if (!email && (view === 'sign_in' || view === 'sign_up')) { // email check for signin/signup
       setError("Please enter your email address.");
       setFormLoading(false);
       return;
     }
-    // Basic email validation
-    if (!/\S+@\S+\.\S+/.test(email)) {
+    if (email && !/\S+@\S+\.\S+/.test(email) && (view === 'sign_in' || view === 'sign_up')) {
       setError("Please enter a valid email address.");
       setFormLoading(false);
       return;
     }
-    if (!password && (view === 'sign_in' || view === 'sign_up')) { // Password only needed for sign_in/sign_up
+    if (!password && (view === 'sign_in' || view === 'sign_up')) {
       setError("Please enter your password.");
       setFormLoading(false);
       return;
@@ -113,6 +121,8 @@ export default function AuthButton() {
         setFormLoading(false);
         return;
     }
+
+    setFormLoading(true);
 
     if (view === 'sign_up') {
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -177,14 +187,17 @@ export default function AuthButton() {
     setMessage(""); // Clear previous success message too
     if (!newPassword || !confirmNewPassword) {
       setError("Please fill out both password fields.");
+      setFormLoading(false); // ensure formLoading is reset
       return;
     }
     if (newPassword !== confirmNewPassword) {
       setError("Passwords do not match.");
+      setFormLoading(false);
       return;
     }
     if (newPassword.length < 6) {
       setError("Password must be at least 6 characters.");
+      setFormLoading(false);
       return;
     }
     setError("");
@@ -239,9 +252,15 @@ export default function AuthButton() {
       <button
         onClick={() => { 
           setAuthUiVisible(true); 
-          setView('sign_in'); // Default to sign_in when opening
+          setView('sign_in');
           setError("");
           setMessage("");
+          // Clear all form fields on open
+          setEmail('');
+          setPassword('');
+          setResetEmail('');
+          setNewPassword('');
+          setConfirmNewPassword('');
         }}
         className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 px-2.5 py-1 border border-gray-200 rounded-sm transition-colors"
       >
@@ -250,7 +269,16 @@ export default function AuthButton() {
 
       {authUiVisible && (
         <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-300 rounded-sm shadow-lg p-4 z-20">
-          <button onClick={() => {setAuthUiVisible(false); setView('sign_in'); setEmail(''); setPassword(''); setResetEmail(''); setNewPassword(''); setConfirmNewPassword(''); setError(""); setMessage(""); }} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+          <button 
+            onClick={() => {
+              setAuthUiVisible(false); 
+              setView('sign_in'); 
+              setError(""); setMessage("");
+              // Clear all form fields on close
+              setEmail(''); setPassword(''); setResetEmail(''); setNewPassword(''); setConfirmNewPassword('');
+            }} 
+            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
 
@@ -279,7 +307,7 @@ export default function AuthButton() {
               {message && <p className="text-green-600 text-xs text-center pt-1">{message}</p>}
               <button
                 type="button"
-                onClick={() => { setView('sign_in'); setError(""); setMessage(""); }}
+                onClick={() => { setView('sign_in'); setError(""); setMessage(""); setResetEmail(''); }}
                 className="mt-3 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
               >
                 Back to Sign In
@@ -371,20 +399,18 @@ export default function AuthButton() {
                   Forgot Password?
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => {
-                  setView(view === 'sign_in' ? 'sign_up' : 'sign_in');
-                  setError("");
-                  setMessage("");
-                  // Clear form fields based on the NEW view
-                  if (view === 'sign_in') { // about to switch to sign_up
-                    setEmail(''); setPassword('');
-                  } else { // about to switch to sign_in
-                    setEmail(''); setPassword('');
-                  }
-                  // Resetting resetEmail here if it was the active form is implicitly handled by setView not being reset_password
-                }}
+              <button 
+                type="button" 
+                onClick={() => { 
+                  setView(view === 'sign_in' ? 'sign_up' : 'sign_in'); 
+                  setError(""); setMessage(""); 
+                  // Clear ALL form fields on main toggle for simplicity and to satisfy linter
+                  setEmail(''); 
+                  setPassword('');
+                  setResetEmail(''); 
+                  setNewPassword(''); 
+                  setConfirmNewPassword('');
+                }} 
                 className="mt-1 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
               >
                 {view === 'sign_in' ? "Need an account? Sign Up" : "Already have an account? Sign In"}

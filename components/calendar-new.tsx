@@ -79,7 +79,7 @@ export default function CalendarNew() {
   const initialProjectGroups = useMemo(() => [{ id: 'default', name: 'TAG 01', color: 'text-black', active: true }], []);
 
   const [currentDate, setCurrentDate] = useState(() => {
-    const dateParam = searchParams.get('date');
+    const dateParam = searchParams ? searchParams.get('date') : null;
     if (dateParam) {
       const [year, month] = dateParam.split('-').map(Number);
       if (!isNaN(year) && !isNaN(month) && year > 1900 && year < 3000 && month >= 1 && month <= 12) {
@@ -221,10 +221,10 @@ export default function CalendarNew() {
         let snapshotEvents: Event[] = [];
         let snapshotGroups: ProjectGroup[] = [...initialProjectGroups];
 
-        if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined') {
           const snapshotStr = localStorage.getItem(`calendarSnapshot_${user.id}`);
           if (snapshotStr) {
-            try {
+      try {
               const parsed = JSON.parse(snapshotStr);
               snapshotEvents = (parsed.events || []).map((ev: any) => ({ ...ev, date: new Date(ev.date) }));
               snapshotGroups = parsed.groups && parsed.groups.length > 0 ? parsed.groups : [...initialProjectGroups];
@@ -349,7 +349,7 @@ export default function CalendarNew() {
             if (lsGroupsStr) try { loadedGroups = JSON.parse(lsGroupsStr); } catch(e) {console.error("Err parsing lsGroups on logged-out load", e);}
             setEvents(loadedEvents);
             setProjectGroups(loadedGroups.length > 0 ? loadedGroups : [...initialProjectGroups]);
-          }
+    }
         }
       }
       prevUser.current = user; // Update previous user state for next run
@@ -390,7 +390,7 @@ export default function CalendarNew() {
       })
       .catch(err => console.error('[SaveEffect] Network error saving to Supabase:', err));
     } else { // Logged OUT: Save to localStorage
-      if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined') {
         console.log('[SaveEffect] User logged out. Saving to localStorage.', { ev: events.length, gr: projectGroups.length });
         const eventsToSave = events.map(event => ({
             ...event,
@@ -621,10 +621,10 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   const handleCancelEdit = () => {
     // Optional: Revert to original events if changes shouldn't persist on cancel
     // setEventsForSelectedDate(originalModalEvents); 
-    
+
     setShowModal(false);
-    setSelectedDate(null);
-    setActiveEventIndex(0);
+      setSelectedDate(null);
+      setActiveEventIndex(0);
     setOriginalModalEvents([]);
     setModalCloseState('idle'); // Reset state for next time modal opens
   };
@@ -642,8 +642,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
     // Keep the success animation for save
     setTimeout(() => {
-      setModalCloseState('saved'); 
-      setTimeout(() => {
+    setModalCloseState('saved');
+    setTimeout(() => {
         setShowModal(false);
         setSelectedDate(null);
         setActiveEventIndex(0);
@@ -932,15 +932,15 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
     setEvents([...otherDayEvents, ...currentDayEvents]);
 
-    setDraggedEvent(null);
-    setDraggedEventIndex(null);
+        setDraggedEvent(null);
+        setDraggedEventIndex(null);
   }, [draggedEvent, events, handleDrop]);
 
   const handleDeleteAllEventsForDay = () => {
     if (!selectedDate) return;
 
     const updatedEvents = events.filter(event => !isSameDay(event.date, selectedDate));
-    setEvents(updatedEvents); 
+    setEvents(updatedEvents);
     setEventsForSelectedDate([]); 
     handleCancelEdit(); 
   };
@@ -1232,7 +1232,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   return (
     <>
       {/* Responsive calendar container: on small screens use full width and no scale to remove side whitespace */}
-      <div
+      <div 
         className={cn(
           // Remove fixed height and scaling so the bounding box matches the visible size
           "flex flex-col w-full sm:max-w-5xl mx-auto font-mono pt-4 pb-4",
@@ -1242,7 +1242,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         style={{ zoom: isMobile ? 0.8 : 0.75 }}
       >
         <div className="mx-1 sm:mx-6 md:mx-12">
-           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-between w-full mb-4 items-center gap-2 sm:gap-4">
+           <div className="flex flex-row flex-wrap justify-center sm:justify-between w-full mb-4 items-center gap-2 sm:gap-4">
              <div className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-2 items-center">
                <AuthButton />
                <button
@@ -1255,25 +1255,25 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
              {/* Right-aligned action buttons */}
              <div className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-2 items-center sm:ml-auto">
                <button
-                 onClick={downloadCalendarAsImage}
-                 disabled={isDownloading}
+                  onClick={downloadCalendarAsImage}
+                  disabled={isDownloading}
                  className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 px-2.5 py-1 border border-gray-200 rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-               >
+                >
                  {isDownloading ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />} {isDownloading ? 'GENERATING' : 'SCREENSHOT'}
-               </button>
-               <div className="relative">
-                 <button
-                     onClick={() => {
-                         setSelectedExportTags(projectGroups.map(g => g.id));
-                         setShowExportOptionsModal(true);
-                     }}
+                </button>
+                <div className="relative">
+                  <button
+                      onClick={() => {
+                          setSelectedExportTags(projectGroups.map(g => g.id));
+                          setShowExportOptionsModal(true);
+                      }}
                      className="text-[10px] sm:text-xs text-gray-500 font-mono hover:bg-gray-100 flex items-center gap-1 px-2.5 py-1 border border-gray-200 rounded-sm transition-colors"
-                 >
+                  >
                    <CalendarIcon size={12} /> EXPORT
-                 </button>
-               </div>
-             </div>
-           </div>
+                  </button>
+                </div>
+              </div>
+            </div>
         </div>
 
         <div 

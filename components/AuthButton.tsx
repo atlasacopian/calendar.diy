@@ -180,17 +180,6 @@ export default function AuthButton() {
             {error && <p className="text-red-500 text-xs text-center pt-1">{error}</p>}
             {message && <p className="text-green-600 text-xs text-center pt-1">{message}</p>}
           </form>
-          <button
-            onClick={() => {
-              setIsSignUp(!isSignUp)
-              setError("")
-              setMessage("")
-              setShowPasswordReset(false)
-            }}
-            className="mt-3 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
-          >
-            {isSignUp ? "Already have an account? Sign In" : "Need an account? Sign Up"}
-          </button>
           {!isSignUp && (
             <button
               onClick={() => {
@@ -198,11 +187,22 @@ export default function AuthButton() {
                 setError("")
                 setMessage("")
               }}
-              className="mt-1 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
+              className="mt-3 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
             >
               Forgot Password?
             </button>
           )}
+          <button
+            onClick={() => {
+                setIsSignUp(!isSignUp)
+                setError("")
+                setMessage("")
+                setShowPasswordReset(false)
+            }}
+            className="mt-1 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
+          >
+            {isSignUp ? "Already have an account? Sign In" : "Need an account? Sign Up"}
+          </button>
         </div>
       )}
 

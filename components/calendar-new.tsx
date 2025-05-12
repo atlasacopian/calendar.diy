@@ -156,6 +156,10 @@ export default function CalendarNew() {
 
   const prevUser = useRef(user); // Ref to store previous user state
 
+  // Track when we are in the middle of a login→logout transition so we don't
+  // erroneously persist cloud data into the anonymous localStorage bucket.
+  const isLoggingOutRef = useRef(false);
+
   useEffect(() => {
     try {
       const checkIfMobile = () => {
@@ -338,6 +342,8 @@ export default function CalendarNew() {
             localStorage.removeItem('projectGroups');
             localStorage.removeItem(`calendarSnapshot_${prevUser.current.id}`); // Clear snapshot of logged-out user
           }
++          // Clear transition flag in next tick so SaveEffect after state flushes sees false
++          setTimeout(() => { isLoggingOutRef.current = false; }, 0);
         } else { // Initial load and user is logged out
           console.log('[DataLoad/Logout] User logged out (initial). Loading from localStorage.');
           if (typeof window !== 'undefined') {
@@ -391,9 +397,8 @@ export default function CalendarNew() {
       .catch(err => console.error('[SaveEffect] Network error saving to Supabase:', err));
     } else { // Logged OUT: Save to localStorage
     if (typeof window !== 'undefined') {
-        // If prevUser.current is not null, we're in the middle of a logout transition.
-        // Skip saving to localStorage so stale cloud events aren't persisted.
-        if (prevUser.current) {
+        // Skip while we are transitioning out of a session
+        if (isLoggingOutRef.current) {
           console.log('[SaveEffect] Logout transition – skipping localStorage save to avoid stale data');
           return;
         }

@@ -17,6 +17,8 @@ export default function AuthButton() {
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [formLoading, setFormLoading] = useState(false)
+  const [showPasswordReset, setShowPasswordReset] = useState(false)
+  const [resetEmail, setResetEmail] = useState("")
 
   useEffect(() => {
     let mounted = true
@@ -78,6 +80,24 @@ export default function AuthButton() {
     }
     setFormLoading(false)
   }
+
+  const handlePasswordResetRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage("");
+    setError("");
+    setFormLoading(true);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: SITE_URL, // Or a specific /update-password page if you create one
+    });
+    if (resetError) {
+      setError(resetError.message);
+    } else {
+      setMessage("Password reset email sent! Check your inbox.");
+      setShowPasswordReset(false); // Hide reset form, show success message
+      setResetEmail("");
+    }
+    setFormLoading(false);
+  };
 
   const handleSignOut = async () => {
     setFormLoading(true)
@@ -165,11 +185,55 @@ export default function AuthButton() {
               setIsSignUp(!isSignUp)
               setError("")
               setMessage("")
+              setShowPasswordReset(false)
             }}
             className="mt-3 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
           >
             {isSignUp ? "Already have an account? Sign In" : "Need an account? Sign Up"}
           </button>
+          {!isSignUp && (
+            <button
+              onClick={() => {
+                setShowPasswordReset(true)
+                setError("")
+                setMessage("")
+              }}
+              className="mt-1 text-xs text-gray-500 hover:text-black hover:underline text-center w-full"
+            >
+              Forgot Password?
+            </button>
+          )}
+        </div>
+      )}
+
+      {showPasswordReset && (
+        <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-300 rounded-sm shadow-lg p-4 z-20">
+          <button onClick={() => {setShowPasswordReset(false); setResetEmail(""); setError(""); setMessage(""); }} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+          <form onSubmit={handlePasswordResetRequest} className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-800 text-center mb-3">Reset Password</h3>
+            <div>
+              <input
+                id="reset-email-auth"
+                type="email"
+                placeholder="Enter your email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                required
+                className="w-full px-2.5 py-1.5 border border-gray-300 rounded-sm focus:ring-1 focus:ring-black focus:border-black text-xs placeholder-gray-400"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={formLoading}
+              className="w-full bg-black text-white px-3 py-1.5 rounded-sm hover:bg-gray-800 transition-colors text-xs font-mono disabled:opacity-50 flex items-center justify-center"
+            >
+              {formLoading ? <Loader2 size={14} className="animate-spin" /> : "Send Reset Link"}
+            </button>
+            {error && <p className="text-red-500 text-xs text-center pt-1">{error}</p>}
+            {message && <p className="text-green-600 text-xs text-center pt-1">{message}</p>}
+          </form>
         </div>
       )}
     </div>

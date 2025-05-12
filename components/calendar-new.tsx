@@ -1238,8 +1238,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           "flex flex-col w-full sm:max-w-5xl mx-auto font-mono pt-4 pb-4",
           "bg-white"
         )}
-        // Shrink a bit further for both mobile and desktop
-        style={{ zoom: isMobile ? 0.8 : 0.75 }}
+        // Shrink via CSS transform so content stays perfectly centered on any viewport size
+        style={{ transform: `scale(${isMobile ? 0.8 : 0.75})`, transformOrigin: 'top center' }}
       >
         <div className="mx-1 sm:mx-6 md:mx-12">
            <div className="flex flex-row flex-wrap justify-center sm:justify-between w-full mb-4 items-center gap-2 sm:gap-4">

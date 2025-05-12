@@ -62,7 +62,7 @@ export default function Home() {
         {/* Client-side rendered calendar */}
         <div className="calendar-wrapper">
           <Suspense>
-            <ClientCalendarWrapper />
+          <ClientCalendarWrapper />
           </Suspense>
         </div>
 

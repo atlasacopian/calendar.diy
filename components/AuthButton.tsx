@@ -20,6 +20,7 @@ export default function AuthButton() {
   const [resetEmail, setResetEmail] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
+  const [initialUrlCheckDone, setInitialUrlCheckDone] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -40,7 +41,7 @@ export default function AuthButton() {
       console.log("[Auth onAuthStateChange] Event:", event, "Session User ID:", session?.user?.id, "Current View:", view)
       setUser(session?.user ?? null)
 
-      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "PASSWORD_RECOVERY") && session?.user) {
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION" ) && session?.user) {
         const currentUrl = (typeof window !== "undefined") ? new URL(window.location.href) : null;
         const urlHasRecoveryType = currentUrl && 
                                    (currentUrl.hash.includes('type=recovery') || 
@@ -64,11 +65,36 @@ export default function AuthButton() {
       }
     })
 
+    // 3. Check URL for recovery parameters ONCE on mount
+    if (!initialUrlCheckDone && typeof window !== "undefined") {
+      const currentUrl = new URL(window.location.href);
+      const recoveryTypeFromQuery = currentUrl.searchParams.get('type');
+      const recoveryCode = currentUrl.searchParams.get('code');
+      const recoveryError = currentUrl.searchParams.get('error_description'); // Supabase often uses error_description
+      const hash = currentUrl.hash;
+
+      if (recoveryError) {
+        console.log("[Auth InitialUrlCheck] Found error in URL query params:", recoveryError);
+        setError(recoveryError.replace(/\+/g, ' ')); // Replace + with space for display
+        setView('sign_in'); 
+        setAuthUiVisible(true);
+        window.history.replaceState({}, document.title, window.location.pathname); 
+      } else if ((recoveryCode && recoveryTypeFromQuery === 'recovery') || (hash.includes('type=recovery') && hash.includes('access_token'))) {
+        console.log("[Auth InitialUrlCheck] Detected recovery params in URL. Switching to update_password view.");
+        setView('update_password');
+        setAuthUiVisible(true);
+        // Supabase client (with detectSessionInUrl: true) should be processing the code/hash.
+        // The onAuthStateChange SIGNED_IN event will confirm session is active.
+        // No need to clear hash/query here, onAuthStateChange will do it if it switches view upon PASSWORD_RECOVERY
+      }
+      setInitialUrlCheckDone(true);
+    }
+
     return () => {
       mounted = false
       subscription?.unsubscribe()
     }
-  }, [])
+  }, [initialUrlCheckDone, view])
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -177,6 +203,15 @@ export default function AuthButton() {
     }
     setError("");
     setFormLoading(true);
+    // Ensure user is authenticated before attempting to update password
+    // The session should have been established by Supabase client processing the recovery URL
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) {
+        setError("Session expired or invalid. Please try resetting your password again.");
+        setFormLoading(false);
+        setView('sign_in');
+        return;
+    }
     const { data: updateData, error: updateError } = await supabase.auth.updateUser({ password: newPassword });
     if (updateError) {
       setError(updateError.message);

@@ -1478,7 +1478,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         style={{ transform: 'scale(0.7)' }}
       >
         <div className="mx-1 sm:mx-6 md:mx-12">
-           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-between w-full mb-4 items-start sm:items-center gap-2 sm:gap-4">
+           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-between w-full mb-4 items-center gap-2 sm:gap-4">
              <div className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-2 items-center">
                <AuthButton />
                <button

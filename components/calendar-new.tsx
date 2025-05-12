@@ -1361,7 +1361,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
               <div className={cn(
                 "text-xs sm:text-sm font-medium",
                 isTodayDate
-                  ? "bg-gray-900 text-white rounded-md w-6 h-6 flex items-center justify-center text-xs" // Today square larger
+                  ? "bg-gray-900 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs" // Today circle larger
                   : "text-gray-600" // Regular day number
               )}>
                 {format(currentDateInLoop, 'd')}

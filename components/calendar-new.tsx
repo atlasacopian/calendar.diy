@@ -1578,14 +1578,17 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
              <div className="flex justify-between items-center p-4 border-t border-gray-200">
                 <div className="flex-shrink-0">
                   {eventsForSelectedDate.filter(ev => ev.content.trim() !== '').length > 0 && ( 
-                    <Button
-                      onClick={handleDeleteAllEventsForDay}
-                      variant="ghost"
-                      className="text-red-600 hover:text-red-600 hover:underline p-0 font-mono bg-transparent focus:outline-none border-none hover:bg-transparent"
-                      disabled={modalCloseState !== 'idle'}
-                    >
-                      DELETE ALL
-                    </Button>
+                    // Show only if there are 2 or more non-deleted events/fields
+                    eventsForSelectedDate.filter(ev => !ev.isDeleted).length > 1 && (
+                     <Button
+                       onClick={handleDeleteAllEventsForDay}
+                       variant="ghost"
+                       className="text-red-600 hover:text-red-600 hover:underline p-0 font-mono bg-transparent focus:outline-none border-none hover:bg-transparent"
+                       disabled={modalCloseState !== 'idle'}
+                     >
+                       DELETE ALL
+                     </Button>
+                    )
                   )}
                 </div>
                 <div className="flex gap-2 flex-grow justify-end">

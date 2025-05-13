@@ -1163,9 +1163,9 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         cloneElement.style.position = "fixed";
         cloneElement.style.top = "-10000px";
         cloneElement.style.left = "-10000px";
-        cloneElement.style.width = "1280px"; // force desktop width so Tailwind classes render like desktop
-        cloneElement.style.transform = "scale(0.75)"; // match desktop scale
-        cloneElement.style.transformOrigin = "top center";
+        // Ensure it renders with default desktop classes
+        cloneElement.style.transform = "none";
+        cloneElement.style.width = `${calendarElement.offsetWidth}px`;
         document.body.appendChild(cloneElement);
         captureTarget = cloneElement;
       }

@@ -712,7 +712,10 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
 
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      handleSaveAndClose()
+      // Only save/close if the current event has content
+      if (eventsForSelectedDate[index] && eventsForSelectedDate[index].content.trim() !== "") {
+        handleSaveAndClose()
+      }
     }
   };
 
@@ -1131,6 +1134,11 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   ]);
 
   const downloadCalendarAsImage = async () => {
+    // Variables that need to be accessible across try/catch/finally blocks
+    let isMobileDevice = false;
+    let outerWrapper: HTMLElement | null = null;
+    let originalTransform = "";
+
     try {
       setIsDownloading(true);
 
@@ -1145,79 +1153,98 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         return;
       }
 
+      // === NEW: Temporarily remove transform scale on mobile to prevent blurry / smushed screenshots ===
+      isMobileDevice = typeof window !== "undefined" && window.innerWidth < 640;
+      // The outer wrapper is the direct parent which contains the transform styling.
+      outerWrapper = calendarElement.parentElement as HTMLElement | null;
+      originalTransform = outerWrapper?.style.transform ?? "";
+      if (isMobileDevice && outerWrapper) {
+        outerWrapper.style.transform = "scale(1)"; // remove scaling
+      }
+
+      // Give the DOM a tick to reflow before taking the screenshot
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
       const canvas = await html2canvas(calendarElement, {
-        scale: 2,
+        // Increase internal rendering scale for crisper output
+        scale: 3,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
         imageTimeout: 0,
         onclone: (clonedDoc) => {
-            const todayElements = clonedDoc.querySelectorAll('.bg-gray-900.text-white.rounded-full');
-            todayElements.forEach((el) => {
-                const todayEl = el as HTMLElement;
-                todayEl.style.backgroundColor = 'transparent';
-                todayEl.style.color = '#4b5563';
-                todayEl.style.borderRadius = '0';
-                todayEl.style.width = 'auto';
-                todayEl.style.height = 'auto';
-                todayEl.style.display = 'inline';
-                todayEl.classList.remove('bg-gray-900', 'text-white', 'rounded-full', 'w-5', 'h-5', 'flex', 'items-center', 'justify-center', 'text-[9px]');
-                todayEl.classList.add('text-gray-600', 'text-xs', 'sm:text-sm');
-            });
+          // Restore any transform removal inside the cloned document as well (safety net)
+          if (isMobileDevice) {
+            const clonedOuter = clonedDoc.body.querySelector('[style*="transform:"]') as HTMLElement | null;
+            if (clonedOuter) clonedOuter.style.transform = 'scale(1)';
+          }
 
-            const dayEventContainers = clonedDoc.querySelectorAll('.flex-1.overflow-hidden.flex.flex-col');
-            dayEventContainers.forEach(container => {
-              const el = container as HTMLElement;
-              el.style.overflow = 'visible';
-              el.style.height = 'auto'; 
-              el.style.minHeight = '1em'; 
-            });
+          const todayElements = clonedDoc.querySelectorAll('.bg-gray-900.text-white.rounded-full');
+          todayElements.forEach((el) => {
+              const todayEl = el as HTMLElement;
+              todayEl.style.backgroundColor = 'transparent';
+              todayEl.style.color = '#4b5563';
+              todayEl.style.borderRadius = '0';
+              todayEl.style.width = 'auto';
+              todayEl.style.height = 'auto';
+              todayEl.style.display = 'inline';
+              todayEl.classList.remove('bg-gray-900', 'text-white', 'rounded-full', 'w-5', 'h-5', 'flex', 'items-center', 'justify-center', 'text-[9px]');
+              todayEl.classList.add('text-gray-600', 'text-xs', 'sm:text-sm');
+          });
 
-            const textElements = clonedDoc.querySelectorAll('.block span.break-words, div.text-\\[9px\\].uppercase'); 
-            textElements.forEach(textEl => {
-              const el = textEl as HTMLElement;
-              el.classList.remove(
-                'truncate',
-                'overflow-hidden',
-                'line-clamp-1', 'line-clamp-2', 'line-clamp-3', 'line-clamp-4',
-                'md:line-clamp-1', 'md:line-clamp-2', 'md:line-clamp-4',
-                'pr-1' 
-              );
-              el.style.overflow = 'visible';
-              el.style.whiteSpace = 'normal'; 
-              el.style.webkitLineClamp = 'unset';
-              el.style.display = 'block'; 
-              el.style.height = 'auto'; 
-              el.style.textOverflow = 'clip';
-              el.style.paddingRight = '0'; 
+          const dayEventContainers = clonedDoc.querySelectorAll('.flex-1.overflow-hidden.flex.flex-col');
+          dayEventContainers.forEach(container => {
+            const el = container as HTMLElement;
+            el.style.overflow = 'visible';
+            el.style.height = 'auto'; 
+            el.style.minHeight = '1em'; 
+          });
 
-              const parentEventItem = el.closest('.block');
-              if (parentEventItem) {
-                (parentEventItem as HTMLElement).style.height = 'auto';
-                (parentEventItem as HTMLElement).style.overflow = 'visible';
-              }
-            });
+          const textElements = clonedDoc.querySelectorAll('.block span.break-words, div.text-\\[9px\\].uppercase'); 
+          textElements.forEach(textEl => {
+            const el = textEl as HTMLElement;
+            el.classList.remove(
+              'truncate',
+              'overflow-hidden',
+              'line-clamp-1', 'line-clamp-2', 'line-clamp-3', 'line-clamp-4',
+              'md:line-clamp-1', 'md:line-clamp-2', 'md:line-clamp-4',
+              'pr-1' 
+            );
+            el.style.overflow = 'visible';
+            el.style.whiteSpace = 'normal'; 
+            el.style.webkitLineClamp = 'unset';
+            el.style.display = 'block'; 
+            el.style.height = 'auto'; 
+            el.style.textOverflow = 'clip';
+            el.style.paddingRight = '0'; 
 
-            const calendarGrid = clonedDoc.querySelector('.grid.grid-cols-7');
-            if (calendarGrid) {
-                const dayCells = calendarGrid.querySelectorAll<HTMLElement>(':scope > div[key]');
-                dayCells.forEach(cell => {
-                    cell.classList.remove('h-20', 'sm:h-24', 'md:h-28');
-                    cell.style.height = 'auto';
-                    cell.style.minHeight = '50px'; 
-                    cell.style.overflow = 'visible'; 
-                });
+            const parentEventItem = el.closest('.block');
+            if (parentEventItem) {
+              (parentEventItem as HTMLElement).style.height = 'auto';
+              (parentEventItem as HTMLElement).style.overflow = 'visible';
             }
+          });
 
-            const leftArrow = clonedDoc.getElementById('calendar-nav-left') as HTMLElement | null;
-            const rightArrow = clonedDoc.getElementById('calendar-nav-right') as HTMLElement | null;
-            if (leftArrow) {
-                leftArrow.style.visibility = 'hidden';
-            }
-            if (rightArrow) {
-                rightArrow.style.visibility = 'hidden';
-            }
+          const calendarGrid = clonedDoc.querySelector('.grid.grid-cols-7');
+          if (calendarGrid) {
+              const dayCells = calendarGrid.querySelectorAll<HTMLElement>(':scope > div[key]');
+              dayCells.forEach(cell => {
+                  cell.classList.remove('h-20', 'sm:h-24', 'md:h-28');
+                  cell.style.height = 'auto';
+                  cell.style.minHeight = '50px'; 
+                  cell.style.overflow = 'visible'; 
+              });
+          }
+
+          const leftArrow = clonedDoc.getElementById('calendar-nav-left') as HTMLElement | null;
+          const rightArrow = clonedDoc.getElementById('calendar-nav-right') as HTMLElement | null;
+          if (leftArrow) {
+              leftArrow.style.visibility = 'hidden';
+          }
+          if (rightArrow) {
+              rightArrow.style.visibility = 'hidden';
+          }
         }
       });
 
@@ -1229,10 +1256,20 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       link.click();
       document.body.removeChild(link);
 
+      // Restore original transform after capture
+      if (isMobileDevice && outerWrapper) {
+        outerWrapper.style.transform = originalTransform;
+      }
+
     } catch (error) {
       console.error("Error generating calendar image:", error);
       alert("Failed to generate image. Please try again.");
     } finally {
+      // Ensure the original transform is always restored even if an error occurs
+      if (isMobileDevice && outerWrapper) {
+        outerWrapper.style.transform = originalTransform;
+      }
+
       setIsDownloading(false);
     }
   };

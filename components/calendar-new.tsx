@@ -1164,7 +1164,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       // Save original overflow so we can restore later
       originalOverflow = calendarElement.style.overflow;
       if (isMobileDevice && outerWrapper) {
-        outerWrapper.style.transform = "scale(1)"; // remove scaling
+        // Match the desktop scaling so the captured layout has generous spacing like desktop
+        outerWrapper.style.transform = "scale(0.75)";
       }
       if (isMobileDevice) {
         calendarElement.style.overflow = "visible"; // prevent content clipping while capturing

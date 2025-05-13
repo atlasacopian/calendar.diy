@@ -1138,33 +1138,41 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
     let isMobileDevice = false;
     let outerWrapper: HTMLElement | null = null;
     let originalTransform = "";
-
+    let originalOverflow = "";
+    let calendarElementRef: HTMLElement | null = null;
+ 
     try {
       setIsDownloading(true);
-
+ 
       const html2canvas = (await import("html2canvas")).default;
-
+ 
       const calendarElement = calendarScreenshotContainerRef.current;
-
+      calendarElementRef = calendarElement;
+ 
       if (!calendarElement) {
         console.error("Calendar element not found for screenshot.");
         alert("Failed to capture calendar. Element not found.");
         setIsDownloading(false);
         return;
       }
-
+ 
       // === NEW: Temporarily remove transform scale on mobile to prevent blurry / smushed screenshots ===
       isMobileDevice = typeof window !== "undefined" && window.innerWidth < 640;
       // The outer wrapper is the direct parent which contains the transform styling.
       outerWrapper = calendarElement.parentElement as HTMLElement | null;
       originalTransform = outerWrapper?.style.transform ?? "";
+      // Save original overflow so we can restore later
+      originalOverflow = calendarElement.style.overflow;
       if (isMobileDevice && outerWrapper) {
         outerWrapper.style.transform = "scale(1)"; // remove scaling
       }
-
+      if (isMobileDevice) {
+        calendarElement.style.overflow = "visible"; // prevent content clipping while capturing
+      }
+ 
       // Give the DOM a tick to reflow before taking the screenshot
       await new Promise((resolve) => setTimeout(resolve, 50));
-
+ 
       const canvas = await html2canvas(calendarElement, {
         // Increase internal rendering scale for crisper output
         scale: 3,
@@ -1179,7 +1187,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             const clonedOuter = clonedDoc.body.querySelector('[style*="transform:"]') as HTMLElement | null;
             if (clonedOuter) clonedOuter.style.transform = 'scale(1)';
           }
-
+ 
           const todayElements = clonedDoc.querySelectorAll('.bg-gray-900.text-white.rounded-full');
           todayElements.forEach((el) => {
               const todayEl = el as HTMLElement;
@@ -1192,7 +1200,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
               todayEl.classList.remove('bg-gray-900', 'text-white', 'rounded-full', 'w-5', 'h-5', 'flex', 'items-center', 'justify-center', 'text-[9px]');
               todayEl.classList.add('text-gray-600', 'text-xs', 'sm:text-sm');
           });
-
+ 
           const dayEventContainers = clonedDoc.querySelectorAll('.flex-1.overflow-hidden.flex.flex-col');
           dayEventContainers.forEach(container => {
             const el = container as HTMLElement;
@@ -1200,7 +1208,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             el.style.height = 'auto'; 
             el.style.minHeight = '1em'; 
           });
-
+ 
           const textElements = clonedDoc.querySelectorAll('.block span.break-words, div.text-\\[9px\\].uppercase'); 
           textElements.forEach(textEl => {
             const el = textEl as HTMLElement;
@@ -1218,14 +1226,14 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             el.style.height = 'auto'; 
             el.style.textOverflow = 'clip';
             el.style.paddingRight = '0'; 
-
+ 
             const parentEventItem = el.closest('.block');
             if (parentEventItem) {
               (parentEventItem as HTMLElement).style.height = 'auto';
               (parentEventItem as HTMLElement).style.overflow = 'visible';
             }
           });
-
+ 
           const calendarGrid = clonedDoc.querySelector('.grid.grid-cols-7');
           if (calendarGrid) {
               const dayCells = calendarGrid.querySelectorAll<HTMLElement>(':scope > div[key]');
@@ -1236,7 +1244,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                   cell.style.overflow = 'visible'; 
               });
           }
-
+ 
           const leftArrow = clonedDoc.getElementById('calendar-nav-left') as HTMLElement | null;
           const rightArrow = clonedDoc.getElementById('calendar-nav-right') as HTMLElement | null;
           if (leftArrow) {
@@ -1247,7 +1255,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           }
         }
       });
-
+ 
       const image = canvas.toDataURL("image/png", 1.0);
       const link = document.createElement("a");
       link.href = image;
@@ -1255,12 +1263,15 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
+ 
       // Restore original transform after capture
       if (isMobileDevice && outerWrapper) {
         outerWrapper.style.transform = originalTransform;
       }
-
+      if (isMobileDevice && calendarElementRef) {
+        calendarElementRef.style.overflow = originalOverflow;
+      }
+ 
     } catch (error) {
       console.error("Error generating calendar image:", error);
       alert("Failed to generate image. Please try again.");
@@ -1269,7 +1280,10 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       if (isMobileDevice && outerWrapper) {
         outerWrapper.style.transform = originalTransform;
       }
-
+      if (isMobileDevice && calendarElementRef) {
+        calendarElementRef.style.overflow = originalOverflow;
+      }
+ 
       setIsDownloading(false);
     }
   };

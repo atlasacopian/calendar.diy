@@ -1136,10 +1136,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   const downloadCalendarAsImage = async () => {
     // Variables that need to be accessible across try/catch/finally blocks
     let isMobileDevice = false;
-    let outerWrapper: HTMLElement | null = null;
-    let originalTransform = "";
-    let originalOverflow = "";
     let calendarElementRef: HTMLElement | null = null;
+    let cloneElement: HTMLElement | null = null; // off-screen clone for mobile capture
  
     try {
       setIsDownloading(true);
@@ -1156,25 +1154,25 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         return;
       }
  
-      // === NEW: Temporarily remove transform scale on mobile to prevent blurry / smushed screenshots ===
+      // === NEW LOGIC: use an off-screen clone on mobile ===
       isMobileDevice = typeof window !== "undefined" && window.innerWidth < 640;
-      // The outer wrapper is the direct parent which contains the transform styling.
-      outerWrapper = calendarElement.parentElement as HTMLElement | null;
-      originalTransform = outerWrapper?.style.transform ?? "";
-      // Save original overflow so we can restore later
-      originalOverflow = calendarElement.style.overflow;
-      if (isMobileDevice && outerWrapper) {
-        // Match the desktop scaling so the captured layout has generous spacing like desktop
-        outerWrapper.style.transform = "scale(0.75)";
-      }
+      let captureTarget: HTMLElement = calendarElement;
+ 
       if (isMobileDevice) {
-        calendarElement.style.overflow = "visible"; // prevent content clipping while capturing
+        cloneElement = calendarElement.cloneNode(true) as HTMLElement;
+        cloneElement.style.position = "fixed";
+        cloneElement.style.top = "-10000px";
+        cloneElement.style.left = "-10000px";
+        cloneElement.style.transform = "scale(0.75)"; // match desktop scale
+        cloneElement.style.transformOrigin = "top center";
+        document.body.appendChild(cloneElement);
+        captureTarget = cloneElement;
       }
  
-      // Give the DOM a tick to reflow before taking the screenshot
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // Give the browser a tick to lay out the clone (if any) before capture
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
  
-      const canvas = await html2canvas(calendarElement, {
+      const canvas = await html2canvas(captureTarget, {
         // Increase internal rendering scale for crisper output
         scale: 3,
         useCORS: true,
@@ -1183,12 +1181,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         logging: false,
         imageTimeout: 0,
         onclone: (clonedDoc) => {
-          // Restore any transform removal inside the cloned document as well (safety net)
-          if (isMobileDevice) {
-            const clonedOuter = clonedDoc.body.querySelector('[style*="transform:"]') as HTMLElement | null;
-            if (clonedOuter) clonedOuter.style.transform = 'scale(1)';
-          }
- 
+          // Remove the today-circle so it renders flat in screenshot
           const todayElements = clonedDoc.querySelectorAll('.bg-gray-900.text-white.rounded-full');
           todayElements.forEach((el) => {
               const todayEl = el as HTMLElement;
@@ -1265,24 +1258,18 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
       link.click();
       document.body.removeChild(link);
  
-      // Restore original transform after capture
-      if (isMobileDevice && outerWrapper) {
-        outerWrapper.style.transform = originalTransform;
-      }
-      if (isMobileDevice && calendarElementRef) {
-        calendarElementRef.style.overflow = originalOverflow;
+      // Remove the off-screen clone
+      if (cloneElement && document.body.contains(cloneElement)) {
+        document.body.removeChild(cloneElement);
       }
  
     } catch (error) {
       console.error("Error generating calendar image:", error);
       alert("Failed to generate image. Please try again.");
     } finally {
-      // Ensure the original transform is always restored even if an error occurs
-      if (isMobileDevice && outerWrapper) {
-        outerWrapper.style.transform = originalTransform;
-      }
-      if (isMobileDevice && calendarElementRef) {
-        calendarElementRef.style.overflow = originalOverflow;
+      // Ensure clone is cleaned up even on error
+      if (cloneElement && document.body.contains(cloneElement)) {
+        document.body.removeChild(cloneElement);
       }
  
       setIsDownloading(false);

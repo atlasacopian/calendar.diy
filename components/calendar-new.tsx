@@ -1262,6 +1262,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             .break-words { font-size: 8px !important; line-height: 1.15 !important; }
             /* shrink holiday labels */
             div.text-\\[9px\\].uppercase { font-size: 7px !important; line-height: 1.1 !important; }
++            /* center days of week text */
++            .grid.grid-cols-7.bg-gray-50 > div { display: flex !important; align-items: center !important; justify-content: center !important; }
 +            /* align bullet and text horizontally */
 +            .block > div { display: flex !important; align-items: center !important; gap: 2px; }
 +            .block > div span:first-child { position: relative; top: 0.5px; }

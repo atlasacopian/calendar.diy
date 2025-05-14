@@ -1262,11 +1262,12 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           clonedDoc.head.appendChild(styleTag);
 
           // Vertically center the month/year title inside its container
-          const monthHeader = clonedDoc.querySelector('.date-selector-container');
+          const monthHeader = clonedDoc.querySelector('.date-selector-container') as HTMLElement | null;
           if (monthHeader) {
-            (monthHeader as HTMLElement).style.display = 'flex';
-            (monthHeader as HTMLElement).style.alignItems = 'center';
-            (monthHeader as HTMLElement).style.justifyContent = 'center';
+            monthHeader.style.display = 'flex';
+            monthHeader.style.alignItems = 'center';
+            monthHeader.style.justifyContent = 'center';
+            monthHeader.style.height = '100%';
           }
 
           // 4) Center month/year text inside screenshot header

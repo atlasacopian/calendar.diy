@@ -1164,8 +1164,8 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
         cloneElement.style.top = "-10000px";
         cloneElement.style.left = "-10000px";
         // Ensure it renders with default desktop classes
-        cloneElement.style.width = "1400px"; // desktop-sized width
-        cloneElement.style.transform = "scale(0.75)";
+        cloneElement.style.width = "1050px"; // desktop visual width
+        cloneElement.style.transform = "none";
         cloneElement.style.transformOrigin = "top center";
         document.body.appendChild(cloneElement);
         captureTarget = cloneElement;

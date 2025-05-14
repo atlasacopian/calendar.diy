@@ -1292,6 +1292,17 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
               (innerDiv as HTMLElement).style.lineHeight = '1';
             }
           }
+
+          // Force header row vertical centering
+          const navLeft = clonedDoc.getElementById('calendar-nav-left');
+          if (navLeft && navLeft.parentElement) {
+            const headerRow = navLeft.parentElement as HTMLElement;
+            headerRow.style.alignItems = 'center';
+          }
+          if (titleBtn) {
+            titleBtn.style.marginTop = 'auto';
+            titleBtn.style.marginBottom = 'auto';
+          }
         }
       });
  

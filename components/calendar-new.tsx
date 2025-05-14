@@ -1268,6 +1268,19 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             (monthHeader as HTMLElement).style.alignItems = 'center';
             (monthHeader as HTMLElement).style.justifyContent = 'center';
           }
+
+          // 4) Center month/year text inside screenshot header
+          const titleBtn = clonedDoc.querySelector('.date-selector-container > button') as HTMLElement | null;
+          if (titleBtn) {
+            titleBtn.style.display = 'flex';
+            titleBtn.style.alignItems = 'center';
+            titleBtn.style.justifyContent = 'center';
+            titleBtn.style.height = '100%';
+            const innerDiv = titleBtn.querySelector('div');
+            if (innerDiv) {
+              (innerDiv as HTMLElement).style.lineHeight = '1';
+            }
+          }
         }
       });
  
@@ -1300,6 +1313,26 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
   const createPrintableCalendar = () => {
     /* existing implementation retained – no changes made */
   };
+
+  useEffect(() => {
+    if (!user) return;
+
+    const flushData = () => {
+      try {
+        const payload = {
+          events: events.map(e => ({ ...e, date: e.date instanceof Date ? e.date.toISOString() : e.date })),
+          groups: projectGroups,
+        };
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        navigator.sendBeacon('/api/calendar', blob);
+      } catch (err) {
+        // noop – sendBeacon failures cannot be recovered here
+      }
+    };
+
+    window.addEventListener('beforeunload', flushData);
+    return () => window.removeEventListener('beforeunload', flushData);
+  }, [user, events, projectGroups]);
 
   return (
     <>

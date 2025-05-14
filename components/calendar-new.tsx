@@ -334,17 +334,15 @@ export default function CalendarNew() {
 
       } else { // USER IS LOGGED OUT
         if (prevUser.current) { // This means a logout just occurred
-          isLoggingOutRef.current = true; // mark logout before any state clears
-          console.log('[DataLoad/Logout] Logout detected. Clearing UI and localStorage.');
-          setEvents([]);
-          setProjectGroups([...initialProjectGroups]);
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('calendarEvents');
-            localStorage.removeItem('projectGroups');
-            localStorage.removeItem(`calendarSnapshot_${prevUser.current.id}`); // Clear snapshot of logged-out user
-          }
-+          // Clear transition flag in next tick so SaveEffect after state flushes sees false
-+          setTimeout(() => { isLoggingOutRef.current = false; }, 0);
+           isLoggingOutRef.current = true; // mark logout before any state clears
+           console.log('[DataLoad/Logout] Logout detected. Clearing UI and localStorage.');
+           setEvents([]);
+           setProjectGroups([...initialProjectGroups]);
+           if (typeof window !== 'undefined') {
+             localStorage.removeItem('calendarEvents');
+             localStorage.removeItem('projectGroups');
+             localStorage.removeItem(`calendarSnapshot_${prevUser.current.id}`); // Clear snapshot of logged-out user
+           }
         } else { // Initial load and user is logged out
           console.log('[DataLoad/Logout] User logged out (initial). Loading from localStorage.');
           if (typeof window !== 'undefined') {
@@ -361,6 +359,7 @@ export default function CalendarNew() {
       }
       prevUser.current = user; // Update previous user state for next run
       isMountedRef.current = true; // Mark initial load as done
+      isLoggingOutRef.current = false; // Reset flag after all logout/login processing is complete
     };
 
     loadInitialDataOrMigrate();

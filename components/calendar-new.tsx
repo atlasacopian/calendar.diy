@@ -1249,6 +1249,31 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
           if (rightArrow) {
               rightArrow.style.visibility = 'hidden';
           }
+
+          // --- Mobile screenshot specific tweaks ---
+          // 1) Shrink event / holiday text so it fits in tighter mobile boxes
+          const eventTextEls = clonedDoc.querySelectorAll('.block span.break-words');
+          eventTextEls.forEach(el => {
+            const n = el as HTMLElement;
+            n.style.fontSize = '8px';
+            n.style.lineHeight = '1.1';
+          });
+
+          // 2) Shrink holiday names (upper-left labels)
+          const holidayEls = clonedDoc.querySelectorAll('div.text-\\[9px\\].uppercase');
+          holidayEls.forEach(el => {
+            const n = el as HTMLElement;
+            n.style.fontSize = '7px';
+            n.style.lineHeight = '1.1';
+          });
+
+          // 3) Vertically center the month/year title
+          const monthTitle = clonedDoc.querySelector('.date-selector-container .text-4xl') as HTMLElement | null;
+          if (monthTitle) {
+            monthTitle.style.display = 'flex';
+            monthTitle.style.alignItems = 'center';
+            monthTitle.style.height = '100%';
+          }
         }
       });
  

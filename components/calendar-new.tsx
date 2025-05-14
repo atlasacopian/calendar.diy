@@ -1263,6 +1263,11 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             .break-words { font-size: 8px !important; line-height: 1.15 !important; }
             /* shrink holiday labels */
             div.text-\\[9px\\].uppercase { font-size: 7px !important; line-height: 1.1 !important; }
++            /* align bullet and text horizontally */
++            .block > div { display: flex !important; align-items: center !important; gap: 2px; }
++            .block > div span:first-child { position: relative; top: 0.5px; }
++            /* center month header */
++            .date-selector-container { display: flex !important; align-items: center !important; justify-content: center !important; height: 100% !important; }
           `;
           clonedDoc.head.appendChild(styleTag);
 

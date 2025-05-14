@@ -334,6 +334,7 @@ export default function CalendarNew() {
 
       } else { // USER IS LOGGED OUT
         if (prevUser.current) { // This means a logout just occurred
+          isLoggingOutRef.current = true; // mark logout before any state clears
           console.log('[DataLoad/Logout] Logout detected. Clearing UI and localStorage.');
           setEvents([]);
           setProjectGroups([...initialProjectGroups]);
@@ -372,6 +373,10 @@ export default function CalendarNew() {
     }
 
     if (user) { // Logged IN: Save to Supabase
+      if (isLoggingOutRef.current) {
+        console.log('[SaveEffect] Logout transition – skipping Supabase save');
+        return;
+      }
       const payload = {
         events: events.map(e => ({ ...e, date: e.date instanceof Date ? e.date.toISOString() : e.date })),
         groups: projectGroups

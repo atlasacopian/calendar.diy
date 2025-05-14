@@ -1366,7 +1366,7 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
                 onClick={() => setShowDateSelector(!showDateSelector)}
                 className="font-mono tracking-tight hover:cursor-pointer hover:underline text-black"
               >
-              <div className="text-4xl font-mono tracking-tight text-center">
+              <div className="text-4xl font-mono tracking-tight text-center flex items-center justify-center h-full">
                 {format(currentDate, "MMMM yyyy").toUpperCase()}
               </div>
               </button>

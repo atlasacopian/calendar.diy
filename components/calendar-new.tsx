@@ -1263,12 +1263,13 @@ PRODID:-//YourCalendarApp//DIY Calendar//EN
             /* shrink holiday labels */
             div.text-\\[9px\\].uppercase { font-size: 7px !important; line-height: 1.1 !important; }
             /* center days of week text */
-            .grid.grid-cols-7.bg-gray-50 > div { display: flex !important; align-items: center !important; justify-content: center !important; height: 100% !important; }
+            .grid.grid-cols-7.bg-gray-50 > div { display: flex !important; align-items: center !important; justify-content: center !important; height: 100% !important; /* ensure full cell height for centering */ }
             /* align bullet and text horizontally */
             .block > div { display: flex !important; align-items: center !important; gap: 2px; }
             .block > div span:first-child { position: relative; top: 0.5px; }
             /* center month header */
-            .date-selector-container button > div { display: flex !important; align-items: center !important; justify-content: center !important; height: 100% !important; line-height: 1 !important; }
+            .date-selector-container > button { height: 100% !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+            .date-selector-container > button > div { line-height: 1 !important; /* ensure text itself is compact */ }
           `;
           clonedDoc.head.appendChild(styleTag);
 

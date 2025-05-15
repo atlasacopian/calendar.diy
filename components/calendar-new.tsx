@@ -1269,10 +1269,10 @@ export default function CalendarNew() {
           // inject CSS rules with !important to guarantee override
           const styleTag = clonedDoc.createElement('style');
           styleTag.textContent = `
-            /* shrink event text */
-            .break-words { font-size: 8px !important; line-height: 1.15 !important; }
-            /* shrink holiday labels */
-            div.text-\\[9px\\].uppercase { font-size: 7px !important; line-height: 1.1 !important; }
+            /* event text */
+            .break-words { font-size: 10px !important; line-height: 1.3 !important; margin-bottom: 2px !important; }
+            /* holiday labels */
+            div.text-\\[9px\\].uppercase { font-size: 8px !important; line-height: 1.2 !important; }
             /* center days of week text */
             .grid.grid-cols-7.bg-gray-50 > div { display: flex !important; align-items: center !important; justify-content: center !important; height: 100% !important; /* ensure full cell height for centering */ }
             /* align bullet and text horizontally */

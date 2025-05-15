@@ -2,7 +2,14 @@
 export function generateICSFile(events: { date: Date; content: string }[]): string {
   // ICS file header
   let icsContent =
-    ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PROJECT CALENDAR//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"].join(
+    [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//PROJECT CALENDAR//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "X-WR-CALNAME:Project Calendar",
+    ].join(
       "\r\n",
     ) + "\r\n"
 
@@ -27,7 +34,7 @@ export function generateICSFile(events: { date: Date; content: string }[]): stri
   })
 
   // ICS file footer
-  icsContent += "END:VCALENDAR"
+  icsContent += "END:VCALENDAR\r\n"
 
   return icsContent
 }

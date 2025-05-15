@@ -416,7 +416,7 @@ export default function CalendarNew() {
         localStorage.setItem('projectGroups', JSON.stringify(projectGroups));
       }
     }
-  }, [events, projectGroups, user]); // Runs when events, groups, or user change
+  }, [events, projectGroups]); // Runs when events or groups change
 
   useEffect(() => {
     const fetchHolidays = async () => {

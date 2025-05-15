@@ -483,30 +483,41 @@ export default function CalendarNew() {
       return;
     }
 
-    let icalString = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//YourCalendarApp//DIY Calendar//EN
-`;
+    // Build ICS file header
+    const headerLines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//YourCalendarApp//DIY Calendar//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "X-WR-CALNAME:DIY Calendar",
+    ];
+    let icalString = headerLines.join("\r\n") + "\r\n";
 
+    // Add each event as a VEVENT block
     eventsToExport.forEach(event => {
       const startDate = format(event.date, 'yyyyMMdd');
-      const summary = event.content.replace(/\r\n|\r|\n/g, '\\\\n'); 
-
-      icalString += `BEGIN:VEVENT
-`;
-      icalString += `UID:${event.id}@yourdomain.com\\n`;
-      icalString += `DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}\\n`;
-      icalString += `DTSTART;VALUE=DATE:${startDate}\\n`;
-      icalString += `SUMMARY:${summary}\\n`;
-      icalString += `END:VEVENT\\n`;
+      const endDate = format(addDays(event.date, 1), 'yyyyMMdd');
+      const summary = event.content.replace(/\r\n|\r|\n/g, '\\n');
+      const eventLines = [
+        "BEGIN:VEVENT",
+        `UID:${event.id}@yourdomain.com`,
+        `DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`,
+        `DTSTART;VALUE=DATE:${startDate}`,
+        `DTEND;VALUE=DATE:${endDate}`,
+        `SUMMARY:${summary}`,
+        "END:VEVENT",
+      ];
+      icalString += eventLines.join("\r\n") + "\r\n";
     });
 
-    icalString += `END:VCALENDAR`;
+    // ICS file footer
+    icalString += "END:VCALENDAR\r\n";
 
     const blob = new Blob([icalString], { type: 'text/calendar;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
+    link.href = url;  
 
     const filename = exportTarget === 'google' ? 'google-calendar-export.ics' : 'calendar-export.ics';
     link.setAttribute('download', filename);

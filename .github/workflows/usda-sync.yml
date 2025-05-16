@@ -1,0 +1,31 @@
+name: USDA Egg Prices (daily)
+
+on:
+  # Runs every day at 00:15 UTC
+  schedule:
+    - cron: '15 7 * * *' # Runs daily at midnight PDT (7:15 AM UTC)
+  # Allow a manual run from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run USDA backfill (latest only)
+        run: node scripts/backfill-usda-weekly.js --latest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          USDA_API_KEY: ${{ secrets.USDA_API_KEY }} 

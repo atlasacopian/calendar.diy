@@ -1,0 +1,32 @@
+name: Target Egg Prices
+
+on:
+  schedule:
+    - cron: '5 7 * * *'    # Runs daily at midnight PDT (7:05 AM UTC)
+  workflow_dispatch: {}    # manual trigger in UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      REDSKY_KEY: ${{ secrets.REDSKY_KEY }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run RedSky API scraper
+        run: node scripts/fetch-target-egg-prices-intercept.js
+
+      - name: Success
+        run: echo "✅ Daily egg prices fetched and upserted" 

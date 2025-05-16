@@ -1269,12 +1269,15 @@ export default function CalendarNew() {
           // inject CSS rules with !important to guarantee override
           const styleTag = clonedDoc.createElement('style');
           styleTag.textContent = `
-            /* event text */
-            .break-words { font-size: 10px !important; line-height: 1.3 !important; margin-bottom: 2px !important; }
+            /* event text – larger and with more spacing */
+            .block { margin-bottom: 4px !important; }
+            .break-words { font-size: 12px !important; line-height: 1.4 !important; }
             /* holiday labels */
             div.text-\\[9px\\].uppercase { font-size: 8px !important; line-height: 1.2 !important; }
             /* center days of week text */
             .grid.grid-cols-7.bg-gray-50 > div { display: flex !important; align-items: center !important; justify-content: center !important; height: 100% !important; /* ensure full cell height for centering */ }
+            /* ensure each day cell can grow vertically */
+            .grid.grid-cols-7 > div { height: auto !important; min-height: 90px !important; }
             /* align bullet and text horizontally */
             .block > div { display: flex !important; align-items: center !important; gap: 2px; }
             .block > div span:first-child { position: relative; top: 0.5px; }
